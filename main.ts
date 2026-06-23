@@ -131,6 +131,16 @@ function drawMonthView() {
     ctx.strokeRect(gridX, y, LABEL_W, CELL);
     for (let d = 0; d < NCOLS; d++) ctx.strokeRect(dateX + d * COL_W, y, COL_W, CELL);
   }
+  // cover cross points with bg color (2px gap)
+  ctx.fillStyle = CLR.bg;
+  for (let row = 0; row <= rows; row++) {
+    const y = gridTop + row * CELL;
+    ctx.fillRect(gridX - 2, y - 2, 4, 4); // label left edge
+    for (let d = 0; d <= NCOLS; d++) {
+      const cx = dateX + d * COL_W;
+      ctx.fillRect(cx - 2, y - 2, 4, 4);
+    }
+  }
   ctx.restore();
 
   // center spine
@@ -192,6 +202,15 @@ function drawMonthView() {
     drawMoon(ctx, cx + calColW - 36, dcy, 8, getMoonPhase(cell.date), CLR.yellow);
     drawMoon(ctx, cx + calColW - 18, dcy, 8, getEarthPhase(cell.date), CLR.blue);
   }
+  // cover cross points with bg color (2px gap)
+  ctx.fillStyle = CLR.bg;
+  for (let row = 0; row <= NUM_ROWS; row++) {
+    const cy = 60 + row * calRowH;
+    for (let col = 0; col <= 7; col++) {
+      const cx = pad + col * calColW;
+      ctx.fillRect(cx - 2, cy - 2, 4, 4);
+    }
+  }
   ctx.restore();
 }
 
@@ -240,6 +259,13 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
   ctx.lineTo(PW, baseY + MONTH_H);
   ctx.stroke();
 
+  // cover cross-line intersections with bg color (2px gap)
+  ctx.fillStyle = CLR.bg;
+  [CELL_W, PW + CELL_W].forEach((vx) => {
+    ctx.fillRect(vx - 2, baseY + CELL_H - 2, 4, 4);
+  });
+  ctx.fillRect(PW - 2, baseY + CELL_H - 2, 4, 4);
+
   // ── 24-division lines on all 8 cells (1h per division) ──
   for (let slotIdx = 0; slotIdx < 8; slotIdx++) {
     const pi = Math.floor(slotIdx / 4);
@@ -270,6 +296,15 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
       ctx.lineCap = "butt";
     }
   }
+
+  // cover UTC line × cross line intersections
+  ctx.fillStyle = CLR.bg;
+  [CELL_W, PW, PW + CELL_W].forEach((vx) => {
+    for (let r = 0; r < 2; r++) {
+      const uy = baseY + r * CELL_H + CELL_H * (8 / 24);
+      ctx.fillRect(vx - 2, uy - 2, 4, 4);
+    }
+  });
 
   // ── DAY LABELS (with date circle background) ──
   ctx.textAlign = "left";
@@ -319,7 +354,7 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
 // render
 // ============================================================
 
-ctx.fillStyle = CLR.white;
+ctx.fillStyle = CLR.bg;
 ctx.fillRect(0, 0, W, TOTAL_H);
 drawMonthView();
 drawWeekViews();
