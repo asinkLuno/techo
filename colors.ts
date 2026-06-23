@@ -4,5 +4,5 @@ export const CLR = {
   yellow: "#e8c830",
   blue: "#4488cc",
   white: "#fff",
-  bg: "#f5efe0",
+  bg: "#FFFFF0",
 } as const;

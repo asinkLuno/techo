@@ -9,85 +9,110 @@ const MONTH_H = 1300;
 const W = PW * 2; // 1560
 const SPLIT = PW;
 
-const REF = new Date();
-const YEAR = REF.getFullYear();
-const MONTH = REF.getMonth();
-const DAYS_IN_MONTH = new Date(YEAR, MONTH + 1, 0).getDate();
-const NUM_ROWS = Math.ceil((new Date(YEAR, MONTH, 1).getDay() + DAYS_IN_MONTH) / 7);
+const YEAR = 2026;
 const WD_ABBR = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
-// precompute day status for month days
-const BASE: LunarBaseStatus[] = [];
-for (let d = 1; d <= DAYS_IN_MONTH; d++) {
-  BASE.push(getTranquilityBaseStatus(new Date(YEAR, MONTH, d, 12)));
-}
+const LW = { major: 2.0, minor: 1.0 } as const;
+const FS = { title: 24, label: 15, small: 9 } as const;
+const MARGIN = 30;
+const LABEL_W = 80;
 
-function dayIsDaytime(date: Date): boolean {
-  return getTranquilityBaseStatus(date).isDaytime;
-}
+// --- global ctx (swapped per page during render) ---
+let ctx: CanvasRenderingContext2D;
 
-// compute all weeks that touch this month (Mon–Sun)
+// --- per-month data ---
 interface WeekSpan {
   label: string;
   days: { date: Date; inMonth: boolean }[];
 }
-const WEEKS: WeekSpan[] = [];
-{
-  // a week belongs to the month whose 1st falls within it
-  const thisFirst = new Date(YEAR, MONTH, 1);
-  const nextFirst = new Date(YEAR, MONTH + 1, 1);
+
+interface MonthData {
+  year: number;
+  month: number;
+  daysInMonth: number;
+  numRows: number;
+  base: LunarBaseStatus[];
+  weeks: WeekSpan[];
+}
+
+function buildMonthData(year: number, month: number): MonthData {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const numRows = Math.ceil((new Date(year, month, 1).getDay() + daysInMonth) / 7);
+
+  const base: LunarBaseStatus[] = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    base.push(getTranquilityBaseStatus(new Date(year, month, d, 12)));
+  }
+
+  const weeks: WeekSpan[] = [];
+  const thisFirst = new Date(year, month, 1);
+  const nextFirst = new Date(year, month + 1, 1);
   const start = new Date(thisFirst);
-  start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // Monday of week containing 1st
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
   const end = new Date(nextFirst);
-  end.setDate(end.getDate() - ((end.getDay() + 6) % 7)); // Monday of week containing next month's 1st
+  end.setDate(end.getDate() - ((end.getDay() + 6) % 7));
 
   const cursor = new Date(start);
   while (cursor < end) {
     const days: WeekSpan["days"] = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(cursor);
-      days.push({ date: d, inMonth: d.getMonth() === MONTH });
+      days.push({ date: d, inMonth: d.getMonth() === month });
       cursor.setDate(cursor.getDate() + 1);
     }
     const mon = days[0].date,
       sun = days[6].date;
-    WEEKS.push({
+    weeks.push({
       label: `${DAY_NAMES[mon.getDay()]} ${mon.getDate()} – ${DAY_NAMES[sun.getDay()]} ${sun.getDate()}`,
       days,
     });
   }
+
+  return { year, month, daysInMonth, numRows, base, weeks };
 }
 
-const TOTAL_H = MONTH_H + WEEKS.length * MONTH_H;
-
-// --- canvas ---
-const canvas = document.getElementById("c") as HTMLCanvasElement;
-canvas.width = W * DPR;
-canvas.height = TOTAL_H * DPR;
-canvas.style.width = `${W}px`;
-canvas.style.height = `${TOTAL_H}px`;
-const ctx = canvas.getContext("2d")!;
-ctx.scale(DPR, DPR);
+const MONTHS: MonthData[] = [];
+for (let m = 0; m < 12; m++) {
+  MONTHS.push(buildMonthData(YEAR, m));
+}
 
 // ============================================================
-// MONTH VIEW (y=0 .. MONTH_H)
+// canvas factory
 // ============================================================
 
-const LW = { major: 2.0, minor: 1.0 } as const;
-const FS = { title: 24, label: 15, small: 9 } as const;
-const MARGIN = 30;
-const LABEL_W = 80;
-const NCOLS = DAYS_IN_MONTH;
-const GRID_W = 1300 - MARGIN * 2;
-const COL_W = (GRID_W - LABEL_W) / NCOLS;
-const CELL = Math.floor(COL_W);
+function makeCanvas(): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = W * DPR;
+  c.height = MONTH_H * DPR;
+  c.style.width = `${W}px`;
+  c.style.height = `${MONTH_H}px`;
+  return c;
+}
 
-function drawMonthView() {
+// ============================================================
+// helpers
+// ============================================================
+
+function dayIsDaytime(date: Date): boolean {
+  return getTranquilityBaseStatus(date).isDaytime;
+}
+
+// ============================================================
+// MONTH VIEW (renders to current ctx, baseY=0)
+// ============================================================
+
+function drawMonthView(md: MonthData) {
+  const { year, month, daysInMonth, numRows, base } = md;
+  const NCOLS = daysInMonth;
+  const GRID_W = 1300 - MARGIN * 2;
+  const COL_W = (GRID_W - LABEL_W) / NCOLS;
+  const CELL = Math.floor(COL_W);
+
   // ── LEFT PAGE (CW) ──
   ctx.save();
   ctx.translate(SPLIT, 0);
   ctx.rotate(Math.PI / 2);
-  ctx.translate(0, 30); // shift everything down
+  ctx.translate(0, 30);
 
   const gridX = MARGIN;
   const dateX = gridX + LABEL_W;
@@ -96,7 +121,7 @@ function drawMonthView() {
   ctx.textBaseline = "alphabetic";
   ctx.font = `${FS.title}px 'IBM 3270 Semi-Condensed'`;
   ctx.fillStyle = CLR.black;
-  ctx.fillText(MONTH_NAMES[MONTH], 650, 28);
+  ctx.fillText(MONTH_NAMES[month], 650, 28);
 
   const wdY = 42;
   ctx.font = `${FS.small}px 'IBM 3270 Semi-Condensed'`;
@@ -104,7 +129,7 @@ function drawMonthView() {
   ctx.textBaseline = "middle";
   for (let d = 0; d < NCOLS; d++) {
     const cx = dateX + d * COL_W + COL_W / 2;
-    const dow = new Date(YEAR, MONTH, d + 1).getDay();
+    const dow = new Date(year, month, d + 1).getDay();
     ctx.fillStyle = dow % 6 === 0 ? CLR.red : CLR.black;
     ctx.fillText(WD_ABBR[dow], cx, wdY);
   }
@@ -115,10 +140,10 @@ function drawMonthView() {
     const cx = dateX + d * COL_W + COL_W / 2;
     ctx.beginPath();
     ctx.arc(cx, dateY + R, R, 0, Math.PI * 2);
-    ctx.fillStyle = BASE[d].isDaytime ? CLR.yellow : CLR.blue;
+    ctx.fillStyle = base[d].isDaytime ? CLR.yellow : CLR.blue;
     ctx.fill();
     ctx.font = `${FS.small}px 'IBM 3270 Semi-Condensed'`;
-    ctx.fillStyle = BASE[d].isDaytime ? CLR.black : CLR.white;
+    ctx.fillStyle = base[d].isDaytime ? CLR.black : CLR.white;
     ctx.fillText((d + 1).toString(), cx, dateY + R);
   }
 
@@ -131,11 +156,10 @@ function drawMonthView() {
     ctx.strokeRect(gridX, y, LABEL_W, CELL);
     for (let d = 0; d < NCOLS; d++) ctx.strokeRect(dateX + d * COL_W, y, COL_W, CELL);
   }
-  // cover cross points with bg color (2px gap)
   ctx.fillStyle = CLR.bg;
   for (let row = 0; row <= rows; row++) {
     const y = gridTop + row * CELL;
-    ctx.fillRect(gridX - 2, y - 2, 4, 4); // label left edge
+    ctx.fillRect(gridX - 2, y - 2, 4, 4);
     for (let d = 0; d <= NCOLS; d++) {
       const cx = dateX + d * COL_W;
       ctx.fillRect(cx - 2, y - 2, 4, 4);
@@ -160,9 +184,9 @@ function drawMonthView() {
     DH = PW;
   const pad = 24;
   const calColW = (DW - pad * 2) / 7;
-  const calRowH = (DH - 60 - 16) / NUM_ROWS;
+  const calRowH = (DH - 60 - 16) / numRows;
 
-  const calGrid = getMonthGrid(YEAR, MONTH);
+  const calGrid = getMonthGrid(year, month);
   while (calGrid.length % 7 !== 0) calGrid.push(null);
 
   ctx.font = `${FS.title}px 'IBM 3270 Semi-Condensed'`;
@@ -202,9 +226,8 @@ function drawMonthView() {
     drawMoon(ctx, cx + calColW - 36, dcy, 8, getMoonPhase(cell.date), CLR.yellow);
     drawMoon(ctx, cx + calColW - 18, dcy, 8, getEarthPhase(cell.date), CLR.blue);
   }
-  // cover cross points with bg color (2px gap)
   ctx.fillStyle = CLR.bg;
-  for (let row = 0; row <= NUM_ROWS; row++) {
+  for (let row = 0; row <= numRows; row++) {
     const cy = 60 + row * calRowH;
     for (let col = 0; col <= 7; col++) {
       const cx = pad + col * calColW;
@@ -215,28 +238,17 @@ function drawMonthView() {
 }
 
 // ============================================================
-// WEEK VIEWS — original 8-panel spread, one per week
+// WEEK VIEW (renders to current ctx, baseY=0)
 // ============================================================
 
-function drawWeekViews() {
-  for (let wi = 0; wi < WEEKS.length; wi++) {
-    const week = WEEKS[wi];
-    const baseY = MONTH_H + wi * MONTH_H;
-    drawOneWeek(week, baseY);
-  }
-}
-
-function drawOneWeek(week: WeekSpan, baseY: number) {
-  const CELL_W = PW / 2; // 390
-  const CELL_H = MONTH_H / 2; // 650
+function drawOneWeek(week: WeekSpan) {
+  const CELL_W = PW / 2;
+  const CELL_H = MONTH_H / 2;
   const pages = [0, PW];
-  const days = week.days; // [Mon..Sun]
 
-  // build 8-slot layout: slot 0 = mini calendar, slots 1-7 = Mon..Sun
   const slots: { label: string; date: Date | null }[] = [];
-  slots.push({ label: "", date: null }); // mini calendar placeholder
-  for (const d of days) {
-    const dow = d.date.getDay();
+  slots.push({ label: "", date: null });
+  for (const d of week.days) {
     slots.push({ label: `${d.date.getDate()}`, date: d.date });
   }
 
@@ -245,35 +257,33 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
   ctx.lineWidth = LW.major;
   pages.forEach((ox) => {
     ctx.beginPath();
-    ctx.moveTo(ox + CELL_W, baseY);
-    ctx.lineTo(ox + CELL_W, baseY + MONTH_H);
+    ctx.moveTo(ox + CELL_W, 0);
+    ctx.lineTo(ox + CELL_W, MONTH_H);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(ox, baseY + CELL_H);
-    ctx.lineTo(ox + PW, baseY + CELL_H);
+    ctx.moveTo(ox, CELL_H);
+    ctx.lineTo(ox + PW, CELL_H);
     ctx.stroke();
   });
-  // center spine
   ctx.beginPath();
-  ctx.moveTo(PW, baseY);
-  ctx.lineTo(PW, baseY + MONTH_H);
+  ctx.moveTo(PW, 0);
+  ctx.lineTo(PW, MONTH_H);
   ctx.stroke();
 
-  // cover cross-line intersections with bg color (2px gap)
   ctx.fillStyle = CLR.bg;
   [CELL_W, PW + CELL_W].forEach((vx) => {
-    ctx.fillRect(vx - 2, baseY + CELL_H - 2, 4, 4);
+    ctx.fillRect(vx - 2, CELL_H - 2, 4, 4);
   });
-  ctx.fillRect(PW - 2, baseY + CELL_H - 2, 4, 4);
+  ctx.fillRect(PW - 2, CELL_H - 2, 4, 4);
 
-  // ── 24-division lines on all 8 cells (1h per division) ──
+  // ── 24-division lines ──
   for (let slotIdx = 0; slotIdx < 8; slotIdx++) {
     const pi = Math.floor(slotIdx / 4);
     const rest = slotIdx % 4;
     const r = Math.floor(rest / 2);
     const c = rest % 2;
     const sx = pages[pi] + c * CELL_W;
-    const sy = baseY + r * CELL_H;
+    const sy = r * CELL_H;
     const step = CELL_H / 24;
 
     for (let div = 1; div < 24; div++) {
@@ -282,7 +292,6 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
       ctx.moveTo(sx, dy);
       ctx.lineTo(sx + CELL_W, dy);
       if (div === 8) {
-        // UTC date change (BJ 08:00 = UTC 00:00) — solid red
         ctx.strokeStyle = CLR.red;
         ctx.lineWidth = LW.minor;
       } else {
@@ -301,12 +310,12 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
   ctx.fillStyle = CLR.bg;
   [CELL_W, PW, PW + CELL_W].forEach((vx) => {
     for (let r = 0; r < 2; r++) {
-      const uy = baseY + r * CELL_H + CELL_H * (8 / 24);
+      const uy = r * CELL_H + CELL_H * (8 / 24);
       ctx.fillRect(vx - 2, uy - 2, 4, 4);
     }
   });
 
-  // ── DAY LABELS (with date circle background) ──
+  // ── DAY LABELS ──
   ctx.textAlign = "left";
   for (let slotIdx = 1; slotIdx < slots.length; slotIdx++) {
     const slot = slots[slotIdx];
@@ -316,10 +325,9 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
     const r = Math.floor(rest / 2);
     const c = rest % 2;
     const sx = pages[pi] + c * CELL_W;
-    const sy = baseY + r * CELL_H;
+    const sy = r * CELL_H;
     const isDay = dayIsDaytime(slot.date);
 
-    // date circle (day/night colored)
     const dcx = sx + 30,
       dcy = sy + 30;
     ctx.beginPath();
@@ -327,14 +335,12 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
     ctx.fillStyle = isDay ? CLR.yellow : CLR.blue;
     ctx.fill();
 
-    // date number inside circle
     ctx.fillStyle = isDay ? CLR.black : CLR.white;
     ctx.font = `${FS.label}px 'IBM 3270 Semi-Condensed'`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(slot.label, dcx, dcy);
 
-    // moon + earth icons
     drawMoon(ctx, sx + CELL_W - 48, sy + 28, 10, getMoonPhase(slot.date), CLR.yellow);
     drawMoon(ctx, sx + CELL_W - 20, sy + 28, 10, getEarthPhase(slot.date), CLR.blue);
 
@@ -343,7 +349,7 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
     const utcY = sy + CELL_H * (8 / 24);
     ctx.font = `${FS.label}px 'IBM 3270 Semi-Condensed'`;
     ctx.fillStyle = CLR.red;
-    ctx.fillText(`UTC ${slot.date.getMonth() + 1}/${slot.date.getDate()}`, sx + 8, utcY - 4);
+    ctx.fillText(`UTC ${slot.date.getDate()}`, sx + 8, utcY - 6);
   }
 
   ctx.textBaseline = "alphabetic";
@@ -351,17 +357,66 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
 }
 
 // ============================================================
-// render
+// render all pages into separate canvases
 // ============================================================
 
-ctx.fillStyle = CLR.bg;
-ctx.fillRect(0, 0, W, TOTAL_H);
-drawMonthView();
-drawWeekViews();
+const container = document.getElementById("pages")!;
+
+function render() {
+  for (const md of MONTHS) {
+    // month view
+    const mc = makeCanvas();
+    ctx = mc.getContext("2d")!;
+    ctx.scale(DPR, DPR);
+    ctx.fillStyle = CLR.bg;
+    ctx.fillRect(0, 0, W, MONTH_H);
+    drawMonthView(md);
+    container.appendChild(mc);
+
+    // week views
+    for (const week of md.weeks) {
+      const wc = makeCanvas();
+      ctx = wc.getContext("2d")!;
+      ctx.scale(DPR, DPR);
+      ctx.fillStyle = CLR.bg;
+      ctx.fillRect(0, 0, W, MONTH_H);
+      drawOneWeek(week);
+      container.appendChild(wc);
+    }
+  }
+}
+
+render();
+
+// ============================================================
+// PDF export (browser, using jsPDF)
+// ============================================================
 
 (window as any).savePDF = () => {
   const { jsPDF } = (window as any).jspdf;
-  const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: [W, TOTAL_H] });
-  pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, W, TOTAL_H);
-  pdf.save("monthly.pdf");
+  const pdf = new jsPDF({ orientation: "landscape", unit: "px", format: [W, MONTH_H] });
+  const tmp = makeCanvas();
+  const tctx = tmp.getContext("2d")!;
+  tctx.scale(DPR, DPR);
+
+  let first = true;
+  for (const md of MONTHS) {
+    ctx = tctx;
+    ctx.fillStyle = CLR.bg;
+    ctx.fillRect(0, 0, W, MONTH_H);
+    drawMonthView(md);
+    if (!first) pdf.addPage([W, MONTH_H]);
+    first = false;
+    pdf.addImage(tmp.toDataURL("image/png"), "PNG", 0, 0, W, MONTH_H);
+
+    for (const week of md.weeks) {
+      ctx.fillStyle = CLR.bg;
+      ctx.fillRect(0, 0, W, MONTH_H);
+      drawOneWeek(week);
+      pdf.addPage([W, MONTH_H]);
+      pdf.addImage(tmp.toDataURL("image/png"), "PNG", 0, 0, W, MONTH_H);
+    }
+  }
+
+  pdf.save("2026.pdf");
 };
