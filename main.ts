@@ -111,7 +111,7 @@ function drawMonthView() {
     ctx.fillStyle = BASE[d].isDaytime ? CLR.yellow : CLR.blue;
     ctx.fill();
     ctx.font = "9px 'IBM 3270 Semi-Condensed'";
-    ctx.fillStyle = CLR.black;
+    ctx.fillStyle = BASE[d].isDaytime ? CLR.black : CLR.white;
     ctx.fillText((d + 1).toString(), cx, dateY + R);
   }
 
@@ -179,7 +179,7 @@ function drawMonthView() {
     ctx.fill();
 
     ctx.font = "9px 'IBM 3270 Semi-Condensed'";
-    ctx.fillStyle = col >= 5 ? CLR.red : CLR.black;
+    ctx.fillStyle = col >= 5 ? CLR.red : isDay ? CLR.black : CLR.white;
     ctx.fillText(cell.day.toString(), dcx, dcy);
 
     drawMoon(ctx, cx + calColW - 36, dcy, 8, getMoonPhase(cell.date), CLR.yellow, CLR.gray);
@@ -203,7 +203,6 @@ function drawWeekViews() {
 function drawOneWeek(week: WeekSpan, baseY: number) {
   const CELL_W = PW / 2; // 390
   const CELL_H = MONTH_H / 2; // 650
-  const G = 13;
   const pages = [0, PW];
   const days = week.days; // [Mon..Sun]
 
@@ -212,32 +211,8 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
   slots.push({ label: "", date: null }); // mini calendar placeholder
   for (const d of days) {
     const dow = d.date.getDay();
-    slots.push({ label: `${DAY_NAMES[dow]} ${d.date.getDate()}`, date: d.date });
+    slots.push({ label: `${d.date.getDate()}`, date: d.date });
   }
-
-  // ── BLUE GRID ──
-  ctx.strokeStyle = CLR.blue;
-  ctx.lineWidth = 0.3;
-  pages.forEach((ox) => {
-    for (let r = 0; r < 2; r++) {
-      for (let c = 0; c < 2; c++) {
-        const gx = ox + c * CELL_W;
-        const gy = baseY + r * CELL_H;
-        for (let x = gx; x <= gx + CELL_W; x += G) {
-          ctx.beginPath();
-          ctx.moveTo(x, gy);
-          ctx.lineTo(x, gy + CELL_H);
-          ctx.stroke();
-        }
-        for (let y = gy; y <= gy + CELL_H; y += G) {
-          ctx.beginPath();
-          ctx.moveTo(gx, y);
-          ctx.lineTo(gx + CELL_W, y);
-          ctx.stroke();
-        }
-      }
-    }
-  });
 
   // ── CROSS LINES (red) ──
   ctx.strokeStyle = CLR.red;
@@ -258,6 +233,39 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
   ctx.lineTo(PW, baseY + MONTH_H);
   ctx.stroke();
 
+  // ── 12-division lines on all 8 cells (24h, 2h per division) ──
+  for (let slotIdx = 0; slotIdx < 8; slotIdx++) {
+    const pi = Math.floor(slotIdx / 4);
+    const rest = slotIdx % 4;
+    const r = Math.floor(rest / 2);
+    const c = rest % 2;
+    const sx = pages[pi] + c * CELL_W;
+    const sy = baseY + r * CELL_H;
+    const step = CELL_H / 12;
+
+    for (let div = 1; div < 12; div++) {
+      const dy = sy + div * step;
+      ctx.beginPath();
+      ctx.moveTo(sx, dy);
+      ctx.lineTo(sx + CELL_W, dy);
+      ctx.strokeStyle = CLR.gray;
+      ctx.lineWidth = 0.25;
+      if (div === 4) {
+        // UTC+8 mark — slightly bolder
+        ctx.strokeStyle = CLR.red;
+        ctx.lineWidth = 0.4;
+      }
+      if (div === 8) {
+        // Beijing date change (UTC 16:00 = BJ 00:00 next day)
+        ctx.setLineDash([3, 5]);
+        ctx.strokeStyle = CLR.gray;
+        ctx.lineWidth = 0.35;
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+
   // ── DAY LABELS (with date circle background) ──
   ctx.textAlign = "left";
   for (let slotIdx = 1; slotIdx < slots.length; slotIdx++) {
@@ -271,24 +279,42 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
     const sy = baseY + r * CELL_H;
     const isDay = dayIsDaytime(slot.date);
 
-    // date circle background
-    const dcx = sx + 28,
-      dcy = sy + 28;
+    // date circle (day/night colored)
+    const dcx = sx + 30,
+      dcy = sy + 30;
     ctx.beginPath();
-    ctx.arc(dcx, dcy, 12, 0, Math.PI * 2);
+    ctx.arc(dcx, dcy, 14, 0, Math.PI * 2);
     ctx.fillStyle = isDay ? CLR.yellow : CLR.blue;
     ctx.fill();
 
-    // date label
-    ctx.fillStyle = CLR.black;
+    // date number inside circle
+    ctx.fillStyle = isDay ? CLR.black : CLR.white;
     ctx.font = "15px 'IBM 3270 Semi-Condensed'";
-    ctx.fillText(slot.label, sx + 48, sy + 36);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(slot.label, dcx, dcy);
 
     // moon + earth icons
     drawMoon(ctx, sx + CELL_W - 48, sy + 28, 10, getMoonPhase(slot.date), CLR.yellow, CLR.gray);
     drawMoon(ctx, sx + CELL_W - 20, sy + 28, 10, getEarthPhase(slot.date), CLR.blue, CLR.gray);
+
+    // UTC+8 mark at div 4
+    ctx.textAlign = "left";
+    const utc8y = sy + CELL_H * (4 / 12);
+    ctx.font = "7px 'IBM 3270 Semi-Condensed'";
+    ctx.fillStyle = CLR.red;
+    ctx.fillText("UTC+8", sx + 8, utc8y - 2);
+
+    // Beijing date at div 8 (UTC 16:00 = BJ 00:00 next day)
+    const bjChangeY = sy + CELL_H * (8 / 12);
+    const bjNext = new Date(slot.date);
+    bjNext.setDate(bjNext.getDate() + 1);
+    ctx.fillStyle = CLR.gray;
+    ctx.fillText(`${bjNext.getMonth() + 1}/${bjNext.getDate()}`, sx + 8, bjChangeY - 2);
   }
 
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
 }
 
 // ============================================================

@@ -3,6 +3,6 @@ export const CLR = {
   red: "#c33",
   gray: "#999",
   yellow: "#ffecb0",
-  blue: "#c8daf0",
+  blue: "#4488cc",
   white: "#fff",
 } as const;
