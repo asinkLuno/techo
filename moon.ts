@@ -106,7 +106,7 @@ export function getMonthDelays(year: number, month: number, lat: number, lng: nu
   return delays;
 }
 
-/** draw moon/planet icon at (cx,cy) with radius r, phase ∈ [0,1) */
+/** draw moon/planet icon at (cx,cy) with radius r, phase ∈ [0,1) — lit fill + colored outline, no dark fill */
 export function drawMoon(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -114,17 +114,10 @@ export function drawMoon(
   r: number,
   phase: number,
   litColor = "#e8c830",
-  darkColor = "#ddd",
 ): void {
   phase = ((phase % 1) + 1) % 1; // normalize
 
-  // dark disk
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fillStyle = darkColor;
-  ctx.fill();
-
-  // lit portion
+  // lit portion (filled)
   ctx.fillStyle = litColor;
   ctx.beginPath();
 
@@ -146,4 +139,11 @@ export function drawMoon(
     }
   }
   ctx.fill();
+
+  // colored outline
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = litColor;
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
 }

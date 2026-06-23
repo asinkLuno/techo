@@ -69,6 +69,8 @@ ctx.scale(DPR, DPR);
 // MONTH VIEW (y=0 .. MONTH_H)
 // ============================================================
 
+const LW = { major: 2.0, minor: 1.0 } as const;
+const FS = { title: 24, label: 15, small: 9 } as const;
 const MARGIN = 30;
 const LABEL_W = 80;
 const NCOLS = DAYS_IN_MONTH;
@@ -87,18 +89,18 @@ function drawMonthView() {
 
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  ctx.font = "24px 'IBM 3270 Semi-Condensed'";
+  ctx.font = `${FS.title}px 'IBM 3270 Semi-Condensed'`;
   ctx.fillStyle = CLR.black;
   ctx.fillText(MONTH_NAMES[MONTH], 650, 28);
 
   const wdY = 42;
-  ctx.font = "8px 'IBM 3270 Semi-Condensed'";
+  ctx.font = `${FS.small}px 'IBM 3270 Semi-Condensed'`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   for (let d = 0; d < NCOLS; d++) {
     const cx = dateX + d * COL_W + COL_W / 2;
     const dow = new Date(YEAR, MONTH, d + 1).getDay();
-    ctx.fillStyle = dow % 6 === 0 ? CLR.red : CLR.gray;
+    ctx.fillStyle = dow % 6 === 0 ? CLR.red : CLR.black;
     ctx.fillText(WD_ABBR[dow], cx, wdY);
   }
 
@@ -110,7 +112,7 @@ function drawMonthView() {
     ctx.arc(cx, dateY + R, R, 0, Math.PI * 2);
     ctx.fillStyle = BASE[d].isDaytime ? CLR.yellow : CLR.blue;
     ctx.fill();
-    ctx.font = "9px 'IBM 3270 Semi-Condensed'";
+    ctx.font = `${FS.small}px 'IBM 3270 Semi-Condensed'`;
     ctx.fillStyle = BASE[d].isDaytime ? CLR.black : CLR.white;
     ctx.fillText((d + 1).toString(), cx, dateY + R);
   }
@@ -118,7 +120,7 @@ function drawMonthView() {
   const gridTop = 76;
   const rows = Math.floor((770 - gridTop) / CELL);
   ctx.strokeStyle = CLR.red;
-  ctx.lineWidth = 0.5;
+  ctx.lineWidth = LW.minor;
   for (let row = 0; row < rows; row++) {
     const y = gridTop + row * CELL;
     ctx.strokeRect(gridX, y, LABEL_W, CELL);
@@ -131,7 +133,7 @@ function drawMonthView() {
   ctx.moveTo(SPLIT, 0);
   ctx.lineTo(SPLIT, MONTH_H);
   ctx.strokeStyle = CLR.red;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = LW.major;
   ctx.stroke();
 
   // ── RIGHT PAGE (CCW) ──
@@ -148,17 +150,17 @@ function drawMonthView() {
   const calGrid = getMonthGrid(YEAR, MONTH);
   while (calGrid.length % 7 !== 0) calGrid.push(null);
 
-  ctx.font = "15px 'IBM 3270 Semi-Condensed'";
+  ctx.font = `${FS.title}px 'IBM 3270 Semi-Condensed'`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   for (let i = 0; i < 7; i++) {
     const cx = pad + calColW * i + calColW / 2;
-    ctx.fillStyle = i >= 5 ? CLR.red : CLR.gray;
+    ctx.fillStyle = i >= 5 ? CLR.red : CLR.black;
     ctx.fillText(DAY_NAMES[i], cx, 42);
   }
 
   ctx.strokeStyle = CLR.red;
-  ctx.lineWidth = 0.6;
+  ctx.lineWidth = LW.minor;
   for (let i = 0; i < calGrid.length; i++) {
     const col = i % 7;
     const row = Math.floor(i / 7);
@@ -178,12 +180,12 @@ function drawMonthView() {
     ctx.fillStyle = isDay ? CLR.yellow : CLR.blue;
     ctx.fill();
 
-    ctx.font = "9px 'IBM 3270 Semi-Condensed'";
+    ctx.font = `${FS.small}px 'IBM 3270 Semi-Condensed'`;
     ctx.fillStyle = col >= 5 ? CLR.red : isDay ? CLR.black : CLR.white;
     ctx.fillText(cell.day.toString(), dcx, dcy);
 
-    drawMoon(ctx, cx + calColW - 36, dcy, 8, getMoonPhase(cell.date), CLR.yellow, CLR.gray);
-    drawMoon(ctx, cx + calColW - 18, dcy, 8, getEarthPhase(cell.date), CLR.blue, CLR.gray);
+    drawMoon(ctx, cx + calColW - 36, dcy, 8, getMoonPhase(cell.date), CLR.yellow);
+    drawMoon(ctx, cx + calColW - 18, dcy, 8, getEarthPhase(cell.date), CLR.blue);
   }
   ctx.restore();
 }
@@ -216,7 +218,7 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
 
   // ── CROSS LINES (red) ──
   ctx.strokeStyle = CLR.red;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = LW.major;
   pages.forEach((ox) => {
     ctx.beginPath();
     ctx.moveTo(ox + CELL_W, baseY);
@@ -233,7 +235,7 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
   ctx.lineTo(PW, baseY + MONTH_H);
   ctx.stroke();
 
-  // ── 12-division lines on all 8 cells (24h, 2h per division) ──
+  // ── 24-division lines on all 8 cells (1h per division) ──
   for (let slotIdx = 0; slotIdx < 8; slotIdx++) {
     const pi = Math.floor(slotIdx / 4);
     const rest = slotIdx % 4;
@@ -241,25 +243,21 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
     const c = rest % 2;
     const sx = pages[pi] + c * CELL_W;
     const sy = baseY + r * CELL_H;
-    const step = CELL_H / 12;
+    const step = CELL_H / 24;
 
-    for (let div = 1; div < 12; div++) {
+    for (let div = 1; div < 24; div++) {
       const dy = sy + div * step;
       ctx.beginPath();
       ctx.moveTo(sx, dy);
       ctx.lineTo(sx + CELL_W, dy);
-      ctx.strokeStyle = CLR.gray;
-      ctx.lineWidth = 0.25;
-      if (div === 4) {
-        // UTC+8 mark — slightly bolder
-        ctx.strokeStyle = CLR.red;
-        ctx.lineWidth = 0.4;
-      }
       if (div === 8) {
-        // Beijing date change (UTC 16:00 = BJ 00:00 next day)
-        ctx.setLineDash([3, 5]);
-        ctx.strokeStyle = CLR.gray;
-        ctx.lineWidth = 0.35;
+        // UTC date change (BJ 08:00 = UTC 00:00) — solid red
+        ctx.strokeStyle = CLR.red;
+        ctx.lineWidth = LW.minor;
+      } else {
+        ctx.setLineDash([2, 4]);
+        ctx.strokeStyle = CLR.red;
+        ctx.lineWidth = LW.minor;
       }
       ctx.stroke();
       ctx.setLineDash([]);
@@ -289,28 +287,21 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
 
     // date number inside circle
     ctx.fillStyle = isDay ? CLR.black : CLR.white;
-    ctx.font = "15px 'IBM 3270 Semi-Condensed'";
+    ctx.font = `${FS.label}px 'IBM 3270 Semi-Condensed'`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(slot.label, dcx, dcy);
 
     // moon + earth icons
-    drawMoon(ctx, sx + CELL_W - 48, sy + 28, 10, getMoonPhase(slot.date), CLR.yellow, CLR.gray);
-    drawMoon(ctx, sx + CELL_W - 20, sy + 28, 10, getEarthPhase(slot.date), CLR.blue, CLR.gray);
+    drawMoon(ctx, sx + CELL_W - 48, sy + 28, 10, getMoonPhase(slot.date), CLR.yellow);
+    drawMoon(ctx, sx + CELL_W - 20, sy + 28, 10, getEarthPhase(slot.date), CLR.blue);
 
-    // UTC+8 mark at div 4
+    // div 8: UTC date change (BJ 08:00 = UTC 00:00)
     ctx.textAlign = "left";
-    const utc8y = sy + CELL_H * (4 / 12);
-    ctx.font = "7px 'IBM 3270 Semi-Condensed'";
+    const utcY = sy + CELL_H * (8 / 24);
+    ctx.font = `${FS.label}px 'IBM 3270 Semi-Condensed'`;
     ctx.fillStyle = CLR.red;
-    ctx.fillText("UTC+8", sx + 8, utc8y - 2);
-
-    // Beijing date at div 8 (UTC 16:00 = BJ 00:00 next day)
-    const bjChangeY = sy + CELL_H * (8 / 12);
-    const bjNext = new Date(slot.date);
-    bjNext.setDate(bjNext.getDate() + 1);
-    ctx.fillStyle = CLR.gray;
-    ctx.fillText(`${bjNext.getMonth() + 1}/${bjNext.getDate()}`, sx + 8, bjChangeY - 2);
+    ctx.fillText(`UTC ${slot.date.getMonth() + 1}/${slot.date.getDate()}`, sx + 8, utcY - 4);
   }
 
   ctx.textBaseline = "alphabetic";
