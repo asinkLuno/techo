@@ -37,7 +37,7 @@ export function getWeekDays(ref: Date): { label: string; date: Date }[] {
 
 /** Full month grid: weeks × 7 cells, null for padding days outside the month */
 export function getMonthGrid(year: number, month: number): (DayCell | null)[] {
-  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // 0=Mon
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const cells: (DayCell | null)[] = [];

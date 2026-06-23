@@ -10,7 +10,7 @@ const W = PW * 2; // 1560
 const SPLIT = PW;
 
 const YEAR = 2026;
-const WD_ABBR = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const WD_ABBR = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 const LW = { major: 2.0, minor: 1.0 } as const;
 const FS = { title: 24, label: 15, small: 9 } as const;
@@ -37,7 +37,7 @@ interface MonthData {
 
 function buildMonthData(year: number, month: number): MonthData {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const numRows = Math.ceil((new Date(year, month, 1).getDay() + daysInMonth) / 7);
+  const numRows = Math.ceil((((new Date(year, month, 1).getDay() + 6) % 7) + daysInMonth) / 7);
 
   const base: LunarBaseStatus[] = [];
   for (let d = 1; d <= daysInMonth; d++) {
@@ -132,7 +132,7 @@ function drawMonthView(md: MonthData) {
     const cx = dateX + d * COL_W + COL_W / 2;
     const dow = new Date(year, month, d + 1).getDay();
     ctx.fillStyle = dow % 6 === 0 ? CLR.red : CLR.black;
-    ctx.fillText(WD_ABBR[dow], cx, wdY);
+    ctx.fillText(WD_ABBR[(dow + 6) % 7], cx, wdY);
   }
 
   const dateY = 56;
@@ -196,7 +196,7 @@ function drawMonthView(md: MonthData) {
   for (let i = 0; i < 7; i++) {
     const cx = pad + calColW * i + calColW / 2;
     ctx.fillStyle = i >= 5 ? CLR.red : CLR.black;
-    ctx.fillText(DAY_NAMES[i], cx, 42);
+    ctx.fillText(DAY_NAMES[(i + 1) % 7], cx, 42);
   }
 
   ctx.lineWidth = LW.minor;
