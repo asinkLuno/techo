@@ -33,12 +33,16 @@ interface WeekSpan {
 }
 const WEEKS: WeekSpan[] = [];
 {
-  const first = new Date(YEAR, MONTH, 1);
-  const last = new Date(YEAR, MONTH, DAYS_IN_MONTH);
-  const cursor = new Date(first);
-  cursor.setDate(cursor.getDate() - ((cursor.getDay() + 6) % 7));
+  // a week belongs to the month whose 1st falls within it
+  const thisFirst = new Date(YEAR, MONTH, 1);
+  const nextFirst = new Date(YEAR, MONTH + 1, 1);
+  const start = new Date(thisFirst);
+  start.setDate(start.getDate() - ((start.getDay() + 6) % 7)); // Monday of week containing 1st
+  const end = new Date(nextFirst);
+  end.setDate(end.getDate() - ((end.getDay() + 6) % 7)); // Monday of week containing next month's 1st
 
-  while (cursor <= last) {
+  const cursor = new Date(start);
+  while (cursor < end) {
     const days: WeekSpan["days"] = [];
     for (let i = 0; i < 7; i++) {
       const d = new Date(cursor);
@@ -83,6 +87,7 @@ function drawMonthView() {
   ctx.save();
   ctx.translate(SPLIT, 0);
   ctx.rotate(Math.PI / 2);
+  ctx.translate(0, 30); // shift everything down
 
   const gridX = MARGIN;
   const dateX = gridX + LABEL_W;
@@ -118,7 +123,7 @@ function drawMonthView() {
   }
 
   const gridTop = 76;
-  const rows = Math.floor((770 - gridTop) / CELL);
+  const rows = Math.floor((770 - gridTop) / CELL) - 1;
   ctx.strokeStyle = CLR.red;
   ctx.lineWidth = LW.minor;
   for (let row = 0; row < rows; row++) {
@@ -159,7 +164,6 @@ function drawMonthView() {
     ctx.fillText(DAY_NAMES[i], cx, 42);
   }
 
-  ctx.strokeStyle = CLR.red;
   ctx.lineWidth = LW.minor;
   for (let i = 0; i < calGrid.length; i++) {
     const col = i % 7;
@@ -168,6 +172,7 @@ function drawMonthView() {
     const cx = pad + col * calColW;
     const cy = 60 + row * calRowH;
 
+    ctx.strokeStyle = CLR.red;
     ctx.strokeRect(cx, cy, calColW, calRowH);
     if (!cell) continue;
 
@@ -255,12 +260,14 @@ function drawOneWeek(week: WeekSpan, baseY: number) {
         ctx.strokeStyle = CLR.red;
         ctx.lineWidth = LW.minor;
       } else {
-        ctx.setLineDash([2, 4]);
+        ctx.setLineDash([0.01, 3]);
+        ctx.lineCap = "round";
         ctx.strokeStyle = CLR.red;
-        ctx.lineWidth = LW.minor;
+        ctx.lineWidth = 1.0;
       }
       ctx.stroke();
       ctx.setLineDash([]);
+      ctx.lineCap = "butt";
     }
   }
 
