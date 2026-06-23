@@ -81,7 +81,7 @@ export function getTranquilityBaseStatus(date: Date): LunarBaseStatus {
 /** round-trip Earth–Moon light-time delay in milliseconds */
 export function getMoonDelay(date: Date, lat: number, lng: number): number {
   const { distance } = SunCalc.getMoonPosition(date, lat, lng);
-  return (2 * distance / C) * 1000;
+  return ((2 * distance) / C) * 1000;
 }
 
 /** hourly moon altitudes (radians) for a 24h day at given location */
@@ -113,7 +113,7 @@ export function drawMoon(
   cy: number,
   r: number,
   phase: number,
-  litColor = "#e8c830",
+  litColor = "#ffdd0d",
 ): void {
   phase = ((phase % 1) + 1) % 1; // normalize
 
