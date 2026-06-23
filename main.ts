@@ -97,6 +97,7 @@ function dayIsDaytime(date: Date): boolean {
   return getTranquilityBaseStatus(date).isDaytime;
 }
 
+
 // ============================================================
 // MONTH VIEW (renders to current ctx, baseY=0)
 // ============================================================
@@ -371,6 +372,7 @@ function render() {
     ctx.fillStyle = CLR.bg;
     ctx.fillRect(0, 0, W, MONTH_H);
     drawMonthView(md);
+
     container.appendChild(mc);
 
     // week views
@@ -381,6 +383,7 @@ function render() {
       ctx.fillStyle = CLR.bg;
       ctx.fillRect(0, 0, W, MONTH_H);
       drawOneWeek(week);
+  
       container.appendChild(wc);
     }
   }
@@ -405,6 +408,7 @@ render();
     ctx.fillStyle = CLR.bg;
     ctx.fillRect(0, 0, W, MONTH_H);
     drawMonthView(md);
+
     if (!first) pdf.addPage([W, MONTH_H]);
     first = false;
     pdf.addImage(tmp.toDataURL("image/png"), "PNG", 0, 0, W, MONTH_H);
@@ -413,6 +417,7 @@ render();
       ctx.fillStyle = CLR.bg;
       ctx.fillRect(0, 0, W, MONTH_H);
       drawOneWeek(week);
+  
       pdf.addPage([W, MONTH_H]);
       pdf.addImage(tmp.toDataURL("image/png"), "PNG", 0, 0, W, MONTH_H);
     }
