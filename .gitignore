@@ -15,3 +15,7 @@ node_modules
 
 #!.yarn/cache
 .pnp.*
+bundle.js
+export.cjs
+Session.vim
+CLAUDE.md
