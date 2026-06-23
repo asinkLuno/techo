@@ -279,9 +279,9 @@ function drawOneWeek(week: WeekSpan) {
 
   // ── 24-division lines ──
   for (let slotIdx = 0; slotIdx < 8; slotIdx++) {
-    const pi = Math.floor(slotIdx / 4);
+    const r = Math.floor(slotIdx / 4);
     const rest = slotIdx % 4;
-    const r = Math.floor(rest / 2);
+    const pi = Math.floor(rest / 2);
     const c = rest % 2;
     const sx = pages[pi] + c * CELL_W;
     const sy = r * CELL_H;
@@ -321,9 +321,9 @@ function drawOneWeek(week: WeekSpan) {
   for (let slotIdx = 1; slotIdx < slots.length; slotIdx++) {
     const slot = slots[slotIdx];
     if (!slot.date) continue;
-    const pi = Math.floor(slotIdx / 4);
+    const r = Math.floor(slotIdx / 4);
     const rest = slotIdx % 4;
-    const r = Math.floor(rest / 2);
+    const pi = Math.floor(rest / 2);
     const c = rest % 2;
     const sx = pages[pi] + c * CELL_W;
     const sy = r * CELL_H;
