@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "esbuild main.ts --bundle --outfile=bundle.js",
-    "export": "yarn build && esbuild export.ts --bundle --platform=node --outfile=export.cjs && node export.cjs && rm export.cjs",
+    "export": "yarn build && esbuild export.ts --bundle --platform=node --outfile=export.cjs && node export.cjs",
     "format": "prettier --write '*.{ts,html,json,mjs}'",
     "lint": "eslint '*.ts'",
     "check": "yarn format && yarn lint"

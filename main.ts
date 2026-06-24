@@ -12,6 +12,17 @@ const SPLIT = PW;
 const YEAR = 2026;
 const WD_ABBR = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
+// --- export mode: URL params ---
+const urlParams = new URLSearchParams(window.location.search);
+const EXPORT_MODE = urlParams.get("mode") === "export";
+if (EXPORT_MODE) {
+  const s = document.createElement("style");
+  s.textContent = `@page { size: ${PW}px ${MONTH_H}px; margin: 0; }`;
+  document.head.appendChild(s);
+}
+const startParam = urlParams.get("start");
+const endParam = urlParams.get("end");
+
 const LW = { major: 2.0, minor: 1.0 } as const;
 const FS = { title: 24, label: 15, small: 9 } as const;
 const MARGIN = 30;
@@ -71,10 +82,28 @@ function buildMonthData(year: number, month: number): MonthData {
   return { year, month, daysInMonth, numRows, base, weeks };
 }
 
-const MONTHS: MonthData[] = [];
-for (let m = 0; m < 12; m++) {
-  MONTHS.push(buildMonthData(YEAR, m));
+function buildMonths(): MonthData[] {
+  let sy = YEAR, sm = 0;
+  let ey = YEAR, em = 11;
+  if (startParam && startParam.length === 6) {
+    sy = parseInt(startParam.slice(0, 4));
+    sm = parseInt(startParam.slice(4, 6)) - 1;
+  }
+  if (endParam && endParam.length === 6) {
+    ey = parseInt(endParam.slice(0, 4));
+    em = parseInt(endParam.slice(4, 6)) - 1;
+  }
+  const months: MonthData[] = [];
+  let y = sy, m = sm;
+  while (y < ey || (y === ey && m <= em)) {
+    months.push(buildMonthData(y, m));
+    m++;
+    if (m > 11) { m = 0; y++; }
+  }
+  return months;
 }
+
+const MONTHS = buildMonths();
 
 // ============================================================
 // canvas factory
@@ -85,6 +114,15 @@ function makeCanvas(): HTMLCanvasElement {
   c.width = W * DPR;
   c.height = MONTH_H * DPR;
   c.style.width = `${W}px`;
+  c.style.height = `${MONTH_H}px`;
+  return c;
+}
+
+function makeHalfCanvas(): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = PW * DPR;
+  c.height = MONTH_H * DPR;
+  c.style.width = `${PW}px`;
   c.style.height = `${MONTH_H}px`;
   return c;
 }
@@ -363,7 +401,28 @@ function drawOneWeek(week: WeekSpan) {
 
 const container = document.getElementById("pages")!;
 
+// ponytail: split left/right via drawImage slice — no render refactor needed
+function appendSplit(spread: HTMLCanvasElement) {
+  const left = makeHalfCanvas();
+  left.getContext("2d")!.drawImage(spread, 0, 0, PW * DPR, MONTH_H * DPR, 0, 0, PW * DPR, MONTH_H * DPR);
+  container.appendChild(left);
+
+  const right = makeHalfCanvas();
+  right.getContext("2d")!.drawImage(spread, PW * DPR, 0, PW * DPR, MONTH_H * DPR, 0, 0, PW * DPR, MONTH_H * DPR);
+  container.appendChild(right);
+}
+
 function render() {
+  // blank page at front (export mode only)
+  if (EXPORT_MODE) {
+    const blank = makeHalfCanvas();
+    const bctx = blank.getContext("2d")!;
+    bctx.scale(DPR, DPR);
+    bctx.fillStyle = CLR.bg;
+    bctx.fillRect(0, 0, PW, MONTH_H);
+    container.appendChild(blank);
+  }
+
   for (const md of MONTHS) {
     // month view
     const mc = makeCanvas();
@@ -373,7 +432,8 @@ function render() {
     ctx.fillRect(0, 0, W, MONTH_H);
     drawMonthView(md);
 
-    container.appendChild(mc);
+    if (EXPORT_MODE) appendSplit(mc);
+    else container.appendChild(mc);
 
     // week views
     for (const week of md.weeks) {
@@ -383,8 +443,9 @@ function render() {
       ctx.fillStyle = CLR.bg;
       ctx.fillRect(0, 0, W, MONTH_H);
       drawOneWeek(week);
-  
-      container.appendChild(wc);
+
+      if (EXPORT_MODE) appendSplit(wc);
+      else container.appendChild(wc);
     }
   }
 }
