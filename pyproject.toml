@@ -1,0 +1,6 @@
+[project]
+name = "techo"
+version = "0.1.0"
+description = "Lunar calendar planner — moon phase data for LaTeX"
+requires-python = ">=3.13"
+dependencies = ["ephem"]

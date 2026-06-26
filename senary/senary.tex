@@ -1,0 +1,70 @@
+% ──────────────────────────────────────────
+% Senary Edition — 月面日程本 2026
+% Build: uv run python senary/generate.py && cd senary && xelatex senary.tex
+% ──────────────────────────────────────────
+\documentclass[10pt, twoside]{article}
+
+% ── Page geometry ──
+% 110×210mm, 9mm binding offset on inner edge
+\usepackage[paperwidth=110mm, paperheight=210mm,
+            inner=8mm, outer=6mm, bindingoffset=9mm,
+            top=15mm, bottom=15mm,
+            twoside]{geometry}
+
+% ── Packages ──
+\usepackage{fontspec}
+\usepackage{tikz}
+
+% ── Fonts ──
+% ponytail: PingFang SC covers Latin + CJK, no separate CJK font needed
+\setmainfont{PingFang SC}[
+  UprightFont = * Regular,
+  BoldFont = * Semibold,
+]
+
+% ── Colors ──
+\definecolor{moon-yellow}{HTML}{FFDD0D}
+\definecolor{ink}{HTML}{2D3130}
+\definecolor{accent}{HTML}{C05C46}
+
+% ── Page style ──
+\pagestyle{plain}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\raggedright  % ponytail: avoid overfull hbox on narrow pages
+
+% ── Moon data ──
+\input{moon-data.tex}
+
+% ── Macros ──
+
+% Moon phase name accessor
+% #1 = date string YYYY-MM-DD
+\newcommand{\moonname}[1]{\csname moon@name@#1\endcsname}
+
+% Moon phase icon (tikz)
+% #1 = date string YYYY-MM-DD, #2 = radius (bare number or dimension)
+% ponytail: explicit mm units — \pgfmathsetmacro strips units from arg
+\newcommand{\moonicon}[2]{%
+  \begin{tikzpicture}[baseline=(current bounding box.center)]
+    \pgfmathsetmacro{\ph}{\csname moon@phase@#1\endcsname}
+    \pgfmathsetmacro{\r}{#2}
+    \fill[black!12] (0,0) circle (\r mm);
+    \begin{scope}
+      \clip (0,0) circle (\r mm);
+      \pgfmathsetmacro{\term}{\r - \ph * 4 * \r}
+      \fill[moon-yellow] (\term mm, -\r mm) rectangle (\r mm, \r mm);
+    \end{scope}
+    \draw[ink, thin] (0,0) circle (\r mm);
+  \end{tikzpicture}%
+}
+
+% Horizontal rule for notes
+\newcommand{\notesline}{%
+  \noindent\rule{\textwidth}{0.2pt}\\[4.5mm]%
+}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}

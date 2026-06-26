@@ -19,3 +19,15 @@ bundle.js
 export.cjs
 Session.vim
 CLAUDE.md
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.pdf
+*.out
+*.toc
+
+# Generated content
+**/moon-data.tex
+**/content.tex
+__pycache__/
