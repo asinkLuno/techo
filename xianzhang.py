@@ -1,8 +1,8 @@
 """Xianzhang — plain ruled notebook generator.
 
 Usage: uv run python xianzhang.py <edition>
-  e.g. uv run python xianzhang.py a5s-xianzhang
-       uv run python xianzhang.py m5-xianzhang
+  e.g. uv run python xianzhang.py xianzhang-a5s
+       uv run python xianzhang.py xianzhang-m5
 """
 
 import sys
