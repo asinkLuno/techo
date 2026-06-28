@@ -1,6 +1,6 @@
 [project]
-name = "techo"
+name = "xianzhang"
 version = "0.1.0"
-description = "Lunar calendar planner — moon phase data for LaTeX"
+description = "Plain ruled notebook generator — LaTeX templates"
 requires-python = ">=3.13"
-dependencies = ["ephem"]
+dependencies = []

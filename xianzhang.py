@@ -1,8 +1,8 @@
-"""Xianzhang ruled notebook generator — shared across sizes.
+"""Xianzhang — plain ruled notebook generator.
 
-Usage: uv run python xgen.py <edition>
-  e.g. uv run python xgen.py a5s
-       uv run python xgen.py m5
+Usage: uv run python xianzhang.py <edition>
+  e.g. uv run python xianzhang.py a5s-xianzhang
+       uv run python xianzhang.py m5-xianzhang
 """
 
 import sys
@@ -25,6 +25,6 @@ def generate(edition: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print(f"Usage: uv run python xgen.py <edition>")
+        print(f"Usage: uv run python xianzhang.py <edition>")
         sys.exit(1)
     generate(sys.argv[1])
