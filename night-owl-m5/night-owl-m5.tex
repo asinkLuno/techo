@@ -1,0 +1,47 @@
+% ──────────────────────────────────────────
+% Night Owl m5 — triangular hourglass, numbers 0–26 colored by night sky
+% Build: uv run python nightowl.py YYYY-MM-DD && cd night-owl-m5 && xelatex night-owl-m5.tex
+% ──────────────────────────────────────────
+\documentclass[10pt, twoside]{article}
+
+% ── Size ──
+\input{../sizes.tex}
+
+% ── Page geometry ──
+\usepackage[paperwidth=\Size{xianzhang-m5}{PW} mm, paperheight=\Size{xianzhang-m5}{PH} mm,
+            margin=0mm,
+            twoside]{geometry}
+
+% ── Packages ──
+\usepackage{tikz}
+\usepackage{fontspec}
+\usepackage{xcolor}
+
+% ── Colors ──
+\definecolor{fluor}{HTML}{39FF14}
+
+% ── Full-page dot-grid background ──
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \foreach \x in {0,3,...,66} {
+      \foreach \y in {0,-3,...,-105} {
+        \fill[fluor!50] (\x mm, \y mm) circle (0.35mm);
+      }
+    }
+  \end{tikzpicture}%
+}
+
+% ── 3270 Nerd Font (retro terminal numerals) ──
+\newfontfamily{\nightowlfont}{3270 Nerd Font Mono}[
+  Scale=1.0,
+]
+
+% ── Page style ──
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}
