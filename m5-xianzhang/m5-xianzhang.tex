@@ -1,6 +1,6 @@
 % ──────────────────────────────────────────
 % Xianzhang m5 — plain ruled notebook (67×105mm)
-% Build: uv run python xgen.py m5 && cd m5 && xelatex m5.tex
+% Build: uv run python xgen.py m5-xianzhang && cd m5-xianzhang && xelatex m5-xianzhang.tex
 % ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
@@ -8,7 +8,7 @@
 \input{../sizes.tex}
 
 % ── Page geometry ──
-\usepackage[paperwidth=\Size{m5}{PW} mm, paperheight=\Size{m5}{PH} mm,
+\usepackage[paperwidth=\Size{m5-xianzhang}{PW} mm, paperheight=\Size{m5-xianzhang}{PH} mm,
             margin=0mm,
             twoside]{geometry}
 
@@ -22,8 +22,8 @@
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
     \draw[red!60, line width=0.4pt]
-      ([xshift=\Size{m5}{RedLine} mm] current page.south west) --
-      ([xshift=\Size{m5}{RedLine} mm] current page.north west);
+      ([xshift=\Size{m5-xianzhang}{RedLine} mm] current page.south west) --
+      ([xshift=\Size{m5-xianzhang}{RedLine} mm] current page.north west);
   \end{tikzpicture}%
 }
 
@@ -36,8 +36,8 @@
 % ── Ruled page macro ──
 \newcommand{\ruledpage}{%
   \begin{tikzpicture}[remember picture, overlay]
-    \foreach \n in {0, 1, ..., \Size{m5}{LastLine}} {
-      \pgfmathsetmacro{\y}{-\Size{m5}{TopGap} - \n * 6}
+    \foreach \n in {0, 1, ..., \Size{m5-xianzhang}{LastLine}} {
+      \pgfmathsetmacro{\y}{-\Size{m5-xianzhang}{TopGap} - \n * 6}
       \draw[ruleblue!45, line width=0.3pt]
         ([yshift=\y mm] current page.north west) --
         ([yshift=\y mm] current page.north east);
