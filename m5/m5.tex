@@ -4,9 +4,11 @@
 % ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
+% ── Size ──
+\input{../sizes.tex}
+
 % ── Page geometry ──
-% 67×105mm (m5), no margins
-\usepackage[paperwidth=67mm, paperheight=105mm,
+\usepackage[paperwidth=\Size{m5}{PW} mm, paperheight=\Size{m5}{PH} mm,
             margin=0mm,
             twoside]{geometry}
 
@@ -16,12 +18,12 @@
 % ── Colors ──
 \definecolor{ruleblue}{HTML}{6B9BD2}
 
-% ── Red vertical line at 7mm from left ──
+% ── Red vertical margin line ──
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
     \draw[red!60, line width=0.4pt]
-      ([xshift=7mm] current page.south west) --
-      ([xshift=7mm] current page.north west);
+      ([xshift=\Size{m5}{RedLine} mm] current page.south west) --
+      ([xshift=\Size{m5}{RedLine} mm] current page.north west);
   \end{tikzpicture}%
 }
 
@@ -32,11 +34,10 @@
 \setlength{\topskip}{0pt}
 
 % ── Ruled page macro ──
-% Blue horizontal lines at 6mm spacing, 9mm top gap, 17 lines
 \newcommand{\ruledpage}{%
   \begin{tikzpicture}[remember picture, overlay]
-    \foreach \n in {0, 1, ..., 16} {
-      \pgfmathsetmacro{\y}{-9 - \n * 6}
+    \foreach \n in {0, 1, ..., \Size{m5}{LastLine}} {
+      \pgfmathsetmacro{\y}{-\Size{m5}{TopGap} - \n * 6}
       \draw[ruleblue!45, line width=0.3pt]
         ([yshift=\y mm] current page.north west) --
         ([yshift=\y mm] current page.north east);
