@@ -19,15 +19,19 @@
 
 % ── Colors ──
 \definecolor{fluor}{HTML}{39FF14}
+\definecolor{cross}{HTML}{FF0000}
 
-% ── Full-page dot-grid background ──
+% ── Background: dot-grid ──
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
-    \foreach \x in {0,3,...,66} {
-      \foreach \y in {0,-3,...,-105} {
+    % Dot grid
+    \foreach \x in {0.5,3.5,...,66.5} {
+      \foreach \y in {-1.5,-4.5,...,-103.5} {
         \fill[fluor!50] (\x mm, \y mm) circle (0.35mm);
       }
     }
+    % Center dot → red
+    \fill[cross!50] (33.5mm, -52.5mm) circle (0.35mm);
   \end{tikzpicture}%
 }
 

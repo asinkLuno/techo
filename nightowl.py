@@ -12,10 +12,10 @@ PW = 67
 PH = 105
 BINDING = 12      # left gutter
 RIGHT_MARGIN = 3  # right margin
-ROW_GAP = 6.2     # mm
+ROW_GAP = 8.0     # mm
 NUM_GAP = 11      # mm horizontal between adjacent numbers
 
-TOTAL_PAGES = 1
+TOTAL_PAGES = 2
 
 
 def _label(n: int) -> str:
@@ -53,16 +53,20 @@ def generate() -> None:
     out.mkdir(parents=True, exist_ok=True)
 
     full = []
-    for _ in range(TOTAL_PAGES):
-        full.append("\\thispagestyle{empty}%")
-        full.append("\\begin{tikzpicture}[remember picture, overlay]")
-        full.extend(page_nodes)
-        full.append("\\end{tikzpicture}%")
-        full.append("\\null")
-        full.append("\\clearpage")
+    # Page 1: numbers + dot grid
+    full.append("\\thispagestyle{empty}%")
+    full.append("\\begin{tikzpicture}[remember picture, overlay]")
+    full.extend(page_nodes)
+    full.append("\\end{tikzpicture}%")
+    full.append("\\null")
+    full.append("\\clearpage")
+    # Page 2: dot grid only (background hook handles dots + center red dot)
+    full.append("\\thispagestyle{empty}%")
+    full.append("\\null")
+    full.append("\\clearpage")
 
     (out / "content.tex").write_text("\n".join(full) + "\n")
-    print(f"Generated {out / 'content.tex'} ({TOTAL_PAGES} pages, {n} numbers)")
+    print(f"Generated {out / 'content.tex'} (page 1: numbers + dots, page 2: dots only)")
 
 
 if __name__ == "__main__":
