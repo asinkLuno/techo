@@ -1,0 +1,51 @@
+% ──────────────────────────────────────────
+% Xianzhang — plain ruled notebook (sample)
+% Build: uv run python xianzhang/generate.py && cd xianzhang && xelatex xianzhang.tex
+% ──────────────────────────────────────────
+\documentclass[10pt, twoside]{article}
+
+% ── Page geometry ──
+% 110×210mm, no margins
+\usepackage[paperwidth=110mm, paperheight=210mm,
+            margin=0mm,
+            twoside]{geometry}
+
+% ── Packages ──
+\usepackage{tikz}
+
+% ── Colors ──
+\definecolor{ruleblue}{HTML}{6B9BD2}
+
+% ── Red vertical line at 12mm from left paper edge ──
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \draw[red!60, line width=0.4pt]
+      ([xshift=12mm] current page.south west) --
+      ([xshift=12mm] current page.north west);
+  \end{tikzpicture}%
+}
+
+% ── Page style ──
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\topskip}{0pt}
+
+% ── Ruled page macro ──
+% Blue horizontal lines at 6mm spacing
+\newcommand{\ruledpage}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \foreach \n in {0, 1, ..., 33} {
+      \pgfmathsetmacro{\y}{-12 - \n * 6}
+      \draw[ruleblue!45, line width=0.3pt]
+        ([yshift=\y mm] current page.north west) --
+        ([yshift=\y mm] current page.north east);
+    }
+  \end{tikzpicture}%
+  \null  % ensure page is not empty
+}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}
