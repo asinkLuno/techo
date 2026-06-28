@@ -1,14 +1,12 @@
-"""Xianzhang a5s — plain ruled notebook (110×210mm).
+"""Xianzhang m5 — plain ruled notebook (67×105mm).
 
-Usage: uv run python xianzhang/generate.py
-Output: xianzhang/content.tex
+Usage: uv run python m5/generate.py
+Output: m5/content.tex
 """
 
 from pathlib import Path
 
 HERE = Path(__file__).parent
-
-# ponytail: change for more pages
 TOTAL_PAGES = 2
 
 

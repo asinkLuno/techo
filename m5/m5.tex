@@ -1,12 +1,12 @@
 % ──────────────────────────────────────────
-% Xianzhang a5s — plain ruled notebook (110×210mm)
-% Build: uv run python xianzhang/generate.py && cd xianzhang && xelatex xianzhang.tex
+% Xianzhang m5 — plain ruled notebook (67×105mm)
+% Build: uv run python m5/generate.py && cd m5 && xelatex m5.tex
 % ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
 % ── Page geometry ──
-% 110×210mm (a5s), no margins
-\usepackage[paperwidth=110mm, paperheight=210mm,
+% 67×105mm (m5), no margins
+\usepackage[paperwidth=67mm, paperheight=105mm,
             margin=0mm,
             twoside]{geometry}
 
@@ -16,12 +16,12 @@
 % ── Colors ──
 \definecolor{ruleblue}{HTML}{6B9BD2}
 
-% ── Red vertical line at 12mm from left paper edge ──
+% ── Red vertical line at 7mm from left ──
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
     \draw[red!60, line width=0.4pt]
-      ([xshift=12mm] current page.south west) --
-      ([xshift=12mm] current page.north west);
+      ([xshift=7mm] current page.south west) --
+      ([xshift=7mm] current page.north west);
   \end{tikzpicture}%
 }
 
@@ -32,17 +32,17 @@
 \setlength{\topskip}{0pt}
 
 % ── Ruled page macro ──
-% Blue horizontal lines at 6mm spacing
+% Blue horizontal lines at 6mm spacing, 9mm top gap, 17 lines
 \newcommand{\ruledpage}{%
   \begin{tikzpicture}[remember picture, overlay]
-    \foreach \n in {0, 1, ..., 33} {
-      \pgfmathsetmacro{\y}{-12 - \n * 6}
+    \foreach \n in {0, 1, ..., 16} {
+      \pgfmathsetmacro{\y}{-9 - \n * 6}
       \draw[ruleblue!45, line width=0.3pt]
         ([yshift=\y mm] current page.north west) --
         ([yshift=\y mm] current page.north east);
     }
   \end{tikzpicture}%
-  \null  % ensure page is not empty
+  \null
 }
 
 % ──────────────────────────────────────────

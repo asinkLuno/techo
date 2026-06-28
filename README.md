@@ -1,7 +1,9 @@
 # techo — lunar planners
 
 **Senary edition** — moon phase planner (110×210mm, 9mm binding offset, 171 pages).
-**Xianzhang** — plain ruled notebook (110×210mm, blue 6mm lines, red margin at 12mm).
+**Xianzhang** — plain ruled notebook, two sizes:
+- **a5s** — 110×210mm, blue 6mm lines, red margin at 12mm
+- **m5** — 67×105mm, blue 6mm lines, red margin at 7mm
 
 ## Prerequisites
 
@@ -15,12 +17,16 @@
 PYTHONPATH=. uv run python senary/generate.py
 cd senary && xelatex senary.tex && xelatex senary.tex
 
-# Xianzhang (plain ruled notebook)
+# Xianzhang a5s (110×210mm)
 uv run python xianzhang/generate.py
 cd xianzhang && xelatex xianzhang.tex && xelatex xianzhang.tex
+
+# Xianzhang m5 (67×105mm)
+uv run python m5/generate.py
+cd m5 && xelatex m5.tex && xelatex m5.tex
 ```
 
-Output: `senary/senary.pdf`, `xianzhang/xianzhang.pdf`
+Output: `senary/senary.pdf`, `xianzhang/xianzhang.pdf`, `m5/m5.pdf`
 
 ## Structure
 
@@ -35,10 +41,15 @@ techo/
 │   ├── content.tex      # generated (gitignored)
 │   └── senary.pdf       # output (gitignored)
 ├── xianzhang/
-│   ├── xianzhang.tex    # ruled notebook LaTeX template
+│   ├── xianzhang.tex    # ruled notebook a5s (110×210mm)
 │   ├── generate.py      # content generation (standalone)
 │   ├── content.tex      # generated (gitignored)
 │   └── xianzhang.pdf    # output (gitignored)
+├── m5/
+│   ├── m5.tex           # ruled notebook m5 (67×105mm)
+│   ├── generate.py      # content generation (standalone)
+│   ├── content.tex      # generated (gitignored)
+│   └── m5.pdf           # output (gitignored)
 └── .gitignore
 ```
 
