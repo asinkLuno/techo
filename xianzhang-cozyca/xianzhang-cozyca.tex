@@ -1,0 +1,58 @@
+% ──────────────────────────────────────────
+% Xianzhang cozyca — plain ruled notebook (100×90mm)
+% Build: uv run python xianzhang.py cozyca && cd cozyca && xelatex cozyca.tex
+% ──────────────────────────────────────────
+\documentclass[10pt, twoside]{article}
+
+% ── Size ──
+\input{../sizes.tex}
+
+% ── Page geometry ──
+\usepackage[paperwidth=\Size{cozyca}{PW} mm, paperheight=\Size{cozyca}{PH} mm,
+  margin=0mm,
+twoside]{geometry}
+
+% ── Packages ──
+\usepackage{tikz}
+
+% ── Colors ──
+\definecolor{ruleblue}{HTML}{6B9BD2}
+
+% ── Red vertical margin line ──
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \ifodd\value{page}
+    \draw[red!60, line width=0.4pt]
+    ([xshift=-\Size{cozyca}{RedLine} mm] current page.south east) --
+    ([xshift=-\Size{cozyca}{RedLine} mm] current page.north east);
+    \else
+    \draw[red!60, line width=0.4pt]
+    ([xshift=\Size{cozyca}{RedLine} mm] current page.south west) --
+    ([xshift=\Size{cozyca}{RedLine} mm] current page.north west);
+    \fi
+  \end{tikzpicture}%
+}
+
+% ── Page style ──
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\topskip}{0pt}
+
+% ── Ruled page macro ──
+\newcommand{\ruledpage}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \foreach \n in {0, 1, ..., \Size{cozyca}{LastLine}} {
+      \pgfmathsetmacro{\y}{-\Size{cozyca}{TopGap} - \n * 5}
+      \draw[ruleblue!45, line width=0.3pt]
+      ([yshift=\y mm] current page.north west) --
+      ([yshift=\y mm] current page.north east);
+    }
+  \end{tikzpicture}%
+  \null
+}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}
