@@ -1,18 +1,18 @@
 % ── Shared size definitions (all values in mm) ──
-% Usage: \Size{<edition>}{<prop>}  e.g. \Size{xianzhang-a5s}{PW}
+% Usage: \Size{<spec>}{<prop>}  e.g. \Size{m5}{PW}
 
 \def\Size#1#2{\csname size@#1@#2\endcsname}
 
-% xianzhang-a5s — ruled notebook, 110×210mm
-\expandafter\def\csname size@xianzhang-a5s@PW\endcsname{110}
-\expandafter\def\csname size@xianzhang-a5s@PH\endcsname{210}
-\expandafter\def\csname size@xianzhang-a5s@TopGap\endcsname{12}
-\expandafter\def\csname size@xianzhang-a5s@RedLine\endcsname{12}
-\expandafter\def\csname size@xianzhang-a5s@LastLine\endcsname{33}
+% a5s — 110×210mm
+\expandafter\def\csname size@a5s@PW\endcsname{110}
+\expandafter\def\csname size@a5s@PH\endcsname{210}
+\expandafter\def\csname size@a5s@TopGap\endcsname{12}
+\expandafter\def\csname size@a5s@RedLine\endcsname{12}
+\expandafter\def\csname size@a5s@LastLine\endcsname{39}
 
-% xianzhang-m5 — ruled notebook, 67×105mm
-\expandafter\def\csname size@xianzhang-m5@PW\endcsname{67}
-\expandafter\def\csname size@xianzhang-m5@PH\endcsname{105}
-\expandafter\def\csname size@xianzhang-m5@TopGap\endcsname{9}
-\expandafter\def\csname size@xianzhang-m5@RedLine\endcsname{7}
-\expandafter\def\csname size@xianzhang-m5@LastLine\endcsname{16}
+% m5 — 67×105mm
+\expandafter\def\csname size@m5@PW\endcsname{67}
+\expandafter\def\csname size@m5@PH\endcsname{105}
+\expandafter\def\csname size@m5@TopGap\endcsname{9}
+\expandafter\def\csname size@m5@RedLine\endcsname{7}
+\expandafter\def\csname size@m5@LastLine\endcsname{19}
