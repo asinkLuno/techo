@@ -2,77 +2,121 @@
 % Cozyca — daily check-in card (100×90mm)
 % Build: cd cozyca && xelatex cozyca.tex
 % ──────────────────────────────────────────
-\documentclass[10pt, twoside]{article}
+\documentclass[10pt]{article}
 
 % ── Size ──
 \input{../sizes.tex}
 
 % ── Page geometry ──
 \usepackage[paperwidth=\Size{cozyca}{PW} mm, paperheight=\Size{cozyca}{PH} mm,
-  margin=0mm,
-twoside]{geometry}
+margin=0mm]{geometry}
 
 % ── Packages ──
+\usepackage{fontspec}
+\setmainfont{3270 Nerd Font}
 \usepackage{tikz}
-
-% ── Colors ──
-\definecolor{ruleblue}{HTML}{6B9BD2}
-
-% ── Red vertical margin line (alt: odd→right, even→left) ──
-\AddToHook{shipout/background}{%
-  \begin{tikzpicture}[remember picture, overlay]
-    \ifodd\value{page}
-    \draw[red!60, line width=0.4pt]
-    ([xshift=-\Size{cozyca}{RedLine} mm] current page.south east) --
-    ([xshift=-\Size{cozyca}{RedLine} mm] current page.north east);
-    \else
-    \draw[red!60, line width=0.4pt]
-    ([xshift=\Size{cozyca}{RedLine} mm] current page.south west) --
-    ([xshift=\Size{cozyca}{RedLine} mm] current page.north west);
-    \fi
-  \end{tikzpicture}%
-}
 
 % ── Page style ──
 \pagestyle{empty}
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{0pt}
-\setlength{\topskip}{0pt}
 
-% ── Check-in page macro ──
-% 7 cols × 5 rows = 35 spots, days 1–31
-\newcommand{\dakapage}{%
+% ── Grid params ──
+% Square cells: CW=RH=5mm, 16 day cols, label col 10mm
+\def\LM{5}
+\def\LW{10}
+\def\CW{5}
+\def\NC{16}
+\def\NR{5}
+\def\TM{8}
+\def\GAP{5}
+
+% ── Draw check-in grids ──
+\AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
-    % Title
-    \node[font=\normalsize, text=black!70]
-    at ([yshift=-10mm] current page.north) {Daily Check-in};
-    % Thin rule under title
-    \draw[black!25, line width=0.2pt]
-    ([yshift=-13mm] current page.north west) --
-    ([yshift=-13mm] current page.north east);
-    % Day circles
-    \foreach \row in {0,...,4} {
-      \foreach \col in {0,...,6} {
-        \pgfmathtruncatemacro{\day}{\col + \row*7 + 1}
-        \ifnum\day<32
-        \pgfmathsetmacro{\x}{14.0 + \col*12.0}
-        \pgfmathsetmacro{\y}{-21.0 - \row*14.0}
-        \draw[black!35, line width=0.3pt, fill=white]
-        ([xshift=\x mm, yshift=\y mm] current page.north west)
-        circle[radius=4.2mm];
-        \node[font=\tiny\sffamily, text=black!50]
-        at ([xshift=\x mm, yshift=\y mm] current page.north west) {\day};
-        \fi
-      }
+    % ---- Table 1 (days 1–15, top) ----
+    \def\topyA{-\TM}
+    \pgfmathsetmacro{\headyA}{\topyA - 5}
+    \pgfmathsetmacro{\botyA}{\topyA - 5 - \NR*5}
+    \def\rcolA{15}  % rightmost column with a day number
+    % Border
+    \draw[black!45, line width=0.3pt]
+    ([xshift=\LM mm, yshift=\topyA mm] current page.north west) --
+    ([xshift=\LM+\LW+\NC*\CW mm, yshift=\topyA mm] current page.north west) --
+    ([xshift=\LM+\LW+\NC*\CW mm, yshift=\botyA mm] current page.north west) --
+    ([xshift=\LM mm, yshift=\botyA mm] current page.north west) -- cycle;
+    % Label divider
+    \draw[black!40, line width=0.25pt]
+    ([xshift=\LM+\LW mm, yshift=\topyA mm] current page.north west) --
+    ([xshift=\LM+\LW mm, yshift=\botyA mm] current page.north west);
+    % Header rule
+    \draw[black!40, line width=0.25pt]
+    ([xshift=\LM mm, yshift=\headyA mm] current page.north west) --
+    ([xshift=\LM+\LW+\NC*\CW mm, yshift=\headyA mm] current page.north west);
+    % Day numbers (1–15)
+    \foreach \c in {0,...,14} {
+      \pgfmathsetmacro{\dx}{\LM + \LW + (\c+0.5)*\CW}
+      \pgfmathsetmacro{\dy}{\topyA - 2.5}
+      \node[font=\fontsize{4.5}{5.5}\selectfont, text=black!55]
+      at ([xshift=\dx mm, yshift=\dy mm] current page.north west)
+      {\the\numexpr1+\c\relax};
+    }
+    % Horizontal lines
+    \foreach \r in {0,...,\NR} {
+      \pgfmathsetmacro{\y}{\topyA - 5 - \r*5}
+      \draw[black!25, line width=0.12pt]
+      ([xshift=\LM mm, yshift=\y mm] current page.north west) --
+      ([xshift=\LM+\LW+\NC*\CW mm, yshift=\y mm] current page.north west);
+    }
+    % Vertical lines
+    \foreach \c in {0,...,\NC} {
+      \pgfmathsetmacro{\x}{\LM + \LW + \c*\CW}
+      \draw[black!25, line width=0.12pt]
+      ([xshift=\x mm, yshift=\topyA mm] current page.north west) --
+      ([xshift=\x mm, yshift=\botyA mm] current page.north west);
+    }
+
+    % ---- Table 2 (days 16–31, bottom) ----
+    \pgfmathsetmacro{\topyB}{\topyA - 5 - \NR*5 - \GAP}
+    \pgfmathsetmacro{\headyB}{\topyB - 5}
+    \pgfmathsetmacro{\botyB}{\topyB - 5 - \NR*5}
+    % Border
+    \draw[black!45, line width=0.3pt]
+    ([xshift=\LM mm, yshift=\topyB mm] current page.north west) --
+    ([xshift=\LM+\LW+\NC*\CW mm, yshift=\topyB mm] current page.north west) --
+    ([xshift=\LM+\LW+\NC*\CW mm, yshift=\botyB mm] current page.north west) --
+    ([xshift=\LM mm, yshift=\botyB mm] current page.north west) -- cycle;
+    % Label divider
+    \draw[black!40, line width=0.25pt]
+    ([xshift=\LM+\LW mm, yshift=\topyB mm] current page.north west) --
+    ([xshift=\LM+\LW mm, yshift=\botyB mm] current page.north west);
+    % Header rule
+    \draw[black!40, line width=0.25pt]
+    ([xshift=\LM mm, yshift=\headyB mm] current page.north west) --
+    ([xshift=\LM+\LW+\NC*\CW mm, yshift=\headyB mm] current page.north west);
+    % Day numbers (16–31)
+    \foreach \c in {0,...,15} {
+      \pgfmathsetmacro{\dx}{\LM + \LW + (\c+0.5)*\CW}
+      \pgfmathsetmacro{\dy}{\topyB - 2.5}
+      \node[font=\fontsize{4.5}{5.5}\selectfont, text=black!55]
+      at ([xshift=\dx mm, yshift=\dy mm] current page.north west)
+      {\the\numexpr16+\c\relax};
+    }
+    % Horizontal lines
+    \foreach \r in {0,...,\NR} {
+      \pgfmathsetmacro{\y}{\topyB - 5 - \r*5}
+      \draw[black!25, line width=0.12pt]
+      ([xshift=\LM mm, yshift=\y mm] current page.north west) --
+      ([xshift=\LM+\LW+\NC*\CW mm, yshift=\y mm] current page.north west);
+    }
+    % Vertical lines
+    \foreach \c in {0,...,\NC} {
+      \pgfmathsetmacro{\x}{\LM + \LW + \c*\CW}
+      \draw[black!25, line width=0.12pt]
+      ([xshift=\x mm, yshift=\topyB mm] current page.north west) --
+      ([xshift=\x mm, yshift=\botyB mm] current page.north west);
     }
   \end{tikzpicture}%
-  \null
 }
 
-% ──────────────────────────────────────────
 \begin{document}
-\dakapage
-\clearpage
-\dakapage
-\clearpage
+\null
 \end{document}
