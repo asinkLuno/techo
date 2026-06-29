@@ -21,9 +21,15 @@ twoside]{geometry}
 % ── Red vertical margin line ──
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
+    \ifodd\value{page}
+    \draw[red!60, line width=0.4pt]
+    ([xshift=-\Size{a5s}{RedLine} mm] current page.south east) --
+    ([xshift=-\Size{a5s}{RedLine} mm] current page.north east);
+    \else
     \draw[red!60, line width=0.4pt]
     ([xshift=\Size{a5s}{RedLine} mm] current page.south west) --
     ([xshift=\Size{a5s}{RedLine} mm] current page.north west);
+    \fi
   \end{tikzpicture}%
 }
 
