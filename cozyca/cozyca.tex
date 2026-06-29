@@ -1,0 +1,78 @@
+% ──────────────────────────────────────────
+% Cozyca — daily check-in card (100×90mm)
+% Build: cd cozyca && xelatex cozyca.tex
+% ──────────────────────────────────────────
+\documentclass[10pt, twoside]{article}
+
+% ── Size ──
+\input{../sizes.tex}
+
+% ── Page geometry ──
+\usepackage[paperwidth=\Size{cozyca}{PW} mm, paperheight=\Size{cozyca}{PH} mm,
+  margin=0mm,
+twoside]{geometry}
+
+% ── Packages ──
+\usepackage{tikz}
+
+% ── Colors ──
+\definecolor{ruleblue}{HTML}{6B9BD2}
+
+% ── Red vertical margin line (alt: odd→right, even→left) ──
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \ifodd\value{page}
+    \draw[red!60, line width=0.4pt]
+    ([xshift=-\Size{cozyca}{RedLine} mm] current page.south east) --
+    ([xshift=-\Size{cozyca}{RedLine} mm] current page.north east);
+    \else
+    \draw[red!60, line width=0.4pt]
+    ([xshift=\Size{cozyca}{RedLine} mm] current page.south west) --
+    ([xshift=\Size{cozyca}{RedLine} mm] current page.north west);
+    \fi
+  \end{tikzpicture}%
+}
+
+% ── Page style ──
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\topskip}{0pt}
+
+% ── Check-in page macro ──
+% 7 cols × 5 rows = 35 spots, days 1–31
+\newcommand{\dakapage}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    % Title
+    \node[font=\normalsize, text=black!70]
+    at ([yshift=-10mm] current page.north) {Daily Check-in};
+    % Thin rule under title
+    \draw[black!25, line width=0.2pt]
+    ([yshift=-13mm] current page.north west) --
+    ([yshift=-13mm] current page.north east);
+    % Day circles
+    \foreach \row in {0,...,4} {
+      \foreach \col in {0,...,6} {
+        \pgfmathtruncatemacro{\day}{\col + \row*7 + 1}
+        \ifnum\day<32
+        \pgfmathsetmacro{\x}{14.0 + \col*12.0}
+        \pgfmathsetmacro{\y}{-21.0 - \row*14.0}
+        \draw[black!35, line width=0.3pt, fill=white]
+        ([xshift=\x mm, yshift=\y mm] current page.north west)
+        circle[radius=4.2mm];
+        \node[font=\tiny\sffamily, text=black!50]
+        at ([xshift=\x mm, yshift=\y mm] current page.north west) {\day};
+        \fi
+      }
+    }
+  \end{tikzpicture}%
+  \null
+}
+
+% ──────────────────────────────────────────
+\begin{document}
+\dakapage
+\clearpage
+\dakapage
+\clearpage
+\end{document}
