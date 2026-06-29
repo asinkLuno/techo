@@ -1,7 +1,7 @@
 % ──────────────────────────────────────────
-% Xianzhang m5 — French ruled (Séyès) notebook (67×105mm)
-% Build: uv run python xianzhang.py xianzhang-m5 && cd xianzhang-m5
-% && xelatex xianzhang-m5.tex
+% Xianzhang cozyca — French ruled (Séyès) notebook (100×90mm)
+% Build: uv run python xianzhang.py xianzhang-cozyca && cd
+% xianzhang-cozyca && xelatex xianzhang-cozyca.tex
 % ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
@@ -9,7 +9,7 @@
 \input{../sizes.tex}
 
 % ── Page geometry ──
-\usepackage[paperwidth=\Size{m5}{PW} mm, paperheight=\Size{m5}{PH} mm,
+\usepackage[paperwidth=\Size{cozyca}{PW} mm, paperheight=\Size{cozyca}{PH} mm,
   margin=0mm,
 twoside]{geometry}
 
@@ -24,12 +24,12 @@ twoside]{geometry}
   \begin{tikzpicture}[remember picture, overlay]
     \ifodd\value{page}
     \draw[red!60, line width=0.4pt]
-    ([xshift=-\Size{m5}{RedLine} mm] current page.south east) --
-    ([xshift=-\Size{m5}{RedLine} mm] current page.north east);
+    ([xshift=-\Size{cozyca}{RedLine} mm] current page.south east) --
+    ([xshift=-\Size{cozyca}{RedLine} mm] current page.north east);
     \else
     \draw[red!60, line width=0.4pt]
-    ([xshift=\Size{m5}{RedLine} mm] current page.south west) --
-    ([xshift=\Size{m5}{RedLine} mm] current page.north west);
+    ([xshift=\Size{cozyca}{RedLine} mm] current page.south west) --
+    ([xshift=\Size{cozyca}{RedLine} mm] current page.north west);
     \fi
   \end{tikzpicture}%
 }

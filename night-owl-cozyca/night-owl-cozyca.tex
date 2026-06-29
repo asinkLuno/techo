@@ -1,7 +1,7 @@
 % ──────────────────────────────────────────
-% Xianzhang m5 — French ruled (Séyès) notebook (67×105mm)
-% Build: uv run python xianzhang.py xianzhang-m5 && cd xianzhang-m5
-% && xelatex xianzhang-m5.tex
+% Night Owl cozyca — triangular hourglass, numbers 0–26 colored by night sky
+% Build: uv run python nightowl.py --size cozyca && cd
+% night-owl-cozyca && xelatex night-owl-cozyca.tex
 % ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
@@ -9,36 +9,42 @@
 \input{../sizes.tex}
 
 % ── Page geometry ──
-\usepackage[paperwidth=\Size{m5}{PW} mm, paperheight=\Size{m5}{PH} mm,
+\usepackage[paperwidth=\Size{cozyca}{PW} mm, paperheight=\Size{cozyca}{PH} mm,
   margin=0mm,
 twoside]{geometry}
 
 % ── Packages ──
 \usepackage{tikz}
+\usepackage{fontspec}
+\usepackage{xcolor}
 
 % ── Colors ──
-\definecolor{ruleblue}{HTML}{6B9BD2}
+\definecolor{fluor}{HTML}{39FF14}
+\definecolor{cross}{HTML}{FF0000}
 
-% ── Red vertical margin line (odd→right, even→left) ──
+% ── Background: dot-grid ──
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
-    \ifodd\value{page}
-    \draw[red!60, line width=0.4pt]
-    ([xshift=-\Size{m5}{RedLine} mm] current page.south east) --
-    ([xshift=-\Size{m5}{RedLine} mm] current page.north east);
-    \else
-    \draw[red!60, line width=0.4pt]
-    ([xshift=\Size{m5}{RedLine} mm] current page.south west) --
-    ([xshift=\Size{m5}{RedLine} mm] current page.north west);
-    \fi
+    % Dot grid
+    \foreach \x in {0.5,3.5,...,99.5} {
+      \foreach \y in {-1.5,-4.5,...,-89.5} {
+        \fill[fluor!50] (\x mm, \y mm) circle (0.35mm);
+      }
+    }
+    % Center dot → red
+    \fill[cross!50] (50.0mm, -45.0mm) circle (0.35mm);
   \end{tikzpicture}%
 }
+
+% ── 3270 Nerd Font (retro terminal numerals) ──
+\newfontfamily{\nightowlfont}{3270 Nerd Font Mono}[
+  Scale=1.0,
+]
 
 % ── Page style ──
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
-\setlength{\topskip}{0pt}
 
 % ──────────────────────────────────────────
 \begin{document}

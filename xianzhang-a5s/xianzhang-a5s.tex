@@ -1,6 +1,7 @@
 % ──────────────────────────────────────────
-% Xianzhang a5s — plain ruled notebook (110×210mm)
-% Build: uv run python xianzhang.py a5s && cd a5s && xelatex a5s.tex
+% Xianzhang a5s — French ruled (Séyès) notebook (110×210mm)
+% Build: uv run python xianzhang.py xianzhang-a5s && cd xianzhang-a5s
+% && xelatex xianzhang-a5s.tex
 % ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
@@ -18,7 +19,7 @@ twoside]{geometry}
 % ── Colors ──
 \definecolor{ruleblue}{HTML}{6B9BD2}
 
-% ── Red vertical margin line ──
+% ── Red vertical margin line (odd→right, even→left) ──
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
     \ifodd\value{page}
@@ -38,19 +39,6 @@ twoside]{geometry}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
 \setlength{\topskip}{0pt}
-
-% ── Ruled page macro ──
-\newcommand{\ruledpage}{%
-  \begin{tikzpicture}[remember picture, overlay]
-    \foreach \n in {0, 1, ..., \Size{a5s}{LastLine}} {
-      \pgfmathsetmacro{\y}{-\Size{a5s}{TopGap} - \n * 5}
-      \draw[ruleblue!45, line width=0.3pt]
-      ([yshift=\y mm] current page.north west) --
-      ([yshift=\y mm] current page.north east);
-    }
-  \end{tikzpicture}%
-  \null
-}
 
 % ──────────────────────────────────────────
 \begin{document}
