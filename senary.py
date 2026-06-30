@@ -71,13 +71,14 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
             f" at ([xshift={x:.2f}mm, yshift={-(gy - HEAD_H / 2):.2f}mm]current page.north west)"
             f" {{{w}}};"
         )
+    PAD = 0.8  # mm, offset from cell top-left
     for d in range(1, days + 1):
         r, c = divmod(first + d - 1, COLS)
-        x = lm + cell_w * (c + 0.5)
-        y = gy + cell_h * (r + 0.5)
+        x = lm + cell_w * c + PAD
+        y = gy + cell_h * r + PAD
         label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
         out.append(
-            f"  \\node[font=\\{FONT_CAL}]"
+            f"  \\node[font=\\{FONT_CAL}, anchor=north west]"
             f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{{label}}};"
         )
     out.append("\\end{tikzpicture}%")
