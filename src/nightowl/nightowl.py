@@ -28,7 +28,7 @@ def generate(size: str) -> None:
 
     # ── Compute positions ──
     tri_height = (len(ROWS) - 1) * ROW_GAP
-    top_margin = (PH - tri_height) / 2 + 5  # slightly below center
+    top_margin = (PH - tri_height) / 2 + 2  # slightly below center
 
     usable_w = PW - BINDING - RIGHT_MARGIN
     center_x = BINDING + usable_w / 2
