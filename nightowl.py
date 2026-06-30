@@ -3,6 +3,7 @@
 Usage: uv run python nightowl.py [--size m5|cozyca]
 """
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,6 +67,8 @@ def generate(size: str) -> None:
         f"\\def\\EDITION{{{size}}}%\n\\input{{../night-owl.tex}}%\n"
     )
     print(f"Generated {out}/content.tex + night-owl-{size}.tex ({PW}×{PH}mm)")
+    for _ in range(2):
+        subprocess.run(["xelatex", f"night-owl-{size}.tex"], cwd=out, check=True)
 
 
 if __name__ == "__main__":

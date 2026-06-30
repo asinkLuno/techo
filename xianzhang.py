@@ -4,6 +4,7 @@ Usage: uv run python xianzhang.py <edition>
   e.g. uv run python xianzhang.py xianzhang-cozyca
 """
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -62,6 +63,8 @@ def generate(edition: str) -> None:
     print(
         f"Generated {out}/content.tex + {edition}.tex ({s['pw']}×{s['ph']}mm, Séyès ruled)"
     )
+    for _ in range(2):
+        subprocess.run(["xelatex", f"{edition}.tex"], cwd=out, check=True)
 
 
 if __name__ == "__main__":
