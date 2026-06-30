@@ -1,7 +1,9 @@
 % ──────────────────────────────────────────
-% Xianzhang m5 — French ruled (Séyès) notebook (67×105mm)
-% Build: uv run python xianzhang.py xianzhang-m5 && cd xianzhang-m5
-% && xelatex xianzhang-m5.tex
+% Xianzhang — French ruled (Séyès) notebook (shared template, all sizes)
+% Size is set by \EDITION in each edition's generated wrapper.
+% Build: uv run python xianzhang.py xianzhang-<size>
+%        cd xianzhang-<size> && xelatex xianzhang-<size>.tex
+% (run from the edition dir; sizes.tex is at the repo root)
 % ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
@@ -9,7 +11,8 @@
 \input{../sizes.tex}
 
 % ── Page geometry ──
-\usepackage[paperwidth=\Size{m5}{PW} mm, paperheight=\Size{m5}{PH} mm,
+\usepackage[paperwidth=\Size{\EDITION}{PW} mm,
+  paperheight=\Size{\EDITION}{PH} mm,
   margin=0mm,
 twoside]{geometry}
 
@@ -24,12 +27,12 @@ twoside]{geometry}
   \begin{tikzpicture}[remember picture, overlay]
     \ifodd\value{page}
     \draw[red!60, line width=0.4pt]
-    ([xshift=-\Size{m5}{RedLine} mm] current page.south east) --
-    ([xshift=-\Size{m5}{RedLine} mm] current page.north east);
+    ([xshift=-\Size{\EDITION}{RedLine} mm] current page.south east) --
+    ([xshift=-\Size{\EDITION}{RedLine} mm] current page.north east);
     \else
     \draw[red!60, line width=0.4pt]
-    ([xshift=\Size{m5}{RedLine} mm] current page.south west) --
-    ([xshift=\Size{m5}{RedLine} mm] current page.north west);
+    ([xshift=\Size{\EDITION}{RedLine} mm] current page.south west) --
+    ([xshift=\Size{\EDITION}{RedLine} mm] current page.north west);
     \fi
   \end{tikzpicture}%
 }

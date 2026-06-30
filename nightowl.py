@@ -6,13 +6,9 @@ Usage: uv run python nightowl.py [--size m5|cozyca]
 import sys
 from pathlib import Path
 
-ROWS = [1, 3, 4, 5, 1, 3, 4, 5, 1]  # 27 numbers total (0–26)
+import sizes
 
-# ── Size presets ──
-SIZES = {
-    "m5": {"pw": 67, "ph": 105, "binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 11},
-    "cozyca": {"pw": 100, "ph": 90, "binding": 15, "right_margin": 3, "row_gap": 7.5, "num_gap": 16},
-}
+ROWS = [1, 3, 4, 5, 1, 3, 4, 5, 1]  # 27 numbers total (0–26)
 
 
 def _label(n: int) -> str:
@@ -23,27 +19,26 @@ def _label(n: int) -> str:
 
 
 def generate(size: str) -> None:
-    cfg = SIZES[size]
-    PW, PH = cfg["pw"], cfg["ph"]
-    BINDING = cfg["binding"]
-    RIGHT_MARGIN = cfg["right_margin"]
-    ROW_GAP = cfg["row_gap"]
-    NUM_GAP = cfg["num_gap"]
+    s = sizes.SIZES[size]
+    g = sizes.NIGHTOWL[size]
+    PW, PH = s["pw"], s["ph"]
+    BINDING, RIGHT_MARGIN = g["binding"], g["right_margin"]
+    ROW_GAP, NUM_GAP = g["row_gap"], g["num_gap"]
 
     # ── Compute positions ──
-    total_rows = len(ROWS)
-    tri_height = (total_rows - 1) * ROW_GAP
+    tri_height = (len(ROWS) - 1) * ROW_GAP
     top_margin = (PH - tri_height) / 2 + 8  # slightly below center
 
     usable_w = PW - BINDING - RIGHT_MARGIN
     center_x = BINDING + usable_w / 2
 
+    sizes.write_sizes_tex()
+
     page_nodes = []
     n = 0
     for ri, cnt in enumerate(ROWS):
         y_mm = -(top_margin + ri * ROW_GAP)
-        row_w = (cnt - 1) * NUM_GAP
-        x_start = center_x - row_w / 2
+        x_start = center_x - (cnt - 1) * NUM_GAP / 2
         for ci in range(cnt):
             x_mm = x_start + ci * NUM_GAP
             page_nodes.append(
@@ -52,30 +47,31 @@ def generate(size: str) -> None:
             )
             n += 1
 
-    # ── Assemble pages ──
-    dir_name = f"night-owl-{size}" if size != "m5" else "night-owl-m5"
-    out = Path(dir_name)
+    out = Path(f"night-owl-{size}")
     out.mkdir(parents=True, exist_ok=True)
 
-    full = []
-    full.append("\\thispagestyle{empty}%")
-    full.append("\\begin{tikzpicture}[remember picture, overlay]")
-    full.extend(page_nodes)
-    full.append("\\end{tikzpicture}%")
-    full.append("\\null")
-    full.append("\\clearpage")
-    full.append("\\thispagestyle{empty}%")
-    full.append("\\null")
-    full.append("\\clearpage")
-
+    full = [
+        "\\thispagestyle{empty}%",
+        "\\begin{tikzpicture}[remember picture, overlay]",
+        *page_nodes,
+        "\\end{tikzpicture}%",
+        "\\null",
+        "\\clearpage",
+        "\\thispagestyle{empty}%",
+        "\\null",
+        "\\clearpage",
+    ]
     (out / "content.tex").write_text("\n".join(full) + "\n")
-    text = "Generated"
-    # ponytail: print path for verification
-    print(f"{text} {out / 'content.tex'} ({size}: {PW}×{PH}mm)")
+    (out / f"night-owl-{size}.tex").write_text(
+        f"\\def\\EDITION{{{size}}}%\n\\input{{../night-owl.tex}}%\n"
+    )
+    print(f"Generated {out}/content.tex + night-owl-{size}.tex ({PW}×{PH}mm)")
 
 
 if __name__ == "__main__":
-    size = "cozyca" if "--size" in sys.argv and "cozyca" in sys.argv else \
-           sys.argv[sys.argv.index("--size") + 1] if "--size" in sys.argv else \
-           "m5"
+    args = sys.argv[1:]
+    size = args[args.index("--size") + 1] if "--size" in args else "m5"
+    if size not in sizes.NIGHTOWL:
+        print(f"Unknown size '{size}'. Known: {list(sizes.NIGHTOWL.keys())}")
+        sys.exit(1)
     generate(size)

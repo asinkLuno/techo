@@ -1,14 +1,20 @@
 % ──────────────────────────────────────────
-% Night Owl m5 — triangular hourglass, numbers 0–26 colored by night sky
-% Build: uv run python nightowl.py YYYY-MM-DD && cd m5 && xelatex m5.tex
+% Night Owl — triangular hourglass, numbers 0–26 colored by night sky
+% Size is set by \EDITION in each edition's generated wrapper.
+% Build: uv run python nightowl.py --size <m5|cozyca>
+%        cd night-owl-<size> && xelatex night-owl-<size>.tex
+% (run from the edition dir; sizes.tex is at the repo root)
 % ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
 % ── Size ──
 \input{../sizes.tex}
+% Materialize current size dims as plain numbers (dot grid derives from these)
+\edef\PW{\Size{\EDITION}{PW}}
+\edef\PH{\Size{\EDITION}{PH}}
 
 % ── Page geometry ──
-\usepackage[paperwidth=\Size{m5}{PW} mm, paperheight=\Size{m5}{PH} mm,
+\usepackage[paperwidth=\PW mm, paperheight=\PH mm,
   margin=0mm,
 twoside]{geometry}
 
@@ -21,17 +27,21 @@ twoside]{geometry}
 \definecolor{fluor}{HTML}{39FF14}
 \definecolor{cross}{HTML}{FF0000}
 
-% ── Background: dot-grid ──
+% ── Background: dot-grid (geometry derived from page size) ──
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
+    \pgfmathsetmacro{\gxmax}{\PW-0.5}
+    \pgfmathsetmacro{\gymin}{-\PH+1.5}
+    \pgfmathsetmacro{\cx}{\PW/2}
+    \pgfmathsetmacro{\cy}{-\PH/2}
     % Dot grid
-    \foreach \x in {0.5,3.5,...,66.5} {
-      \foreach \y in {-1.5,-4.5,...,-103.5} {
+    \foreach \x in {0.5,3.5,...,\gxmax} {
+      \foreach \y in {-1.5,-4.5,...,\gymin} {
         \fill[fluor!50] (\x mm, \y mm) circle (0.35mm);
       }
     }
     % Center dot → red
-    \fill[cross!50] (33.5mm, -52.5mm) circle (0.35mm);
+    \fill[cross!50] (\cx mm, \cy mm) circle (0.35mm);
   \end{tikzpicture}%
 }
 
