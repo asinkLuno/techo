@@ -62,15 +62,25 @@ def check_moon(year, month, day, tz_name="UTC", lat=0.67, lon=23.47):
     return cos_angle > 0, m.moon_phase
 
 
-def _moon_color(year, month, day, tz_name="UTC", lat=0.67, lon=23.47):
-    """Return '#ffa700' (lunar day) or '#0047ab' (lunar night)."""
-    lat, lon = math.radians(lat), math.radians(lon)
+def _moon_info(year, month, day, tz_name="UTC", lat=0.67, lon=23.47):
+    """Return (color: str, phase: float, is_waxing: bool). phase: 0=new, 1=full."""
+    lat_r, lon_r = math.radians(lat), math.radians(lon)
     m = ephem.Moon()
     m.compute(_to_utc(year, month, day, tz_name))
-    cos_a = math.sin(m.subsolar_lat) * math.sin(lat) + math.cos(
+    cos_a = math.sin(m.subsolar_lat) * math.sin(lat_r) + math.cos(
         m.subsolar_lat
-    ) * math.cos(lat) * math.cos(float(m.colong) - math.pi / 2 - lon)
-    return "ChromeYellow" if cos_a > 0 else "CobaltBlue"
+    ) * math.cos(lat_r) * math.cos(float(m.colong) - math.pi / 2 - lon_r)
+    color = "ChromeYellow" if cos_a > 0 else "CobaltBlue"
+    phase = m.moon_phase
+    # waxing/waning: compare with next day's phase
+    days_in_month = calendar.monthrange(year, month)[1]
+    if day < days_in_month:
+        m2 = ephem.Moon()
+        m2.compute(_to_utc(year, month, day + 1, tz_name))
+        is_waxing = phase < m2.moon_phase
+    else:
+        is_waxing = True  # ponytail: last day, assume waxing
+    return color, phase, is_waxing
 
 
 def _cal(
@@ -114,17 +124,37 @@ def _cal(
             f" at ([xshift={x:.2f}mm, yshift={-(gy - HEAD_H / 2):.2f}mm]current page.north west)"
             f" {{{w}}};"
         )
-    PAD = 0.1  # mm, offset from cell top-left
+    PAD = 0.1  # mm, offset from cell edge
+    PS = 2.0  # mm, phase indicator square (match digit height of \FontSmall, 8pt)
     for d in range(1, days + 1):
         r, c = divmod(first + d - 1, COLS)
         x = lm + cell_w * c + PAD
         y = gy + cell_h * r + PAD
-        color = _moon_color(year, month, d, tz_name, lat, lon)
+        color, phase, is_waxing = _moon_info(year, month, d, tz_name, lat, lon)
         label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
         out.append(
             f"  \\node[font=\\{FONT_CAL}, anchor=north west, fill={color}, text=white]"
             f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{{label}}};"
         )
+        # phase indicator at top-right
+        rx = lm + cell_w * (c + 1) - PAD
+        ty = gy + cell_h * r + PAD
+        out.append(
+            f"  \\draw[{color}] ([xshift={rx - PS:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
+            f" rectangle ([xshift={rx:.2f}mm, yshift={-(ty + PS):.2f}mm]current page.north west);"
+        )
+        if is_waxing:
+            fill_left = rx - PS * phase
+            out.append(
+                f"  \\fill[{color}] ([xshift={fill_left:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
+                f" rectangle ([xshift={rx:.2f}mm, yshift={-(ty + PS):.2f}mm]current page.north west);"
+            )
+        else:
+            fill_right = rx - PS * (1 - phase)
+            out.append(
+                f"  \\fill[{color}] ([xshift={rx - PS:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
+                f" rectangle ([xshift={fill_right:.2f}mm, yshift={-(ty + PS):.2f}mm]current page.north west);"
+            )
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
 
@@ -167,7 +197,7 @@ def _table(
     if with_header:
         hy = top + A - 0.1
         for i, d in enumerate(dates):
-            color = _moon_color(year, month, d, tz_name, lat, lon)
+            color, _, _ = _moon_info(year, month, d, tz_name, lat, lon)
             cx = xs[off + i + 1]
             label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
             out.append(
