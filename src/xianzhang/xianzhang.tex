@@ -18,19 +18,17 @@ twoside]{geometry}
 
 % ── Packages ──
 \usepackage{tikz}
-
-% ── Colors ──
-\definecolor{ruleblue}{HTML}{6B9BD2}
+\input{../../src/colors.tex}
 
 % ── Red vertical margin line (odd→right, even→left) ──
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
     \ifodd\value{page}
-    \draw[red!60, line width=0.4pt]
+    \draw[IronOxideRed!60, line width=0.4pt]
     ([xshift=-\Size{\EDITION}{RedLine} mm] current page.south east) --
     ([xshift=-\Size{\EDITION}{RedLine} mm] current page.north east);
     \else
-    \draw[red!60, line width=0.4pt]
+    \draw[IronOxideRed!60, line width=0.4pt]
     ([xshift=\Size{\EDITION}{RedLine} mm] current page.south west) --
     ([xshift=\Size{\EDITION}{RedLine} mm] current page.north west);
     \fi

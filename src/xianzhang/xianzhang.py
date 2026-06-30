@@ -29,7 +29,7 @@ def _french_ruled_page(pw: float, ph: float, top_gap: float) -> str:
         lw = 0.45 if is_bold else 0.18
         opacity = 65 if is_bold else 35
         lines.append(
-            f"  \\draw[ruleblue!{opacity}, line width={lw}pt]"
+            f"  \\draw[CobaltBlue!{opacity}, line width={lw}pt]"
             f" ([yshift=-{y:.1f}mm] current page.north west) --"
             f" ([yshift=-{y:.1f}mm] current page.north east);"
         )

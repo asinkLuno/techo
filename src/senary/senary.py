@@ -7,8 +7,11 @@ Usage: uv run python -m src.senary 2026-07
 """
 
 import calendar
+import math
 import sys
 from pathlib import Path
+
+import ephem
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
@@ -33,6 +36,39 @@ ITEM_W = 2  # multiplier, item column = ITEM_W * A wide
 ITEMS = 4  # blank habit rows
 
 
+def check_tranquility_day_night(date_string):
+    """Return whether Tranquility Base is in lunar day or night at the given UTC time.
+
+    :param date_string: 'YYYY/MM/DD' or 'YYYY/MM/DD HH:MM:SS' (UTC)
+    """
+    lat_target = math.radians(0.67)
+    lon_target = math.radians(23.47)
+    m = ephem.Moon()
+    try:
+        m.compute(date_string)
+    except ValueError:
+        return "错误：日期格式不正确，请使用 'YYYY/MM/DD' 格式"
+    cos_angle = math.sin(m.subsolar_lat) * math.sin(lat_target) + math.cos(
+        m.subsolar_lat
+    ) * math.cos(lat_target) * math.cos(float(m.colong) - math.pi / 2 - lon_target)
+    if cos_angle > 0:
+        return f"UTC时间 {date_string}: ☀️ 处于【月昼】(能被太阳照到)"
+    else:
+        return f"UTC时间 {date_string}: 🌑 处于【月夜】(在太阳的阴影中)"
+
+
+def _moon_color(year, month, day):
+    """Return '#ffa700' (lunar day) or '#0047ab' (lunar night)."""
+    lat = math.radians(0.67)
+    lon = math.radians(23.47)
+    m = ephem.Moon()
+    m.compute(f"{year}/{month:02d}/{day:02d}")
+    cos_a = math.sin(m.subsolar_lat) * math.sin(lat) + math.cos(
+        m.subsolar_lat
+    ) * math.cos(lat) * math.cos(float(m.colong) - math.pi / 2 - lon)
+    return "ChromeYellow" if cos_a > 0 else "CobaltBlue"
+
+
 def _cal(year: int, month: int, pw: float, ph: float) -> str:
     days = calendar.monthrange(year, month)[1]
     first = calendar.monthrange(year, month)[0]  # weekday of the 1st, 0=Mon
@@ -45,6 +81,17 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
+    # day-cell fills (before gridlines, so they stay behind)
+    for d in range(1, days + 1):
+        r, c = divmod(first + d - 1, COLS)
+        color = _moon_color(year, month, d)
+        left = lm + cell_w * c
+        right = lm + cell_w * (c + 1)
+        cy = gy + cell_h * r
+        out.append(
+            f"  \\fill[{color}] ([xshift={left:.2f}mm, yshift={-cy:.2f}mm]current page.north west)"
+            f" rectangle ([xshift={right:.2f}mm, yshift={-(cy + cell_h):.2f}mm]current page.north west);"
+        )
     # explicit verticals + horizontals (tikz `grid[step]` aligns to the page
     # origin, which clipped the first/last column and row to wrong widths)
     for i in range(COLS + 1):
@@ -86,7 +133,13 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
 
 
 def _table(
-    lm: float, top: float, dates: list[int], with_items: bool, with_header: bool = True
+    lm: float,
+    top: float,
+    dates: list[int],
+    year: int,
+    month: int,
+    with_items: bool,
+    with_header: bool = True,
 ) -> list[str]:
     """Verticals + horizontals + header dates for one tracker table."""
     xs = [lm]
@@ -98,6 +151,15 @@ def _table(
     bottom = top + rows * A
     off = 1 if with_items else 0
     out = []
+    # date-column fills (before gridlines)
+    for i, d in enumerate(dates):
+        color = _moon_color(year, month, d)
+        left = xs[off + i]
+        right = xs[off + i + 1]
+        out.append(
+            f"  \\fill[{color}] ([xshift={left:.2f}mm, yshift={-top:.2f}mm]current page.north west)"
+            f" rectangle ([xshift={right:.2f}mm, yshift={-bottom:.2f}mm]current page.north west);"
+        )
     vtop = top + (A if with_header else 0)  # verticals skip header row
     for x in xs:
         out.append(
@@ -123,7 +185,7 @@ def _table(
     return out
 
 
-def _tracker(days: int, pw: float, ph: float) -> str:
+def _tracker(year: int, month: int, days: int, pw: float, ph: float) -> str:
     dates1 = list(range(1, 15))  # 1–14
     dates2 = list(range(15, days + 1))  # 15–end
     w1 = ITEM_W * A + len(dates1) * A
@@ -137,8 +199,8 @@ def _tracker(days: int, pw: float, ph: float) -> str:
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
-    out += _table(lm, top1, dates1, with_items=True)
-    out += _table(lm, top2, dates2, with_items=False, with_header=True)
+    out += _table(lm, top1, dates1, year, month, with_items=True)
+    out += _table(lm, top2, dates2, year, month, with_items=False, with_header=True)
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
 
@@ -167,7 +229,7 @@ def generate(ym: str) -> None:
         "\\null",
         "\\clearpage",
         "\\thispagestyle{empty}%",
-        _tracker(days, pw, ph),
+        _tracker(year, month, days, pw, ph),
         "\\null",
         "\\clearpage",
     ]
@@ -185,3 +247,6 @@ if __name__ == "__main__":
         print("Usage: uv run python -m src.senary YYYY-MM  (e.g. 2026-07)")
         sys.exit(1)
     generate(sys.argv[1])
+    year, month = (int(x) for x in sys.argv[1].split("-"))
+    print(check_tranquility_day_night(f"{year}/{month:02d}/01"))
+    print(check_tranquility_day_night(f"{year}/{month:02d}/15"))

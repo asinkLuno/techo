@@ -20,12 +20,9 @@ twoside]{geometry}
 
 % ── Packages ──
 \usepackage{tikz}
+\input{../../src/colors.tex}
 \usepackage{fontspec}
 \usepackage{xcolor}
-
-% ── Colors ──
-\definecolor{fluor}{HTML}{39FF14}
-\definecolor{cross}{HTML}{FF0000}
 
 % ── Background: dot-grid (geometry derived from page size) ──
 \AddToHook{shipout/background}{%
@@ -37,11 +34,11 @@ twoside]{geometry}
     % Dot grid
     \foreach \x in {0.5,3.5,...,\gxmax} {
       \foreach \y in {-1.5,-4.5,...,\gymin} {
-        \fill[fluor!50] (\x mm, \y mm) circle (0.35mm);
+        \fill[NeonGreen!50] (\x mm, \y mm) circle (0.35mm);
       }
     }
     % Center dot → red
-    \fill[cross!50] (\cx mm, \cy mm) circle (0.35mm);
+    \fill[IronOxideRed!50] (\cx mm, \cy mm) circle (0.35mm);
   \end{tikzpicture}%
 }
 

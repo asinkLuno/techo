@@ -7,7 +7,10 @@ name = "xianzhang"
 version = "0.1.0"
 description = "Plain ruled notebook generator — LaTeX templates"
 requires-python = ">=3.13"
-dependencies = ["click>=8.4.2"]
+dependencies = [
+    "click>=8.4.2",
+    "ephem>=4.2.1",
+]
 
 [project.scripts]
 techo = "src.cli:cli"
