@@ -21,7 +21,7 @@ from sizes import FONT_CMD
 
 # ── Calendar (front) ──
 COLS = 7
-BIND = 9.0  # mm, top binding margin
+BIND = 7.0  # mm, top binding margin
 GM = 4.0  # mm, margin on the other three sides (left/right/bottom)
 TITLE_H = 7.0
 HEAD_H = 4.0
