@@ -1,13 +1,13 @@
 """Xianzhang — French ruled (Séyès) notebook generator.
 
-Usage: uv run python xianzhang.py <edition>
-  e.g. uv run python xianzhang.py xianzhang-cozyca
+Usage: uv run python -m src.xianzhang <edition>
+  e.g. uv run python -m src.xianzhang xianzhang-cozyca
 """
 
-import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
 
 TOTAL_PAGES = 2
@@ -50,7 +50,7 @@ def generate(edition: str) -> None:
     sizes.write_sizes_tex()
     ruled = _french_ruled_page(s["pw"], s["ph"], sizes.XIANZHANG[key])
 
-    out = Path(edition)
+    out = Path("outputs") / edition
     out.mkdir(parents=True, exist_ok=True)
 
     pages = []
@@ -58,17 +58,16 @@ def generate(edition: str) -> None:
         pages += ["\\thispagestyle{empty}%", ruled, "\\null", "\\clearpage"]
     (out / "content.tex").write_text("\n".join(pages) + "\n")
     (out / f"{edition}.tex").write_text(
-        f"\\def\\EDITION{{{key}}}%\n\\input{{../xianzhang.tex}}%\n"
+        f"\\def\\EDITION{{{key}}}%\n\\input{{../../src/xianzhang/xianzhang.tex}}%\n"
     )
     print(
         f"Generated {out}/content.tex + {edition}.tex ({s['pw']}×{s['ph']}mm, Séyès ruled)"
     )
-    for _ in range(2):
-        subprocess.run(["xelatex", f"{edition}.tex"], cwd=out, check=True)
+    sizes.compile(f"{edition}.tex", out)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: uv run python xianzhang.py <edition>")
+        print("Usage: uv run python -m src.xianzhang <edition>")
         sys.exit(1)
     generate(sys.argv[1])

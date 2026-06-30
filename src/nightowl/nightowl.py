@@ -1,12 +1,12 @@
 """Night Owl — triangular numbers 0–26 in hourglass layout.
 
-Usage: uv run python nightowl.py [--size m5|cozyca]
+Usage: uv run python -m src.nightowl [--size m5|cozyca]
 """
 
-import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
 
 ROWS = [1, 3, 4, 5, 1, 3, 4, 5, 1]  # 27 numbers total (0–26)
@@ -48,7 +48,7 @@ def generate(size: str) -> None:
             )
             n += 1
 
-    out = Path(f"night-owl-{size}")
+    out = Path("outputs") / f"night-owl-{size}"
     out.mkdir(parents=True, exist_ok=True)
 
     full = [
@@ -64,11 +64,10 @@ def generate(size: str) -> None:
     ]
     (out / "content.tex").write_text("\n".join(full) + "\n")
     (out / f"night-owl-{size}.tex").write_text(
-        f"\\def\\EDITION{{{size}}}%\n\\input{{../night-owl.tex}}%\n"
+        f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/nightowl/night-owl.tex}}%\n"
     )
     print(f"Generated {out}/content.tex + night-owl-{size}.tex ({PW}×{PH}mm)")
-    for _ in range(2):
-        subprocess.run(["xelatex", f"night-owl-{size}.tex"], cwd=out, check=True)
+    sizes.compile(f"night-owl-{size}.tex", out)
 
 
 if __name__ == "__main__":

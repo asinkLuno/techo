@@ -1,16 +1,16 @@
 """Senary — monthly calendar (front) + habit tracker (back), landscape m5 (105×67).
 
-Usage: uv run python senary.py 2026-07
+Usage: uv run python -m src.senary 2026-07
   Front (odd page): that month's calendar, landscape (no rotation — the page is wide).
   Back  (even page): two tracker tables stacked — 1–14 (item col + header) +
                      15–end (header only, no item col), 6 rows each.
 """
 
 import calendar
-import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
 from sizes import FONT_CMD
 
@@ -159,7 +159,7 @@ def generate(ym: str) -> None:
     days = calendar.monthrange(year, month)[1]
 
     edition = f"senary-{year}-{month:02d}"
-    out = Path(edition)
+    out = Path("outputs") / edition
     out.mkdir(parents=True, exist_ok=True)
     content = [
         "\\thispagestyle{empty}%",
@@ -172,17 +172,16 @@ def generate(ym: str) -> None:
         "\\clearpage",
     ]
     (out / "content.tex").write_text("\n".join(content) + "\n")
-    (out / f"{edition}.tex").write_text("\\input{../senary.tex}%\n")
+    (out / f"{edition}.tex").write_text("\\input{../../src/senary/senary.tex}%\n")
     print(
         f"Generated {edition}/content.tex + {edition}.tex "
         f"({calendar.month_name[month]} {year}, {days} days, {pw}×{ph}mm landscape)"
     )
-    for _ in range(2):
-        subprocess.run(["xelatex", f"{edition}.tex"], cwd=out, check=True)
+    sizes.compile(f"{edition}.tex", out)
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: uv run python senary.py YYYY-MM  (e.g. 2026-07)")
+        print("Usage: uv run python -m src.senary YYYY-MM  (e.g. 2026-07)")
         sys.exit(1)
     generate(sys.argv[1])

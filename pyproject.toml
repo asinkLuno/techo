@@ -10,7 +10,7 @@ requires-python = ">=3.13"
 dependencies = ["click>=8.4.2"]
 
 [project.scripts]
-techo = "cli:cli"
+techo = "src.cli:cli"
 
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple"
