@@ -12,8 +12,8 @@ import sizes
 TOTAL_PAGES = 2
 
 # French ruling: 2mm thin lines, bold every 4th (8mm group)
-LINE_STEP = 2       # mm between thin lines
-GROUP_LINES = 4     # lines per group (4 thin → 1 bold)
+LINE_STEP = 2  # mm between thin lines
+GROUP_LINES = 4  # lines per group (4 thin → 1 bold)
 
 
 def _french_ruled_page(pw: float, ph: float, top_gap: float) -> str:
@@ -24,7 +24,7 @@ def _french_ruled_page(pw: float, ph: float, top_gap: float) -> str:
     n = 0
     y = top_gap
     while y <= ph - bottom_margin:
-        is_bold = (n % GROUP_LINES == 0)
+        is_bold = n % GROUP_LINES == 0
         lw = 0.45 if is_bold else 0.18
         opacity = 65 if is_bold else 35
         lines.append(
@@ -59,7 +59,9 @@ def generate(edition: str) -> None:
     (out / f"{edition}.tex").write_text(
         f"\\def\\EDITION{{{key}}}%\n\\input{{../xianzhang.tex}}%\n"
     )
-    print(f"Generated {out}/content.tex + {edition}.tex ({s['pw']}×{s['ph']}mm, Séyès ruled)")
+    print(
+        f"Generated {out}/content.tex + {edition}.tex ({s['pw']}×{s['ph']}mm, Séyès ruled)"
+    )
 
 
 if __name__ == "__main__":

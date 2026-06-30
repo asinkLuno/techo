@@ -15,3 +15,14 @@ techo = "cli:cli"
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple"
 default = true
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[dependency-groups]
+dev = [
+    "radon>=6.0.1",
+    "ruff>=0.15.20",
+    "ty>=0.0.55",
+    "vulture>=2.16",
+]
