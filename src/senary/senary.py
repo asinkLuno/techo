@@ -32,6 +32,9 @@ FONT_TITLE = FONT_CMD["large"]
 FONT_CAL = FONT_CMD["small"]
 FONT_TRACKER_HEAD = FONT_CMD["small"]
 
+# ── Moon phase indicator (shared with day.py) ──
+PS = 2.0  # mm, phase square side (matches digit height of \FontSmall, 8pt)
+
 # ── Habit tracker (back) ──
 A = 5.5  # mm, square check cell
 ITEM_W = 2  # multiplier, item column = ITEM_W * A wide
@@ -83,6 +86,36 @@ def _moon_info(year, month, day, tz_name="UTC", lat=0.67, lon=23.47):
     return color, phase, is_waxing
 
 
+def date_node(day: int, color: str, x: float, y: float, font: str = FONT_CAL) -> str:
+    """Colored date badge — fill hugs the text, anchor=north west at (x,y) mm."""
+    label = f"\\phantom{{0}}{day}" if day < 10 else str(day)
+    return (
+        f"  \\node[font=\\{font}, anchor=north west, fill={color}, text=white]"
+        f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{{label}}};"
+    )
+
+
+def phase_square(phase: float, is_waxing: bool, rx: float, ty: float, ps: float = PS) -> str:
+    """Phase indicator square (always ChromeYellow). (rx,ty) = top-right corner; spans ps×ps."""
+    out = [
+        f"  \\draw[ChromeYellow] ([xshift={rx - ps:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
+        f" rectangle ([xshift={rx:.2f}mm, yshift={-(ty + ps):.2f}mm]current page.north west);"
+    ]
+    if is_waxing:
+        left = rx - ps * phase
+        out.append(
+            f"  \\fill[ChromeYellow] ([xshift={left:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
+            f" rectangle ([xshift={rx:.2f}mm, yshift={-(ty + ps):.2f}mm]current page.north west);"
+        )
+    else:
+        right = rx - ps * (1 - phase)
+        out.append(
+            f"  \\fill[ChromeYellow] ([xshift={rx - ps:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
+            f" rectangle ([xshift={right:.2f}mm, yshift={-(ty + ps):.2f}mm]current page.north west);"
+        )
+    return "\n".join(out)
+
+
 def _cal(
     year: int,
     month: int,
@@ -131,36 +164,16 @@ def _cal(
             f" {{{w}}};"
         )
     PAD = 0.2  # mm, offset from cell edge
-    PS = 2.0  # mm, phase indicator square (match digit height of \FontSmall, 8pt)
     for d in range(1, days + 1):
         r, c = divmod(first + d - 1, COLS)
         x = lm + cell_w * c + PAD
         y = gy + cell_h * r + PAD
         color, phase, is_waxing = _moon_info(year, month, d, tz_name, lat, lon)
-        label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
-        out.append(
-            f"  \\node[font=\\{FONT_CAL}, anchor=north west, fill={color}, text=white]"
-            f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{{label}}};"
-        )
-        # phase indicator at top-right
+        out.append(date_node(d, color, x, y))
+        # phase indicator at top-right — always ChromeYellow
         rx = lm + cell_w * (c + 1) - PAD
         ty = gy + cell_h * r + PAD
-        out.append(
-            f"  \\draw[{color}] ([xshift={rx - PS:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
-            f" rectangle ([xshift={rx:.2f}mm, yshift={-(ty + PS):.2f}mm]current page.north west);"
-        )
-        if is_waxing:
-            fill_left = rx - PS * phase
-            out.append(
-                f"  \\fill[{color}] ([xshift={fill_left:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
-                f" rectangle ([xshift={rx:.2f}mm, yshift={-(ty + PS):.2f}mm]current page.north west);"
-            )
-        else:
-            fill_right = rx - PS * (1 - phase)
-            out.append(
-                f"  \\fill[{color}] ([xshift={rx - PS:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
-                f" rectangle ([xshift={fill_right:.2f}mm, yshift={-(ty + PS):.2f}mm]current page.north west);"
-            )
+        out.append(phase_square(phase, is_waxing, rx, ty))
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
 

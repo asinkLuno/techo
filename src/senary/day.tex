@@ -1,0 +1,29 @@
+% ──────────────────────────────────────────
+% Day view — single day on vertical m5 (67×105)
+% Build: uv run python src/senary/day.py 2026-07-15
+%        cd day-2026-07-15 && xelatex day-2026-07-15.tex && xelatex
+% day-2026-07-15.tex
+% ──────────────────────────────────────────
+\documentclass[10pt]{article}
+
+\input{../../src/sizes.tex}
+
+\usepackage[paperwidth=\Size{m5}{PW} mm,
+  paperheight=\Size{m5}{PH} mm,
+margin=0mm]{geometry}
+
+\usepackage{tikz}
+\input{../../src/colors.tex}
+\usepackage{fontspec}
+\setmainfont{3270 Nerd Font Mono}
+
+\tikzset{gridline/.style={IronOxideRed!55, line width=0.5pt}}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\topskip}{0pt}
+
+\begin{document}
+\input{content.tex}
+\end{document}
