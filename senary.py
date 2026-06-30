@@ -2,8 +2,8 @@
 
 Usage: uv run python senary.py 2026-07
   Front (odd page): that month's calendar, landscape (no rotation — the page is wide).
-  Back  (even page): single tracker — a 3-wide item column + one square check cell
-                     per day (1–<last>). Width 105mm fits the whole month in one row.
+  Back  (even page): two tracker tables stacked — 1–14 (item col + header) +
+                     15–end (header only, no item col), 6 rows each.
 """
 
 import calendar
@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 import sizes
+from sizes import FONT_CMD
 
 # ── Calendar (front) ──
 COLS = 7
@@ -21,9 +22,15 @@ TITLE_H = 7.0
 HEAD_H = 4.0
 WEEKDAYS = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")  # Monday-first
 
+# ── Fonts (defined in sizes.py, emitted to sizes.tex) ──
+FONT_TITLE = FONT_CMD["large"]
+FONT_CAL = FONT_CMD["small"]
+FONT_TRACKER_HEAD = FONT_CMD["small"]
+
 # ── Habit tracker (back) ──
-A = 2.8  # mm, square check cell; item column = 3*A wide
-ITEMS = 18  # blank habit rows
+A = 5.5  # mm, square check cell
+ITEM_W = 2  # multiplier, item column = ITEM_W * A wide
+ITEMS = 4  # blank habit rows
 
 
 def _cal(year: int, month: int, pw: float, ph: float) -> str:
@@ -53,14 +60,14 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
             f" -- ([xshift={rm:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
         )
     out.append(
-        f"  \\node[font=\\large]"
+        f"  \\node[font=\\{FONT_TITLE}]"
         f" at ([xshift={pw / 2:.2f}mm, yshift={-(BIND + TITLE_H / 2):.2f}mm]current page.north west)"
         f" {{{calendar.month_name[month]} {year}}};"
     )
     for i, w in enumerate(WEEKDAYS):
         x = lm + cell_w * (i + 0.5)
         out.append(
-            f"  \\node[font=\\small]"
+            f"  \\node[font=\\{FONT_CAL}]"
             f" at ([xshift={x:.2f}mm, yshift={-(gy - HEAD_H / 2):.2f}mm]current page.north west)"
             f" {{{w}}};"
         )
@@ -70,54 +77,67 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
         y = gy + cell_h * (r + 0.5)
         label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
         out.append(
-            f"  \\node[font=\\small]"
+            f"  \\node[font=\\{FONT_CAL}]"
             f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{{label}}};"
         )
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
 
 
-def _table(lm: float, top: float, dates: list[int], with_items: bool) -> list[str]:
+def _table(
+    lm: float, top: float, dates: list[int], with_items: bool, with_header: bool = True
+) -> list[str]:
     """Verticals + horizontals + header dates for one tracker table."""
     xs = [lm]
     if with_items:
-        xs.append(lm + 3 * A)
+        xs.append(lm + ITEM_W * A)
     for _ in dates:
         xs.append(xs[-1] + A)
-    bottom = top + (ITEMS + 1) * A
+    rows = ITEMS + (1 if with_header else 0)
+    bottom = top + rows * A
     off = 1 if with_items else 0
     out = []
-    for x in xs:  # verticals
+    vtop = top + (A if with_header else 0)  # verticals skip header row
+    for x in xs:
         out.append(
-            f"  \\draw[gridline] ([xshift={x:.2f}mm, yshift={-top:.2f}mm]current page.north west)"
+            f"  \\draw[gridline] ([xshift={x:.2f}mm, yshift={-vtop:.2f}mm]current page.north west)"
             f" -- ([xshift={x:.2f}mm, yshift={-bottom:.2f}mm]current page.north west);"
         )
-    for i in range(ITEMS + 2):  # horizontals
+    start_i = 1 if with_header else 0  # skip top line of header
+    for i in range(start_i, rows + 1):  # horizontals
         y = top + i * A
         out.append(
             f"  \\draw[gridline] ([xshift={lm:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
             f" -- ([xshift={xs[-1]:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
         )
-    hy = top + A / 2
-    for i, d in enumerate(dates):  # header row
-        cx = (xs[off + i] + xs[off + i + 1]) / 2
-        label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
-        out.append(
-            f"  \\node[font=\\tiny]"
-            f" at ([xshift={cx:.2f}mm, yshift={-hy:.2f}mm]current page.north west) {{{label}}};"
-        )
+    if with_header:
+        hy = top + A / 2
+        for i, d in enumerate(dates):
+            cx = (xs[off + i] + xs[off + i + 1]) / 2
+            label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
+            out.append(
+                f"  \\node[font=\\{FONT_TRACKER_HEAD}]"
+                f" at ([xshift={cx:.2f}mm, yshift={-hy:.2f}mm]current page.north west) {{{label}}};"
+            )
     return out
 
 
 def _tracker(days: int, pw: float, ph: float) -> str:
-    dates = list(range(1, days + 1))
-    total_w = 3 * A + len(dates) * A  # item column + one cell per day
-    lm = (pw - total_w) / 2
-    top = (ph - (ITEMS + 1) * A) / 2
+    dates1 = list(range(1, 15))  # 1–14
+    dates2 = list(range(15, days + 1))  # 15–end
+    w1 = ITEM_W * A + len(dates1) * A
+    w2 = len(dates2) * A  # no item column
+    lm = (pw - max(w1, w2)) / 2
+    gap = 2.0  # mm between tables
+    h1 = (ITEMS + 1) * A  # with header
+    h2 = ITEMS * A  # no header
+    top1 = (ph - h1 - gap - h2) / 2
+    top2 = top1 + h1 + gap
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
-    out += _table(lm, top, dates, with_items=True)
+    out += _table(lm, top1, dates1, with_items=True)
+    out += _table(lm, top2, dates2, with_items=False, with_header=True)
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
 
