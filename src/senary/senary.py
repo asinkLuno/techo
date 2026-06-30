@@ -103,20 +103,26 @@ def _cal(
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
-    # explicit verticals + horizontals (tikz `grid[step]` aligns to the page
-    # origin, which clipped the first/last column and row to wrong widths)
+    # gridlines with 0.2mm gaps at intersections
+    GAP = 0.2
     for i in range(COLS + 1):
         x = lm + cell_w * i
-        out.append(
-            f"  \\draw[gridline] ([xshift={x:.2f}mm, yshift={-gy:.2f}mm]current page.north west)"
-            f" -- ([xshift={x:.2f}mm, yshift={-gb:.2f}mm]current page.north west);"
-        )
+        for j in range(weeks):
+            y1 = gy + cell_h * j + GAP
+            y2 = gy + cell_h * (j + 1) - GAP
+            out.append(
+                f"  \\draw[gridline] ([xshift={x:.2f}mm, yshift={-y1:.2f}mm]current page.north west)"
+                f" -- ([xshift={x:.2f}mm, yshift={-y2:.2f}mm]current page.north west);"
+            )
     for j in range(weeks + 1):
         y = gy + cell_h * j
-        out.append(
-            f"  \\draw[gridline] ([xshift={lm:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
-            f" -- ([xshift={rm:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
-        )
+        for i in range(COLS):
+            x1 = lm + cell_w * i + GAP
+            x2 = lm + cell_w * (i + 1) - GAP
+            out.append(
+                f"  \\draw[gridline] ([xshift={x1:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
+                f" -- ([xshift={x2:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
+            )
     for i, w in enumerate(WEEKDAYS):
         x = lm + cell_w * (i + 0.5)
         out.append(
@@ -124,7 +130,7 @@ def _cal(
             f" at ([xshift={x:.2f}mm, yshift={-(gy - HEAD_H / 2):.2f}mm]current page.north west)"
             f" {{{w}}};"
         )
-    PAD = 0.1  # mm, offset from cell edge
+    PAD = 0.2  # mm, offset from cell edge
     PS = 2.0  # mm, phase indicator square (match digit height of \FontSmall, 8pt)
     for d in range(1, days + 1):
         r, c = divmod(first + d - 1, COLS)
@@ -178,24 +184,29 @@ def _table(
     for _ in dates:
         xs.append(xs[-1] + A)
     rows = ITEMS + (1 if with_header else 0)
-    bottom = top + rows * A
     off = 1 if with_items else 0
     out = []
-    vtop = top + (A if with_header else 0)  # verticals skip header row
-    for x in xs:
-        out.append(
-            f"  \\draw[gridline] ([xshift={x:.2f}mm, yshift={-vtop:.2f}mm]current page.north west)"
-            f" -- ([xshift={x:.2f}mm, yshift={-bottom:.2f}mm]current page.north west);"
-        )
     start_i = 1 if with_header else 0  # skip top line of header
-    for i in range(start_i, rows + 1):  # horizontals
+    GAP = 0.2
+    for x in xs:  # verticals with gaps at intersections
+        for i in range(start_i, rows):
+            y1 = top + i * A + GAP
+            y2 = top + (i + 1) * A - GAP
+            out.append(
+                f"  \\draw[gridline] ([xshift={x:.2f}mm, yshift={-y1:.2f}mm]current page.north west)"
+                f" -- ([xshift={x:.2f}mm, yshift={-y2:.2f}mm]current page.north west);"
+            )
+    for i in range(start_i, rows + 1):  # horizontals with gaps
         y = top + i * A
-        out.append(
-            f"  \\draw[gridline] ([xshift={lm:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
-            f" -- ([xshift={xs[-1]:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
-        )
+        for k in range(len(xs) - 1):
+            x1 = xs[k] + GAP
+            x2 = xs[k + 1] - GAP
+            out.append(
+                f"  \\draw[gridline] ([xshift={x1:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
+                f" -- ([xshift={x2:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
+            )
     if with_header:
-        hy = top + A - 0.1
+        hy = top + A - 0.2
         for i, d in enumerate(dates):
             color, _, _ = _moon_info(year, month, d, tz_name, lat, lon)
             cx = xs[off + i + 1]
