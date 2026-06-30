@@ -1,5 +1,34 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+
   - repo: https://github.com/WGUNDERWOOD/tex-fmt
     rev: v0.5.7
     hooks:
       - id: tex-fmt
+
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: ruff check --fix --exit-non-zero-on-fix
+        language: system
+        types: [python]
+
+      - id: ruff-format
+        name: ruff-format
+        entry: ruff format
+        language: system
+        types: [python]
+
+      - id: ty
+        name: ty
+        entry: ty check
+        language: system
+        types: [python]
+        pass_filenames: false
