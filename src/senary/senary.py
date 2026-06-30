@@ -74,24 +74,13 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
     first = calendar.monthrange(year, month)[0]  # weekday of the 1st, 0=Mon
     weeks = (first + days + COLS - 1) // COLS
     lm, rm = GM, pw - GM  # left/right edges
-    gy = BIND + TITLE_H + HEAD_H  # grid top edge
+    gy = BIND + HEAD_H  # grid top edge
     gb = ph - GM  # grid bottom edge
     cell_w = (rm - lm) / COLS
     cell_h = (gb - gy) / weeks
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
-    # day-cell fills (before gridlines, so they stay behind)
-    for d in range(1, days + 1):
-        r, c = divmod(first + d - 1, COLS)
-        color = _moon_color(year, month, d)
-        left = lm + cell_w * c
-        right = lm + cell_w * (c + 1)
-        cy = gy + cell_h * r
-        out.append(
-            f"  \\fill[{color}] ([xshift={left:.2f}mm, yshift={-cy:.2f}mm]current page.north west)"
-            f" rectangle ([xshift={right:.2f}mm, yshift={-(cy + cell_h):.2f}mm]current page.north west);"
-        )
     # explicit verticals + horizontals (tikz `grid[step]` aligns to the page
     # origin, which clipped the first/last column and row to wrong widths)
     for i in range(COLS + 1):
@@ -106,11 +95,6 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
             f"  \\draw[gridline] ([xshift={lm:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
             f" -- ([xshift={rm:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
         )
-    out.append(
-        f"  \\node[font=\\{FONT_TITLE}]"
-        f" at ([xshift={pw / 2:.2f}mm, yshift={-(BIND + TITLE_H / 2):.2f}mm]current page.north west)"
-        f" {{{calendar.month_name[month]} {year}}};"
-    )
     for i, w in enumerate(WEEKDAYS):
         x = lm + cell_w * (i + 0.5)
         out.append(
@@ -118,14 +102,15 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
             f" at ([xshift={x:.2f}mm, yshift={-(gy - HEAD_H / 2):.2f}mm]current page.north west)"
             f" {{{w}}};"
         )
-    PAD = 0.8  # mm, offset from cell top-left
+    PAD = 0.1  # mm, offset from cell top-left
     for d in range(1, days + 1):
         r, c = divmod(first + d - 1, COLS)
         x = lm + cell_w * c + PAD
         y = gy + cell_h * r + PAD
+        color = _moon_color(year, month, d)
         label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
         out.append(
-            f"  \\node[font=\\{FONT_CAL}, anchor=north west]"
+            f"  \\node[font=\\{FONT_CAL}, anchor=north west, fill={color}, text=white]"
             f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{{label}}};"
         )
     out.append("\\end{tikzpicture}%")
@@ -151,15 +136,6 @@ def _table(
     bottom = top + rows * A
     off = 1 if with_items else 0
     out = []
-    # date-column fills (before gridlines)
-    for i, d in enumerate(dates):
-        color = _moon_color(year, month, d)
-        left = xs[off + i]
-        right = xs[off + i + 1]
-        out.append(
-            f"  \\fill[{color}] ([xshift={left:.2f}mm, yshift={-top:.2f}mm]current page.north west)"
-            f" rectangle ([xshift={right:.2f}mm, yshift={-bottom:.2f}mm]current page.north west);"
-        )
     vtop = top + (A if with_header else 0)  # verticals skip header row
     for x in xs:
         out.append(
@@ -174,12 +150,13 @@ def _table(
             f" -- ([xshift={xs[-1]:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
         )
     if with_header:
-        hy = top + A / 2
+        hy = top + A - 0.1
         for i, d in enumerate(dates):
-            cx = (xs[off + i] + xs[off + i + 1]) / 2
+            color = _moon_color(year, month, d)
+            cx = xs[off + i + 1]
             label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
             out.append(
-                f"  \\node[font=\\{FONT_TRACKER_HEAD}]"
+                f"  \\node[font=\\{FONT_TRACKER_HEAD}, fill={color}, text=white, anchor=south east]"
                 f" at ([xshift={cx:.2f}mm, yshift={-hy:.2f}mm]current page.north west) {{{label}}};"
             )
     return out
