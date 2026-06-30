@@ -3,6 +3,7 @@
 import click
 
 import nightowl
+import senary
 import sizes
 import xianzhang
 
@@ -29,3 +30,10 @@ def nightowl_cmd(size: str) -> None:
 def xianzhang_cmd(edition: str) -> None:
     """French ruled (Séyès) notebook."""
     xianzhang.generate(f"xianzhang-{edition}")
+
+
+@cli.command("senary")
+@click.argument("ym")
+def senary_cmd(ym: str) -> None:
+    """Monthly calendar (front) + habit tracker (back). YYYY-MM, e.g. 2026-07."""
+    senary.generate(ym)

@@ -14,8 +14,9 @@ from pathlib import Path
 import sizes
 
 # ── Calendar (front) ──
-CELL = 9.0  # mm, square day cell (sized for the 67mm page height, up to 6 weeks)
 COLS = 7
+BIND = 9.0  # mm, top binding margin
+GM = 4.0  # mm, margin on the other three sides (left/right/bottom)
 TITLE_H = 7.0
 HEAD_H = 4.0
 WEEKDAYS = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")  # Monday-first
@@ -28,27 +29,36 @@ ITEMS = 18  # blank habit rows
 def _cal(year: int, month: int, pw: float, ph: float) -> str:
     days = calendar.monthrange(year, month)[1]
     first = calendar.monthrange(year, month)[0]  # weekday of the 1st, 0=Mon
-    grid_w = CELL * COLS
-    lm = (pw - grid_w) / 2
     weeks = (first + days + COLS - 1) // COLS
-    grid_h = CELL * weeks
-    top = (ph - (TITLE_H + HEAD_H + grid_h)) / 2
-    gy = top + TITLE_H + HEAD_H  # grid top edge
+    lm, rm = GM, pw - GM  # left/right edges
+    gy = BIND + TITLE_H + HEAD_H  # grid top edge
+    gb = ph - GM  # grid bottom edge
+    cell_w = (rm - lm) / COLS
+    cell_h = (gb - gy) / weeks
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
-    out.append(
-        f"  \\draw[gridline] ([xshift={lm:.2f}mm, yshift={-gy:.2f}mm]current page.north west)"
-        f" grid[step={CELL:.2f}mm]"
-        f" ([xshift={lm + grid_w:.2f}mm, yshift={-(gy + grid_h):.2f}mm]current page.north west);"
-    )
+    # explicit verticals + horizontals (tikz `grid[step]` aligns to the page
+    # origin, which clipped the first/last column and row to wrong widths)
+    for i in range(COLS + 1):
+        x = lm + cell_w * i
+        out.append(
+            f"  \\draw[gridline] ([xshift={x:.2f}mm, yshift={-gy:.2f}mm]current page.north west)"
+            f" -- ([xshift={x:.2f}mm, yshift={-gb:.2f}mm]current page.north west);"
+        )
+    for j in range(weeks + 1):
+        y = gy + cell_h * j
+        out.append(
+            f"  \\draw[gridline] ([xshift={lm:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
+            f" -- ([xshift={rm:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
+        )
     out.append(
         f"  \\node[font=\\large]"
-        f" at ([xshift={pw / 2:.2f}mm, yshift={-(top + TITLE_H / 2):.2f}mm]current page.north west)"
+        f" at ([xshift={pw / 2:.2f}mm, yshift={-(BIND + TITLE_H / 2):.2f}mm]current page.north west)"
         f" {{{calendar.month_name[month]} {year}}};"
     )
     for i, w in enumerate(WEEKDAYS):
-        x = lm + CELL * (i + 0.5)
+        x = lm + cell_w * (i + 0.5)
         out.append(
             f"  \\node[font=\\small]"
             f" at ([xshift={x:.2f}mm, yshift={-(gy - HEAD_H / 2):.2f}mm]current page.north west)"
@@ -56,11 +66,12 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
         )
     for d in range(1, days + 1):
         r, c = divmod(first + d - 1, COLS)
-        x = lm + CELL * (c + 0.5)
-        y = gy + CELL * (r + 0.5)
+        x = lm + cell_w * (c + 0.5)
+        y = gy + cell_h * (r + 0.5)
+        label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
         out.append(
             f"  \\node[font=\\small]"
-            f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{{d}}};"
+            f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{{label}}};"
         )
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
@@ -90,9 +101,10 @@ def _table(lm: float, top: float, dates: list[int], with_items: bool) -> list[st
     hy = top + A / 2
     for i, d in enumerate(dates):  # header row
         cx = (xs[off + i] + xs[off + i + 1]) / 2
+        label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
         out.append(
             f"  \\node[font=\\tiny]"
-            f" at ([xshift={cx:.2f}mm, yshift={-hy:.2f}mm]current page.north west) {{{d}}};"
+            f" at ([xshift={cx:.2f}mm, yshift={-hy:.2f}mm]current page.north west) {{{label}}};"
         )
     return out
 
