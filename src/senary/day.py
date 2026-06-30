@@ -11,8 +11,8 @@ from zoneinfo import ZoneInfo
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
-from sizes import FONT_CMD
 from senary.senary import _moon_info, date_node
+from sizes import FONT_CMD
 
 # ── Layout ──
 LEFT_MARGIN = 9.0  # mm, date strip width (left of the divider)
@@ -30,7 +30,9 @@ def _utc_axis(year, month, day, tz_name, lat, lon):
     utc_midnight = lm_utc.replace(hour=0, minute=0, second=0, microsecond=0)
     if utc_midnight < lm_utc:
         utc_midnight += timedelta(days=1)
-    offset_h = local_midnight.utcoffset().total_seconds() / 3600
+    offset = local_midnight.utcoffset()
+    assert offset is not None  # ZoneInfo always has a UTC offset
+    offset_h = offset.total_seconds() / 3600
     utc_color, _, _ = _moon_info(
         utc_midnight.year, utc_midnight.month, utc_midnight.day, "UTC", lat, lon
     )

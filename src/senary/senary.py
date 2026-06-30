@@ -95,7 +95,9 @@ def date_node(day: int, color: str, x: float, y: float, font: str = FONT_CAL) ->
     )
 
 
-def phase_square(phase: float, is_waxing: bool, rx: float, ty: float, ps: float = PS) -> str:
+def phase_square(
+    phase: float, is_waxing: bool, rx: float, ty: float, ps: float = PS
+) -> str:
     """Phase indicator square (always ChromeYellow). (rx,ty) = top-right corner; spans ps×ps."""
     out = [
         f"  \\draw[ChromeYellow] ([xshift={rx - ps:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
@@ -249,7 +251,8 @@ def _tracker(
     gap = 2.0  # mm between tables
     h1 = (ITEMS + 1) * A  # with header
     h2 = ITEMS * A  # no header
-    top1 = (ph - h1 - gap - h2) / 2
+    TRACKER_UP = 3.0  # mm, nudge both tables up from center
+    top1 = (ph - h1 - gap - h2) / 2 - TRACKER_UP
     top2 = top1 + h1 + gap
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
