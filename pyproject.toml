@@ -1,6 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "xianzhang"
 version = "0.1.0"
 description = "Plain ruled notebook generator — LaTeX templates"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = ["click>=8.4.2"]
+
+[project.scripts]
+techo = "cli:cli"
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple"
+default = true
