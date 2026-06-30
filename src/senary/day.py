@@ -23,7 +23,7 @@ FONT_HR = FONT_CMD["small"]
 LOCATIONS = {"tranquility": (0.67, 23.47)}
 
 
-def _utc_midnight(year, month, day, tz_name, lat, lon):
+def _utc_axis(year, month, day, tz_name, lat, lon):
     """UTC offset (h), UTC date at UTC midnight within the local day, and its moon color."""
     local_midnight = datetime(year, month, day, tzinfo=ZoneInfo(tz_name))
     lm_utc = local_midnight.astimezone(ZoneInfo("UTC"))
@@ -48,26 +48,28 @@ def _day(
     lon: float,
 ) -> str:
     color, _, _ = _moon_info(year, month, day, tz_name, lat, lon)
-    offset_h, utc_day, utc_color = _utc_midnight(year, month, day, tz_name, lat, lon)
+    offset_h, utc_day, utc_color = _utc_axis(year, month, day, tz_name, lat, lon)
     utc_hour = offset_h % 24  # local hour at which UTC midnight falls
-    dual = utc_hour > 1e-6  # non-UTC tz → draw the UTC axis + midnight marker
+    dual = abs(offset_h) > 1e-6  # non-UTC tz → fill the right (UTC) strip
 
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
 
     vl_x = LEFT_MARGIN
+    vr_x = pw - LEFT_MARGIN  # right divider, mirroring the left
     PAD = 0.1  # mm, content inset from edges
 
-    # ── Date badge: colored fill hugs the day number, top-left of the strip ──
+    # ── Local date badge (top-left of the left strip) ──
     out.append(date_node(day, color, PAD, PAD, FONT_DAY))
-    # Vertical divider (right edge of the date block)
-    out.append(
-        f"  \\draw[gridline] ([xshift={vl_x:.2f}mm, yshift=0mm]current page.north west)"
-        f" -- ([xshift={vl_x:.2f}mm, yshift={-ph:.2f}mm]current page.north west);"
-    )
+    # ── Dividers (left + right), full height ──
+    for vx in (vl_x, vr_x):
+        out.append(
+            f"  \\draw[gridline] ([xshift={vx:.2f}mm, yshift=0mm]current page.north west)"
+            f" -- ([xshift={vx:.2f}mm, yshift={-ph:.2f}mm]current page.north west);"
+        )
 
-    # ── 24-row timeline (vl_x → pw, full height, edge to edge) ──
+    # ── 24-row timeline (vl_x → vr_x, full height) ──
     tl_top = 0.0
     tl_bot = ph
     slot_h = (tl_bot - tl_top) / 24
@@ -76,7 +78,7 @@ def _day(
         y = tl_top + slot_h * row
         out.append(
             f"  \\draw[gridline] ([xshift={vl_x:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
-            f" -- ([xshift={pw:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
+            f" -- ([xshift={vr_x:.2f}mm, yshift={-y:.2f}mm]current page.north west);"
         )
         label_y = y + slot_h / 2
         out.append(
@@ -90,30 +92,32 @@ def _day(
             ulabel = f"{uh}" if um == 0 else f"{uh}:{um:02d}"
             out.append(
                 f"  \\node[font=\\{FONT_HR}, anchor=east]"
-                f" at ([xshift={pw - PAD - 0.8:.2f}mm, yshift={-label_y:.2f}mm]current page.north west)"
+                f" at ([xshift={vr_x - PAD - 0.8:.2f}mm, yshift={-label_y:.2f}mm]current page.north west)"
                 f" {{{ulabel}}};"
             )
     # Bottom line
     out.append(
         f"  \\draw[gridline] ([xshift={vl_x:.2f}mm, yshift={-tl_bot:.2f}mm]current page.north west)"
-        f" -- ([xshift={pw:.2f}mm, yshift={-tl_bot:.2f}mm]current page.north west);"
+        f" -- ([xshift={vr_x:.2f}mm, yshift={-tl_bot:.2f}mm]current page.north west);"
     )
 
-    # ── UTC midnight marker: full-width line at its local-hour height, with the
-    #    UTC date as a colored badge in the sidebar. Skipped when tz is UTC
-    #    (the local day already is the UTC day). ──
+    # ── UTC midnight: full-width line at its height, UTC date badge in the right
+    #    strip (top edge on the line, like the local date), "utc" beneath it. ──
     if dual:
         y_utc = tl_top + slot_h * utc_hour
         out.append(
             f"  \\draw[gridline] ([xshift=0mm, yshift={-y_utc:.2f}mm]current page.north west)"
             f" -- ([xshift={pw:.2f}mm, yshift={-y_utc:.2f}mm]current page.north west);"
         )
-        # UTC date badge — top-left aligned at the line (same as the local date),
-        # with "utc" written beneath it.
-        out.append(date_node(utc_day, utc_color, PAD, y_utc, FONT_DAY))
+        utc_label = f"\\phantom{{0}}{utc_day}" if utc_day < 10 else str(utc_day)
         out.append(
-            f"  \\node[font=\\{FONT_HR}, anchor=north west]"
-            f" at ([xshift={PAD:.2f}mm, yshift={-(y_utc + 2.4):.2f}mm]current page.north west)"
+            f"  \\node[font=\\{FONT_DAY}, anchor=north east, fill={utc_color}, text=white]"
+            f" at ([xshift={pw - PAD:.2f}mm, yshift={-y_utc:.2f}mm]current page.north west)"
+            f" {{{utc_label}}};"
+        )
+        out.append(
+            f"  \\node[font=\\{FONT_HR}, anchor=north east]"
+            f" at ([xshift={pw - PAD:.2f}mm, yshift={-(y_utc + 2.4):.2f}mm]current page.north west)"
             f" {{utc}};"
         )
 
