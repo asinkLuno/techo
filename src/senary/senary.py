@@ -1,6 +1,6 @@
 """Senary — monthly calendar (front) + habit tracker (back), landscape m5 (105×67).
 
-Usage: uv run python -m src.senary 2026-07
+Usage: uv run python src/senary/senary.py 2026-07 [TZ]
   Front (odd page): that month's calendar, landscape (no rotation — the page is wide).
   Back  (even page): two tracker tables stacked — 1–14 (item col + header) +
                      15–end (header only, no item col), 6 rows each.
@@ -9,7 +9,9 @@ Usage: uv run python -m src.senary 2026-07
 import calendar
 import math
 import sys
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import ephem
 
@@ -36,40 +38,48 @@ ITEM_W = 2  # multiplier, item column = ITEM_W * A wide
 ITEMS = 4  # blank habit rows
 
 
-def check_tranquility_day_night(date_string):
-    """Return whether Tranquility Base is in lunar day or night at the given UTC time.
+def _to_utc(year, month, day, tz_name):
+    """Return UTC datetime string for midnight local time in tz_name."""
+    local = datetime(year, month, day, tzinfo=ZoneInfo(tz_name))
+    utc = local.astimezone(ZoneInfo("UTC"))
+    return f"{utc.year}/{utc.month:02d}/{utc.day:02d} {utc.hour:02d}:{utc.minute:02d}:{utc.second:02d}"
 
-    :param date_string: 'YYYY/MM/DD' or 'YYYY/MM/DD HH:MM:SS' (UTC)
+
+def check_tranquility_day_night(year, month, day, tz_name="UTC"):
+    """Return whether Tranquility Base is in lunar day or night at local midnight.
+
+    :param year: e.g. 2026
+    :param month: 1-12
+    :param day: 1-31
+    :param tz_name: IANA timezone name, e.g. 'Asia/Shanghai'
     """
     lat_target = math.radians(0.67)
     lon_target = math.radians(23.47)
     m = ephem.Moon()
-    try:
-        m.compute(date_string)
-    except ValueError:
-        return "错误：日期格式不正确，请使用 'YYYY/MM/DD' 格式"
+    utc_str = _to_utc(year, month, day, tz_name)
+    m.compute(utc_str)
     cos_angle = math.sin(m.subsolar_lat) * math.sin(lat_target) + math.cos(
         m.subsolar_lat
     ) * math.cos(lat_target) * math.cos(float(m.colong) - math.pi / 2 - lon_target)
     if cos_angle > 0:
-        return f"UTC时间 {date_string}: ☀️ 处于【月昼】(能被太阳照到)"
+        return f"{tz_name} {year}/{month:02d}/{day:02d} → UTC {utc_str}: ☀️ 处于【月昼】(能被太阳照到)"
     else:
-        return f"UTC时间 {date_string}: 🌑 处于【月夜】(在太阳的阴影中)"
+        return f"{tz_name} {year}/{month:02d}/{day:02d} → UTC {utc_str}: 🌑 处于【月夜】(在太阳的阴影中)"
 
 
-def _moon_color(year, month, day):
+def _moon_color(year, month, day, tz_name="UTC"):
     """Return '#ffa700' (lunar day) or '#0047ab' (lunar night)."""
     lat = math.radians(0.67)
     lon = math.radians(23.47)
     m = ephem.Moon()
-    m.compute(f"{year}/{month:02d}/{day:02d}")
+    m.compute(_to_utc(year, month, day, tz_name))
     cos_a = math.sin(m.subsolar_lat) * math.sin(lat) + math.cos(
         m.subsolar_lat
     ) * math.cos(lat) * math.cos(float(m.colong) - math.pi / 2 - lon)
     return "ChromeYellow" if cos_a > 0 else "CobaltBlue"
 
 
-def _cal(year: int, month: int, pw: float, ph: float) -> str:
+def _cal(year: int, month: int, pw: float, ph: float, tz_name: str = "UTC") -> str:
     days = calendar.monthrange(year, month)[1]
     first = calendar.monthrange(year, month)[0]  # weekday of the 1st, 0=Mon
     weeks = (first + days + COLS - 1) // COLS
@@ -107,7 +117,7 @@ def _cal(year: int, month: int, pw: float, ph: float) -> str:
         r, c = divmod(first + d - 1, COLS)
         x = lm + cell_w * c + PAD
         y = gy + cell_h * r + PAD
-        color = _moon_color(year, month, d)
+        color = _moon_color(year, month, d, tz_name)
         label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
         out.append(
             f"  \\node[font=\\{FONT_CAL}, anchor=north west, fill={color}, text=white]"
@@ -123,6 +133,7 @@ def _table(
     dates: list[int],
     year: int,
     month: int,
+    tz_name: str,
     with_items: bool,
     with_header: bool = True,
 ) -> list[str]:
@@ -152,7 +163,7 @@ def _table(
     if with_header:
         hy = top + A - 0.1
         for i, d in enumerate(dates):
-            color = _moon_color(year, month, d)
+            color = _moon_color(year, month, d, tz_name)
             cx = xs[off + i + 1]
             label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
             out.append(
@@ -162,7 +173,9 @@ def _table(
     return out
 
 
-def _tracker(year: int, month: int, days: int, pw: float, ph: float) -> str:
+def _tracker(
+    year: int, month: int, days: int, pw: float, ph: float, tz_name: str = "UTC"
+) -> str:
     dates1 = list(range(1, 15))  # 1–14
     dates2 = list(range(15, days + 1))  # 15–end
     w1 = ITEM_W * A + len(dates1) * A
@@ -176,13 +189,15 @@ def _tracker(year: int, month: int, days: int, pw: float, ph: float) -> str:
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
-    out += _table(lm, top1, dates1, year, month, with_items=True)
-    out += _table(lm, top2, dates2, year, month, with_items=False, with_header=True)
+    out += _table(lm, top1, dates1, year, month, tz_name, with_items=True)
+    out += _table(
+        lm, top2, dates2, year, month, tz_name, with_items=False, with_header=True
+    )
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
 
 
-def generate(ym: str) -> None:
+def generate(ym: str, tz_name: str = "UTC") -> None:
     try:
         year, month = (int(x) for x in ym.split("-"))
     except ValueError:
@@ -202,11 +217,11 @@ def generate(ym: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
     content = [
         "\\thispagestyle{empty}%",
-        _cal(year, month, pw, ph),
+        _cal(year, month, pw, ph, tz_name),
         "\\null",
         "\\clearpage",
         "\\thispagestyle{empty}%",
-        _tracker(year, month, days, pw, ph),
+        _tracker(year, month, days, pw, ph, tz_name),
         "\\null",
         "\\clearpage",
     ]
@@ -220,10 +235,12 @@ def generate(ym: str) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: uv run python -m src.senary YYYY-MM  (e.g. 2026-07)")
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: uv run python src/senary/senary.py YYYY-MM [TZ]")
+        print("  TZ: IANA timezone name (default: UTC), e.g. Asia/Shanghai")
         sys.exit(1)
-    generate(sys.argv[1])
+    tz_name = sys.argv[2] if len(sys.argv) == 3 else "UTC"
+    generate(sys.argv[1], tz_name)
     year, month = (int(x) for x in sys.argv[1].split("-"))
-    print(check_tranquility_day_night(f"{year}/{month:02d}/01"))
-    print(check_tranquility_day_night(f"{year}/{month:02d}/15"))
+    print(check_tranquility_day_night(year, month, 1, tz_name))
+    print(check_tranquility_day_night(year, month, 15, tz_name))
