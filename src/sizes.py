@@ -13,7 +13,6 @@ SIZES = {
     "m5": {"pw": 67, "ph": 105, "red_line": 13},
     "74m5": {"pw": 74, "ph": 105, "red_line": 12},
     "m5l": {"pw": 105, "ph": 67, "red_line": 8},  # landscape m5 (senary)
-    "a5s": {"pw": 110, "ph": 210, "red_line": 12},
 }
 
 # ── Design-specific layout params (consumed only by the generators) ──
@@ -22,12 +21,6 @@ NIGHTOWL = {
     "m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 11},
     "74m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 13},
 }
-XIANZHANG = {
-    "cozyca": 9,
-    "m5": 9,
-    "74m5": 9,
-    "a5s": 12,
-}  # top_gap: ruling start from top
 
 # ── Font sizes in pt ──
 FONTS = {
