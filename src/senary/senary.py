@@ -1,9 +1,10 @@
-"""Senary — monthly calendar (front) + habit tracker (back), landscape m5 (105×67).
+"""Senary — monthly calendar + habit tracker + day pages, landscape m5 (105×67).
 
 Usage: uv run python src/senary/senary.py 2026-07 [TZ] [LOCATION]
   Front (odd page): that month's calendar, landscape (no rotation — the page is wide).
   Back  (even page): two tracker tables stacked — 1–14 (item col + header) +
                      15–end (header only, no item col), 6 rows each.
+  Day pages: one portrait m5 page per day of the month (timeline view).
 """
 
 import calendar
@@ -314,6 +315,12 @@ def generate(ym: str, tz_name: str = "UTC", location: str = "tranquility") -> No
     )
     sizes.compile(f"{edition}.tex", out)
 
+    # ── Day pages (one portrait m5 per day) ──
+    from senary.day import generate as _generate_day
+
+    for d in range(1, days + 1):
+        _generate_day(f"{year}-{month:02d}-{d:02d}", tz_name, location)
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or len(sys.argv) > 4:
@@ -324,5 +331,3 @@ if __name__ == "__main__":
     tz_name = sys.argv[2] if len(sys.argv) >= 3 else "UTC"
     location = sys.argv[3] if len(sys.argv) >= 4 else "tranquility"
     generate(sys.argv[1], tz_name, location)
-    year, month = (int(x) for x in sys.argv[1].split("-"))
-    lat, lon = LOCATIONS[location]
