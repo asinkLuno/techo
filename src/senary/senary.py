@@ -1,6 +1,6 @@
 """Senary — monthly calendar + habit tracker + day pages, landscape m5 (105×67).
 
-Usage: uv run python src/senary/senary.py 2026-07 [TZ] [LOCATION]
+Usage: techo senary 2026-07 [--tz Asia/Shanghai] [--location tranquility]
   Front (odd page): that month's calendar, landscape (no rotation — the page is wide).
   Back  (even page): two tracker tables stacked — 1–14 (item col + header) +
                      15–end (header only, no item col), 6 rows each.
@@ -16,7 +16,6 @@ from zoneinfo import ZoneInfo
 
 import ephem
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
 from sizes import FONT_CMD
 
@@ -24,12 +23,10 @@ from sizes import FONT_CMD
 COLS = 7
 BIND = 7.0  # mm, top binding margin
 GM = 4.0  # mm, margin on the other three sides (left/right/bottom)
-TITLE_H = 7.0
 HEAD_H = 4.0
 WEEKDAYS = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")  # Monday-first
 
 # ── Fonts (defined in sizes.py, emitted to sizes.tex) ──
-FONT_TITLE = FONT_CMD["large"]
 FONT_CAL = FONT_CMD["small"]
 FONT_TRACKER_HEAD = FONT_CMD["small"]
 
@@ -48,22 +45,6 @@ def _to_utc(year, month, day, tz_name):
     local = datetime(year, month, day, tzinfo=ZoneInfo(tz_name))
     utc = local.astimezone(ZoneInfo("UTC"))
     return f"{utc.year}/{utc.month:02d}/{utc.day:02d} {utc.hour:02d}:{utc.minute:02d}:{utc.second:02d}"
-
-
-def check_moon(year, month, day, tz_name="UTC", lat=0.67, lon=23.47):
-    """Return (is_lunar_day: bool, moon_phase: float) at local midnight.
-
-    moon_phase: 0=new moon, 1=full moon.
-    """
-    lat_target = math.radians(lat)
-    lon_target = math.radians(lon)
-    m = ephem.Moon()
-    utc_str = _to_utc(year, month, day, tz_name)
-    m.compute(utc_str)
-    cos_angle = math.sin(m.subsolar_lat) * math.sin(lat_target) + math.cos(
-        m.subsolar_lat
-    ) * math.cos(lat_target) * math.cos(float(m.colong) - math.pi / 2 - lon_target)
-    return cos_angle > 0, m.moon_phase
 
 
 def _moon_info(year, month, day, tz_name="UTC", lat=0.67, lon=23.47):
@@ -320,14 +301,3 @@ def generate(ym: str, tz_name: str = "UTC", location: str = "tranquility") -> No
 
     for d in range(1, days + 1):
         _generate_day(f"{year}-{month:02d}-{d:02d}", tz_name, location)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2 or len(sys.argv) > 4:
-        print("Usage: uv run python src/senary/senary.py YYYY-MM [TZ] [LOCATION]")
-        print("  TZ: IANA timezone name (default: UTC), e.g. Asia/Shanghai")
-        print(f"  LOCATION: {list(LOCATIONS.keys())} (default: tranquility)")
-        sys.exit(1)
-    tz_name = sys.argv[2] if len(sys.argv) >= 3 else "UTC"
-    location = sys.argv[3] if len(sys.argv) >= 4 else "tranquility"
-    generate(sys.argv[1], tz_name, location)

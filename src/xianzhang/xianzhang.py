@@ -1,13 +1,11 @@
 """Xianzhang — French ruled (Séyès) notebook generator.
 
-Usage: uv run python -m src.xianzhang <edition>
-  e.g. uv run python -m src.xianzhang xianzhang-cozyca
+Usage: techo xianzhang <cozyca|m5|74m5|a5s>
 """
 
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
 
 TOTAL_PAGES = 2
@@ -64,10 +62,3 @@ def generate(edition: str) -> None:
         f"Generated {out}/content.tex + {edition}.tex ({s['pw']}×{s['ph']}mm, Séyès ruled)"
     )
     sizes.compile(f"{edition}.tex", out)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: uv run python -m src.xianzhang <edition>")
-        sys.exit(1)
-    generate(sys.argv[1])

@@ -1,12 +1,10 @@
 """Night Owl — triangular numbers 0–26 in hourglass layout.
 
-Usage: uv run python -m src.nightowl [--size m5|cozyca]
+Usage: techo nightowl --size m5|cozyca|74m5
 """
 
-import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
 
 ROWS = [1, 3, 4, 5, 1, 3, 4, 5, 1]  # 27 numbers total (0–26)
@@ -68,12 +66,3 @@ def generate(size: str) -> None:
     )
     print(f"Generated {out}/content.tex + night-owl-{size}.tex ({PW}×{PH}mm)")
     sizes.compile(f"night-owl-{size}.tex", out)
-
-
-if __name__ == "__main__":
-    args = sys.argv[1:]
-    size = args[args.index("--size") + 1] if "--size" in args else "m5"
-    if size not in sizes.NIGHTOWL:
-        print(f"Unknown size '{size}'. Known: {list(sizes.NIGHTOWL.keys())}")
-        sys.exit(1)
-    generate(size)

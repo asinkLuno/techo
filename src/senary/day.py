@@ -1,6 +1,6 @@
 """Day view — single day on vertical m5 (67×105), timeline layout.
 
-Usage: uv run python src/senary/day.py 2026-07-15 [TZ] [LOCATION]
+Usage: techo day 2026-07-15 [--tz Asia/Shanghai] [--location tranquility]
 """
 
 import calendar
@@ -9,9 +9,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
 import sizes
-from senary.senary import _moon_info, date_node
+from senary.senary import LOCATIONS, _moon_info, date_node
 from sizes import FONT_CMD
 
 # ── Layout ──
@@ -19,8 +18,6 @@ LEFT_MARGIN = 9.0  # mm, date strip width (left of the divider)
 
 FONT_DAY = FONT_CMD["medium"]
 FONT_HR = FONT_CMD["small"]
-
-LOCATIONS = {"tranquility": (0.67, 23.47)}
 
 
 def _utc_axis(year, month, day, tz_name, lat, lon):
@@ -163,14 +160,3 @@ def generate(datestr: str, tz_name: str = "UTC", location: str = "tranquility") 
         f"{day} {calendar.month_name[month]} {year}, {pw}×{ph}mm portrait)"
     )
     sizes.compile(f"{edition}.tex", out)
-
-
-if __name__ == "__main__":
-    if len(sys.argv) < 2 or len(sys.argv) > 4:
-        print("Usage: uv run python src/senary/day.py YYYY-MM-DD [TZ] [LOCATION]")
-        print("  TZ: IANA timezone name (default: UTC), e.g. Asia/Shanghai")
-        print(f"  LOCATION: {list(LOCATIONS.keys())} (default: tranquility)")
-        sys.exit(1)
-    tz_name = sys.argv[2] if len(sys.argv) >= 3 else "UTC"
-    location = sys.argv[3] if len(sys.argv) >= 4 else "tranquility"
-    generate(sys.argv[1], tz_name, location)
