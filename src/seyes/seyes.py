@@ -17,7 +17,6 @@ def generate(size: str, sheets: int = 1) -> None:
     g = sizes.SEYES[size]
     PW, PH = s["pw"], s["ph"]
     BINDING = g["binding"]
-    OUTER = g["outer_margin"]
     TOP = g["top_margin"]
     BOTTOM = g["bottom_margin"]
     ROW_H = g["row_height"]
@@ -36,7 +35,7 @@ def generate(size: str, sheets: int = 1) -> None:
         hlines.append(
             f"  \\fill[CobaltBlue!70] "
             f"(0, -{y:.1f}mm) "
-            f"rectangle ++({PW - OUTER:.1f}mm, -{lw:.1f}mm);"
+            f"rectangle ++({PW:.1f}mm, -{lw:.1f}mm);"
         )
         y += ROW_H
         row += 1
