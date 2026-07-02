@@ -29,53 +29,39 @@ def generate(size: str, sheets: int = 1) -> None:
     sizes.write_sizes_tex()
 
     # ── Horizontal lines ──
-    odd_lines, even_lines = [], []
+    hlines = []
     y, row = TOP, 0
     while y <= PH - BOTTOM:
         lw = THICK if row % GROUP == 0 else THIN
-        # ponytail: red-line side extends to page edge
-        odd_lines.append(
+        hlines.append(
             f"  \\fill[CobaltBlue!70] "
             f"(0, -{y:.1f}mm) "
-            f"rectangle ++({PW - OUTER:.1f}mm, -{lw:.1f}mm);"
-        )
-        even_lines.append(
-            f"  \\fill[CobaltBlue!70] "
-            f"({OUTER:.1f}mm, -{y:.1f}mm) "
             f"rectangle ++({PW - OUTER:.1f}mm, -{lw:.1f}mm);"
         )
         y += ROW_H
         row += 1
 
-    # ── Red vertical line ──
-    odd_red = (
+    # ── Red vertical line (always on the left) ──
+    red_line = (
         f"  \\fill[IronOxideRed!60] "
         f"({BINDING:.1f}mm, 0) "
         f"rectangle ++({RED_LW:.1f}mm, -{PH:.1f}mm);"
     )
-    even_red = (
-        f"  \\fill[IronOxideRed!60] "
-        f"({PW - BINDING:.1f}mm, 0) "
-        f"rectangle ++({RED_LW:.1f}mm, -{PH:.1f}mm);"
-    )
 
-    def _page(red, lines):
+    def _page():
         return [
             "\\thispagestyle{empty}%",
             "\\begin{tikzpicture}[remember picture, overlay]",
-            red,
-            *lines,
+            red_line,
+            *hlines,
             "\\end{tikzpicture}%",
         ]
 
-    # ── Build N spreads (odd + even) — 1 sheet = 2 spreads = 4 pages ──
-    spreads = sheets * 2
+    # ── Build N sheets (1 sheet = 4 pages) ──
+    sheets_4 = sheets * 4
     full = []
-    for _ in range(spreads):
-        full.extend(_page(odd_red, odd_lines))
-        full.append("\\null")
-        full.append("\\clearpage")
-        full.extend(_page(even_red, even_lines))
+    for _ in range(sheets_4):
+        full.extend(_page())
         full.append("\\null")
         full.append("\\clearpage")
 
@@ -85,7 +71,7 @@ def generate(size: str, sheets: int = 1) -> None:
     (out / f"seyes-{size}.tex").write_text(
         f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/seyes/seyes.tex}}%\n"
     )
-    total_pages = spreads * 2
+    total_pages = sheets_4
     print(
         f"Generated {out}/content.tex + seyes-{size}.tex "
         f"({PW}×{PH}mm, {row} rows, {row // GROUP} groups, {total_pages} pages)"
