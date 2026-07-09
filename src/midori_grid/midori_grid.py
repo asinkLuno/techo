@@ -35,8 +35,19 @@ def generate(size: str, sheets: int = 1) -> None:
     start_x = BINDING + (usable_w - grid_w) / 2.0
     start_y = TOP + (usable_h - grid_h) / 2.0
 
+    # 1. Helper dots (Calculate first to exclude extensions on dot lines)
+    x_dots = set()
+    for i in range(0, num_x // 2 + 1, DOT_FREQ):
+        x_dots.add(i)
+        x_dots.add(num_x - i)
+
+    y_dots = set()
+    for i in range(0, num_y // 2 + 1, DOT_FREQ):
+        y_dots.add(i)
+        y_dots.add(num_y - i)
+
     lines = []
-    # 1. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows)
+    # 2. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows except on dot rows)
     for y_idx in range(num_y + 1):
         y = start_y + y_idx * STEP
         
@@ -46,8 +57,8 @@ def generate(size: str, sheets: int = 1) -> None:
             f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
         )
         
-        # Extensions every 2 rows
-        if y_idx % 2 == 0:
+        # Extensions every 2 rows, BUT NOT on rows with dots
+        if y_idx % 2 == 0 and y_idx not in y_dots:
             lines.append(
                 f"  \\draw[cyan!40, very thin] "
                 f"({start_x - GAP - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x - GAP:.2f}mm, -{y:.2f}mm);"
@@ -57,13 +68,13 @@ def generate(size: str, sheets: int = 1) -> None:
                 f"({start_x + grid_w + GAP:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + GAP + EXT:.2f}mm, -{y:.2f}mm);"
             )
 
-    # 2. Vertical lines (U-shaped segments with gaps)
+    # 3. Vertical lines (U-shaped segments with gaps)
     for x_idx in range(num_x + 1):
         x = start_x + x_idx * STEP
         path_cmds = []
         
-        # Top and bottom extensions every 2 columns (with gap)
-        if x_idx % 2 == 0:
+        # Top and bottom extensions every 2 columns, BUT NOT on columns with dots
+        if x_idx % 2 == 0 and x_idx not in x_dots:
             path_cmds.append(f"({x:.2f}mm, -{start_y - GAP - EXT:.2f}mm) -- ({x:.2f}mm, -{start_y - GAP:.2f}mm)")
             
             y_last = start_y + num_y * STEP
@@ -77,17 +88,7 @@ def generate(size: str, sheets: int = 1) -> None:
             
         lines.append(f"  \\draw[cyan!40, very thin] {' '.join(path_cmds)};")
 
-    # 4. Helper dots (Symmetric from edges)
-    x_dots = set()
-    for i in range(0, num_x // 2 + 1, DOT_FREQ):
-        x_dots.add(i)
-        x_dots.add(num_x - i)
-
-    y_dots = set()
-    for i in range(0, num_y // 2 + 1, DOT_FREQ):
-        y_dots.add(i)
-        y_dots.add(num_y - i)
-
+    # 4. Draw Helper dots (Symmetric from edges)
     for x_idx in sorted(x_dots):
         x = start_x + x_idx * STEP
         lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 3:.2f}mm) circle (0.4mm);")
