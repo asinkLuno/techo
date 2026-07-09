@@ -32,7 +32,8 @@ def generate(size: str, sheets: int = 1) -> None:
     grid_w = num_x * STEP
     grid_h = num_y * STEP
 
-    start_x = BINDING + (usable_w - grid_w) / 2.0
+    start_x_odd = BINDING + (usable_w - grid_w) / 2.0
+    start_x_even = RIGHT + (usable_w - grid_w) / 2.0
     start_y = TOP + (usable_h - grid_h) / 2.0
 
     # 1. Helper dots (Calculate first to exclude extensions on dot lines)
@@ -64,72 +65,78 @@ def generate(size: str, sheets: int = 1) -> None:
             y_dots.add(bottom)
         i += DOT_FREQ
 
-    lines = []
-    # 2. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows except on dot rows)
-    for y_idx in range(num_y + 1):
-        y = start_y + y_idx * STEP
-        
-        # Main continuous line inside grid
-        lines.append(
-            f"  \\draw[cyan!40, very thin] "
-            f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
-        )
-        
-        # Extensions every 2 rows, BUT NOT on rows with dots, AND NOT on the very top/bottom borders
-        if y_idx % 2 == 0 and y_idx not in y_dots and y_idx != 0 and y_idx != num_y:
+    def _generate_lines(start_x):
+        lines = []
+        # 2. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows except on dot rows)
+        for y_idx in range(num_y + 1):
+            y = start_y + y_idx * STEP
+            
+            # Main continuous line inside grid
             lines.append(
                 f"  \\draw[cyan!40, very thin] "
-                f"({start_x - GAP - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x - GAP:.2f}mm, -{y:.2f}mm);"
+                f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
             )
-            lines.append(
-                f"  \\draw[cyan!40, very thin] "
-                f"({start_x + grid_w + GAP:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + GAP + EXT:.2f}mm, -{y:.2f}mm);"
-            )
-
-    # 3. Vertical lines (U-shaped segments with gaps)
-    for x_idx in range(num_x + 1):
-        x = start_x + x_idx * STEP
-        path_cmds = []
-        
-        # Top and bottom extensions every 2 columns, BUT NOT on columns with dots, AND NOT on left/right borders
-        if x_idx % 2 == 0 and x_idx not in x_dots and x_idx != 0 and x_idx != num_x:
-            path_cmds.append(f"({x:.2f}mm, -{start_y - GAP - EXT:.2f}mm) -- ({x:.2f}mm, -{start_y - GAP:.2f}mm)")
             
-            y_last = start_y + num_y * STEP
-            path_cmds.append(f"({x:.2f}mm, -{y_last + GAP:.2f}mm) -- ({x:.2f}mm, -{y_last + GAP + EXT:.2f}mm)")
-        
-        # Grid segments (U-shape arms: touch bottom line, gap before top line)
-        for y_idx in range(num_y):
-            y_top = start_y + y_idx * STEP
-            y_bottom = start_y + (y_idx + 1) * STEP
-            path_cmds.append(f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)")
+            # Extensions every 2 rows, BUT NOT on rows with dots, AND NOT on the very top/bottom borders
+            if y_idx % 2 == 0 and y_idx not in y_dots and y_idx != 0 and y_idx != num_y:
+                lines.append(
+                    f"  \\draw[cyan!40, very thin] "
+                    f"({start_x - GAP - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x - GAP:.2f}mm, -{y:.2f}mm);"
+                )
+                lines.append(
+                    f"  \\draw[cyan!40, very thin] "
+                    f"({start_x + grid_w + GAP:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + GAP + EXT:.2f}mm, -{y:.2f}mm);"
+                )
+
+        # 3. Vertical lines (U-shaped segments with gaps)
+        for x_idx in range(num_x + 1):
+            x = start_x + x_idx * STEP
+            path_cmds = []
             
-        lines.append(f"  \\draw[cyan!40, very thin] {' '.join(path_cmds)};")
+            # Top and bottom extensions every 2 columns, BUT NOT on columns with dots, AND NOT on left/right borders
+            if x_idx % 2 == 0 and x_idx not in x_dots and x_idx != 0 and x_idx != num_x:
+                path_cmds.append(f"({x:.2f}mm, -{start_y - GAP - EXT:.2f}mm) -- ({x:.2f}mm, -{start_y - GAP:.2f}mm)")
+                
+                y_last = start_y + num_y * STEP
+                path_cmds.append(f"({x:.2f}mm, -{y_last + GAP:.2f}mm) -- ({x:.2f}mm, -{y_last + GAP + EXT:.2f}mm)")
+            
+            # Grid segments (U-shape arms: touch bottom line, gap before top line)
+            for y_idx in range(num_y):
+                y_top = start_y + y_idx * STEP
+                y_bottom = start_y + (y_idx + 1) * STEP
+                path_cmds.append(f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)")
+                
+            lines.append(f"  \\draw[cyan!40, very thin] {' '.join(path_cmds)};")
 
-    # 4. Draw Helper dots (Symmetric from edges)
-    for x_idx in sorted(x_dots):
-        x = start_x + x_idx * STEP
-        lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 1.5:.2f}mm) circle (0.4mm);")
-        lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y + grid_h + 1.5:.2f}mm) circle (0.4mm);")
-    
-    for y_idx in sorted(y_dots):
-        y = start_y + y_idx * STEP
-        lines.append(f"  \\fill[cyan!40] ({start_x - 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
-        lines.append(f"  \\fill[cyan!40] ({start_x + grid_w + 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
+        # 4. Draw Helper dots (Symmetric from edges)
+        for x_idx in sorted(x_dots):
+            x = start_x + x_idx * STEP
+            lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 1.5:.2f}mm) circle (0.4mm);")
+            lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y + grid_h + 1.5:.2f}mm) circle (0.4mm);")
+        
+        for y_idx in sorted(y_dots):
+            y = start_y + y_idx * STEP
+            lines.append(f"  \\fill[cyan!40] ({start_x - 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
+            lines.append(f"  \\fill[cyan!40] ({start_x + grid_w + 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
+            
+        return lines
 
-    def _page():
+    lines_odd = _generate_lines(start_x_odd)
+    lines_even = _generate_lines(start_x_even)
+
+    def _page(is_odd: bool):
         return [
             "\\thispagestyle{empty}%",
             "\\begin{tikzpicture}[remember picture, overlay]",
-            *lines,
+            *(lines_odd if is_odd else lines_even),
             "\\end{tikzpicture}%",
         ]
 
     # ── Build exactly 2 pages (front and back) ──
     total_pages = 2
     full = []
-    for _ in range(total_pages):
-        full.extend(_page())
+    for i in range(total_pages):
+        full.extend(_page(is_odd=(i % 2 == 0)))
         full.append("\\null")
         full.append("\\clearpage")
 
