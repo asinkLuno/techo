@@ -13,7 +13,7 @@ SIZES = {
     "m5": {"pw": 67, "ph": 105, "red_line": 13},
     "74m5": {"pw": 74, "ph": 105, "red_line": 12},
     "m5l": {"pw": 105, "ph": 67, "red_line": 8},  # landscape m5 (senary)
-    "a5s": {"pw": 148, "ph": 210, "red_line": 15},
+    "a5s": {"pw": 110, "ph": 210, "red_line": 15},
     "tn": {"pw": 110, "ph": 210, "red_line": 15},
 }
 
