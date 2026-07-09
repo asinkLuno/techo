@@ -37,7 +37,7 @@ def generate(size: str, sheets: int = 1) -> None:
 
     # 1. Helper dots (Calculate first to exclude extensions on dot lines)
     x_dots = set()
-    mid_x = num_x / 2.0
+    mid_x = num_x // 2
     i = 0
     while True:
         left = mid_x - i
@@ -51,7 +51,7 @@ def generate(size: str, sheets: int = 1) -> None:
         i += DOT_FREQ
 
     y_dots = set()
-    mid_y = num_y / 2.0
+    mid_y = num_y // 2
     i = 0
     while True:
         top = mid_y - i
