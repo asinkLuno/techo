@@ -36,42 +36,33 @@ def generate(size: str, sheets: int = 1) -> None:
     start_y = TOP + (usable_h - grid_h) / 2.0
 
     lines = []
-    # 1. Base grid
-    lines.append(
-        f"  \\draw[step={STEP:.2f}mm, cyan!40, very thin, shift={{({start_x:.2f}mm, -{start_y:.2f}mm)}}] "
-        f"(0, 0) grid ({grid_w:.2f}mm, -{grid_h:.2f}mm);"
-    )
-    
-    # 2. Edge extensions
-    # Horizontal extensions
+    # 1. Horizontal lines (continuous, including edge extensions)
     for y_idx in range(num_y + 1):
         y = start_y + y_idx * STEP
         lines.append(
-            f"  \\draw[cyan!40, very thin] ({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x - EXT:.2f}mm, -{y:.2f}mm);"
-        )
-        lines.append(
-            f"  \\draw[cyan!40, very thin] ({start_x + grid_w:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + EXT:.2f}mm, -{y:.2f}mm);"
-        )
-    
-    # Vertical extensions
-    for x_idx in range(num_x + 1):
-        x = start_x + x_idx * STEP
-        lines.append(
-            f"  \\draw[cyan!40, very thin] ({x:.2f}mm, -{start_y:.2f}mm) -- ({x:.2f}mm, -{start_y - EXT:.2f}mm);"
-        )
-        lines.append(
-            f"  \\draw[cyan!40, very thin] ({x:.2f}mm, -{start_y + grid_h:.2f}mm) -- ({x:.2f}mm, -{start_y + grid_h + EXT:.2f}mm);"
+            f"  \\draw[cyan!40, very thin] "
+            f"({start_x - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + EXT:.2f}mm, -{y:.2f}mm);"
         )
 
-    # 3. White squares (hollow intersections)
-    half_gap = GAP / 2.0
+    # 2. Vertical lines (U-shaped segments with gaps)
     for x_idx in range(num_x + 1):
-        for y_idx in range(num_y + 1):
-            x = start_x + x_idx * STEP
-            y = start_y + y_idx * STEP
-            lines.append(
-                f"  \\fill[white] ({x - half_gap:.2f}mm, -{y - half_gap:.2f}mm) rectangle ({x + half_gap:.2f}mm, -{y + half_gap:.2f}mm);"
-            )
+        x = start_x + x_idx * STEP
+        path_cmds = []
+        
+        # Top extension (touches the top line and goes up)
+        path_cmds.append(f"({x:.2f}mm, -{start_y:.2f}mm) -- ({x:.2f}mm, -{start_y - EXT:.2f}mm)")
+        
+        # Grid segments (U-shape arms: touch bottom line, gap before top line)
+        for y_idx in range(num_y):
+            y_top = start_y + y_idx * STEP
+            y_bottom = start_y + (y_idx + 1) * STEP
+            path_cmds.append(f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)")
+            
+        # Bottom extension (gap before it starts)
+        y_last = start_y + num_y * STEP
+        path_cmds.append(f"({x:.2f}mm, -{y_last + GAP:.2f}mm) -- ({x:.2f}mm, -{y_last + GAP + EXT:.2f}mm)")
+        
+        lines.append(f"  \\draw[cyan!40, very thin] {' '.join(path_cmds)};")
 
     # 4. Helper dots (Symmetric from edges)
     x_dots = set()
