@@ -74,8 +74,8 @@ MIDORI_GRID = {
     "74m5": {
         "binding": 12,
         "right_margin": 3,
-        "top_margin": 5,
-        "bottom_margin": 5,
+        "top_margin": 4,
+        "bottom_margin": 9,
         "grid_step": 4,
         "dot_freq": 10,
         "gap_size": 1.0,
