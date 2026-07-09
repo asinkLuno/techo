@@ -37,14 +37,32 @@ def generate(size: str, sheets: int = 1) -> None:
 
     # 1. Helper dots (Calculate first to exclude extensions on dot lines)
     x_dots = set()
-    for i in range(DOT_FREQ, num_x // 2 + 1, DOT_FREQ):
-        x_dots.add(i)
-        x_dots.add(num_x - i)
+    mid_x = num_x / 2.0
+    i = 0
+    while True:
+        left = mid_x - i
+        right = mid_x + i
+        if left <= 0 and right >= num_x:
+            break
+        if left > 0:
+            x_dots.add(left)
+        if right < num_x:
+            x_dots.add(right)
+        i += DOT_FREQ
 
     y_dots = set()
-    for i in range(DOT_FREQ, num_y // 2 + 1, DOT_FREQ):
-        y_dots.add(i)
-        y_dots.add(num_y - i)
+    mid_y = num_y / 2.0
+    i = 0
+    while True:
+        top = mid_y - i
+        bottom = mid_y + i
+        if top <= 0 and bottom >= num_y:
+            break
+        if top > 0:
+            y_dots.add(top)
+        if bottom < num_y:
+            y_dots.add(bottom)
+        i += DOT_FREQ
 
     lines = []
     # 2. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows except on dot rows)
