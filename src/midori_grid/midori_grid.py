@@ -1,0 +1,138 @@
+"""Midori Grid — square grids with hollow intersections.
+
+Usage: techo midori-grid --size a5s
+"""
+
+from pathlib import Path
+
+import sizes
+
+
+def generate(size: str, sheets: int = 1) -> None:
+    s = sizes.SIZES[size]
+    g = sizes.MIDORI_GRID[size]
+    PW, PH = s["pw"], s["ph"]
+    BINDING = g["binding"]
+    RIGHT = g["right_margin"]
+    TOP = g["top_margin"]
+    BOTTOM = g["bottom_margin"]
+    STEP = g["grid_step"]
+    GAP = g["gap_size"]
+    EXT = g["edge_extension"]
+    DOT_FREQ = g["dot_freq"]
+
+    sizes.write_sizes_tex()
+
+    usable_w = PW - BINDING - RIGHT
+    usable_h = PH - TOP - BOTTOM
+    
+    num_x = int(usable_w // STEP)
+    num_y = int(usable_h // STEP)
+
+    grid_w = num_x * STEP
+    grid_h = num_y * STEP
+
+    start_x = BINDING + (usable_w - grid_w) / 2.0
+    start_y = TOP + (usable_h - grid_h) / 2.0
+
+    lines = []
+    # 1. Base grid
+    lines.append(
+        f"  \\draw[step={STEP:.2f}mm, cyan!40, very thin, shift={{({start_x:.2f}mm, -{start_y:.2f}mm)}}] "
+        f"(0, 0) grid ({grid_w:.2f}mm, -{grid_h:.2f}mm);"
+    )
+    
+    # 2. Edge extensions
+    # Horizontal extensions
+    for y_idx in range(num_y + 1):
+        y = start_y + y_idx * STEP
+        lines.append(
+            f"  \\draw[cyan!40, very thin] ({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x - EXT:.2f}mm, -{y:.2f}mm);"
+        )
+        lines.append(
+            f"  \\draw[cyan!40, very thin] ({start_x + grid_w:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + EXT:.2f}mm, -{y:.2f}mm);"
+        )
+    
+    # Vertical extensions
+    for x_idx in range(num_x + 1):
+        x = start_x + x_idx * STEP
+        lines.append(
+            f"  \\draw[cyan!40, very thin] ({x:.2f}mm, -{start_y:.2f}mm) -- ({x:.2f}mm, -{start_y - EXT:.2f}mm);"
+        )
+        lines.append(
+            f"  \\draw[cyan!40, very thin] ({x:.2f}mm, -{start_y + grid_h:.2f}mm) -- ({x:.2f}mm, -{start_y + grid_h + EXT:.2f}mm);"
+        )
+
+    # 3. White squares (hollow intersections)
+    half_gap = GAP / 2.0
+    for x_idx in range(num_x + 1):
+        for y_idx in range(num_y + 1):
+            x = start_x + x_idx * STEP
+            y = start_y + y_idx * STEP
+            lines.append(
+                f"  \\fill[white] ({x - half_gap:.2f}mm, -{y - half_gap:.2f}mm) rectangle ({x + half_gap:.2f}mm, -{y + half_gap:.2f}mm);"
+            )
+
+    # 4. Helper dots (Symmetric from edges)
+    x_dots = set()
+    for i in range(0, num_x // 2 + 1, DOT_FREQ):
+        x_dots.add(i)
+        x_dots.add(num_x - i)
+
+    y_dots = set()
+    for i in range(0, num_y // 2 + 1, DOT_FREQ):
+        y_dots.add(i)
+        y_dots.add(num_y - i)
+
+    for x_idx in sorted(x_dots):
+        x = start_x + x_idx * STEP
+        lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 3:.2f}mm) circle (0.4mm);")
+        lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y + grid_h + 3:.2f}mm) circle (0.4mm);")
+    
+    for y_idx in sorted(y_dots):
+        y = start_y + y_idx * STEP
+        lines.append(f"  \\fill[cyan!40] ({start_x - 3:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
+        lines.append(f"  \\fill[cyan!40] ({start_x + grid_w + 3:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
+
+    def _page():
+        return [
+            "\\thispagestyle{empty}%",
+            "\\begin{tikzpicture}[remember picture, overlay]",
+            *lines,
+            "\\end{tikzpicture}%",
+        ]
+
+    # ── Build N sheets (1 sheet = 4 pages) ──
+    sheets_4 = sheets * 4
+    full = []
+    for _ in range(sheets_4):
+        full.extend(_page())
+        full.append("\\null")
+        full.append("\\clearpage")
+
+    out = Path("outputs") / f"midori-grid-{size}"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "content.tex").write_text("\n".join(full) + "\n")
+    (out / f"midori-grid-{size}.tex").write_text(
+        f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/midori_grid/midori_grid.tex}}%\n"
+    )
+    total_pages = sheets_4
+    print(
+        f"Generated {out}/content.tex + midori-grid-{size}.tex "
+        f"({PW}×{PH}mm, {num_x}x{num_y} grid, {total_pages} pages)"
+    )
+    sizes.compile(f"midori-grid-{size}.tex", out)
+
+    # ── Booklet imposition via pdfpages ──
+    booklet_tex = (
+        "\\documentclass[10pt]{article}\n"
+        f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+        "\\usepackage{pdfpages}\n"
+        "\\begin{document}\n"
+        f"\\includepdf[pages=-, nup=2x1, signature={total_pages}, width={PW}mm, height={PH}mm]"
+        f"{{midori-grid-{size}.pdf}}\n"
+        "\\end{document}\n"
+    )
+    (out / "booklet.tex").write_text(booklet_tex)
+    print(f"Generated {out}/booklet.tex (booklet imposition, {PW * 2}×{PH}mm)")
+    sizes.compile("booklet.tex", out)

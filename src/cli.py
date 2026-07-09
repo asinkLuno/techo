@@ -14,6 +14,7 @@ from nightowl import generate as gen_nightowl
 from senary import LOCATIONS
 from senary import generate as gen_senary
 from seyes import generate as gen_seyes
+from midori_grid.midori_grid import generate as gen_midori_grid
 
 
 @click.group()
@@ -77,6 +78,24 @@ def linear(size: str) -> None:
 def seyes(size: str, sheets: int) -> None:
     """French-ruled pages (Seyes) — blue lines every 2mm, red vertical margin."""
     gen_seyes(size, sheets=sheets)
+
+
+@cli.command("midori-grid")
+@click.option(
+    "--size",
+    default="a5s",
+    show_default=True,
+    type=click.Choice(list(sizes.MIDORI_GRID.keys())),
+)
+@click.option(
+    "--sheets",
+    default=1,
+    show_default=True,
+    help="Number of physical sheets (1 sheet = 4 pages)",
+)
+def midori_grid(size: str, sheets: int) -> None:
+    """Midori Grid — square grids with hollow intersections."""
+    gen_midori_grid(size, sheets=sheets)
 
 
 if __name__ == "__main__":

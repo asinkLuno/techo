@@ -12,6 +12,9 @@ dependencies = [
     "ephem>=4.2.1",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
 [project.scripts]
 techo = "src.cli:cli"
 

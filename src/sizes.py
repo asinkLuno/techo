@@ -50,6 +50,69 @@ NIGHTOWL = {
     "a5s": {"binding": 18, "right_margin": 5, "row_gap": 14.0, "num_gap": 26},
 }
 
+MIDORI_GRID = {
+    "cozyca": {
+        "binding": 15,
+        "right_margin": 3,
+        "top_margin": 5,
+        "bottom_margin": 5,
+        "grid_step": 5,
+        "dot_freq": 5,
+        "gap_size": 1.2,
+        "edge_extension": 1.5,
+    },
+    "m5": {
+        "binding": 12,
+        "right_margin": 3,
+        "top_margin": 5,
+        "bottom_margin": 5,
+        "grid_step": 4,
+        "dot_freq": 5,
+        "gap_size": 1.0,
+        "edge_extension": 1.2,
+    },
+    "74m5": {
+        "binding": 12,
+        "right_margin": 3,
+        "top_margin": 5,
+        "bottom_margin": 5,
+        "grid_step": 4,
+        "dot_freq": 5,
+        "gap_size": 1.0,
+        "edge_extension": 1.2,
+    },
+    "m5l": {
+        "binding": 10,
+        "right_margin": 5,
+        "top_margin": 5,
+        "bottom_margin": 5,
+        "grid_step": 5,
+        "dot_freq": 5,
+        "gap_size": 1.2,
+        "edge_extension": 1.5,
+    },
+    "a5s": {
+        "binding": 15,
+        "right_margin": 5,
+        "top_margin": 10,
+        "bottom_margin": 10,
+        "grid_step": 5,
+        "dot_freq": 10,
+        "gap_size": 1.2,
+        "edge_extension": 1.5,
+    },
+    "tn": {
+        "binding": 12,
+        "right_margin": 5,
+        "top_margin": 10,
+        "bottom_margin": 10,
+        "grid_step": 5,
+        "dot_freq": 10,
+        "gap_size": 1.2,
+        "edge_extension": 1.5,
+    },
+}
+
 # ── Font sizes in pt ──
 FONTS = {
     "large": 12,

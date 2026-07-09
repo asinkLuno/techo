@@ -1,0 +1,29 @@
+% ──────────────────────────────────────────
+% Midori Grid
+% Build: techo midori-grid --size a5s
+% ──────────────────────────────────────────
+\documentclass[10pt, twoside]{article}
+
+% ── Size ──
+\input{../../src/sizes.tex}
+\edef\PW{\Size{\EDITION}{PW}}
+\edef\PH{\Size{\EDITION}{PH}}
+
+% ── Page geometry ──
+\usepackage[paperwidth=\PW mm, paperheight=\PH mm,
+  margin=0mm,
+twoside]{geometry}
+
+% ── Packages ──
+\usepackage{tikz}
+\input{../../src/colors.tex}
+
+% ── Page style ──
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}
