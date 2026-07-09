@@ -95,7 +95,7 @@ MIDORI_GRID = {
         "binding": 15,
         "right_margin": 5,
         "top_margin": 5,
-        "bottom_margin": 5,
+        "bottom_margin": 10,
         "grid_step": 5,
         "dot_freq": 10,
         "gap_size": 1.2,
