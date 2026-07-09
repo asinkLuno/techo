@@ -73,18 +73,18 @@ def generate(size: str, sheets: int = 1) -> None:
             
             # Main continuous line inside grid
             lines.append(
-                f"  \\draw[cyan!40, very thin] "
+                f"  \\draw[cyan!40, line width=0.3pt] "
                 f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
             )
             
             # Extensions every 2 rows, BUT NOT on rows with dots, AND NOT on the very top/bottom borders
             if y_idx % 2 == 0 and y_idx not in y_dots and y_idx != 0 and y_idx != num_y:
                 lines.append(
-                    f"  \\draw[cyan!40, very thin] "
+                    f"  \\draw[cyan!40, line width=0.3pt] "
                     f"({start_x - GAP - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x - GAP:.2f}mm, -{y:.2f}mm);"
                 )
                 lines.append(
-                    f"  \\draw[cyan!40, very thin] "
+                    f"  \\draw[cyan!40, line width=0.3pt] "
                     f"({start_x + grid_w + GAP:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + GAP + EXT:.2f}mm, -{y:.2f}mm);"
                 )
 
@@ -106,7 +106,7 @@ def generate(size: str, sheets: int = 1) -> None:
                 y_bottom = start_y + (y_idx + 1) * STEP
                 path_cmds.append(f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)")
                 
-            lines.append(f"  \\draw[cyan!40, very thin] {' '.join(path_cmds)};")
+            lines.append(f"  \\draw[cyan!40, line width=0.3pt] {' '.join(path_cmds)};")
 
         # 4. Draw Helper dots (Symmetric from edges)
         for x_idx in sorted(x_dots):
