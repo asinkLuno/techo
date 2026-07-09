@@ -91,13 +91,13 @@ def generate(size: str, sheets: int = 1) -> None:
     # 4. Draw Helper dots (Symmetric from edges)
     for x_idx in sorted(x_dots):
         x = start_x + x_idx * STEP
-        lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 3:.2f}mm) circle (0.4mm);")
-        lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y + grid_h + 3:.2f}mm) circle (0.4mm);")
+        lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 1.5:.2f}mm) circle (0.4mm);")
+        lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y + grid_h + 1.5:.2f}mm) circle (0.4mm);")
     
     for y_idx in sorted(y_dots):
         y = start_y + y_idx * STEP
-        lines.append(f"  \\fill[cyan!40] ({start_x - 3:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
-        lines.append(f"  \\fill[cyan!40] ({start_x + grid_w + 3:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
+        lines.append(f"  \\fill[cyan!40] ({start_x - 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
+        lines.append(f"  \\fill[cyan!40] ({start_x + grid_w + 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
 
     def _page():
         return [
