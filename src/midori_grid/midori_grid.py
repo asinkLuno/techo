@@ -36,21 +36,38 @@ def generate(size: str, sheets: int = 1) -> None:
     start_y = TOP + (usable_h - grid_h) / 2.0
 
     lines = []
-    # 1. Horizontal lines (continuous, including edge extensions)
+    # 1. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows)
     for y_idx in range(num_y + 1):
         y = start_y + y_idx * STEP
+        
+        # Main continuous line inside grid
         lines.append(
             f"  \\draw[cyan!40, very thin] "
-            f"({start_x - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + EXT:.2f}mm, -{y:.2f}mm);"
+            f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
         )
+        
+        # Extensions every 2 rows
+        if y_idx % 2 == 0:
+            lines.append(
+                f"  \\draw[cyan!40, very thin] "
+                f"({start_x - GAP - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x - GAP:.2f}mm, -{y:.2f}mm);"
+            )
+            lines.append(
+                f"  \\draw[cyan!40, very thin] "
+                f"({start_x + grid_w + GAP:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + GAP + EXT:.2f}mm, -{y:.2f}mm);"
+            )
 
     # 2. Vertical lines (U-shaped segments with gaps)
     for x_idx in range(num_x + 1):
         x = start_x + x_idx * STEP
         path_cmds = []
         
-        # Top extension (touches the top line and goes up)
-        path_cmds.append(f"({x:.2f}mm, -{start_y:.2f}mm) -- ({x:.2f}mm, -{start_y - EXT:.2f}mm)")
+        # Top and bottom extensions every 2 columns (with gap)
+        if x_idx % 2 == 0:
+            path_cmds.append(f"({x:.2f}mm, -{start_y - GAP - EXT:.2f}mm) -- ({x:.2f}mm, -{start_y - GAP:.2f}mm)")
+            
+            y_last = start_y + num_y * STEP
+            path_cmds.append(f"({x:.2f}mm, -{y_last + GAP:.2f}mm) -- ({x:.2f}mm, -{y_last + GAP + EXT:.2f}mm)")
         
         # Grid segments (U-shape arms: touch bottom line, gap before top line)
         for y_idx in range(num_y):
@@ -58,10 +75,6 @@ def generate(size: str, sheets: int = 1) -> None:
             y_bottom = start_y + (y_idx + 1) * STEP
             path_cmds.append(f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)")
             
-        # Bottom extension (gap before it starts)
-        y_last = start_y + num_y * STEP
-        path_cmds.append(f"({x:.2f}mm, -{y_last + GAP:.2f}mm) -- ({x:.2f}mm, -{y_last + GAP + EXT:.2f}mm)")
-        
         lines.append(f"  \\draw[cyan!40, very thin] {' '.join(path_cmds)};")
 
     # 4. Helper dots (Symmetric from edges)
