@@ -125,10 +125,10 @@ def generate(size: str, sheets: int = 1) -> None:
             "\\end{tikzpicture}%",
         ]
 
-    # ── Build N sheets (1 sheet = 4 pages) ──
-    sheets_4 = sheets * 4
+    # ── Build exactly 2 pages (front and back) ──
+    total_pages = 2
     full = []
-    for _ in range(sheets_4):
+    for _ in range(total_pages):
         full.extend(_page())
         full.append("\\null")
         full.append("\\clearpage")
@@ -139,23 +139,23 @@ def generate(size: str, sheets: int = 1) -> None:
     (out / f"midori-grid-{size}.tex").write_text(
         f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/midori_grid/midori_grid.tex}}%\n"
     )
-    total_pages = sheets_4
     print(
         f"Generated {out}/content.tex + midori-grid-{size}.tex "
         f"({PW}×{PH}mm, {num_x}x{num_y} grid, {total_pages} pages)"
     )
     sizes.compile(f"midori-grid-{size}.tex", out)
 
-    # ── Booklet imposition via pdfpages ──
-    booklet_tex = (
-        "\\documentclass[10pt]{article}\n"
-        f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
-        "\\usepackage{pdfpages}\n"
-        "\\begin{document}\n"
-        f"\\includepdf[pages=-, nup=2x1, signature={total_pages}, width={PW}mm, height={PH}mm]"
-        f"{{midori-grid-{size}.pdf}}\n"
-        "\\end{document}\n"
-    )
-    (out / "booklet.tex").write_text(booklet_tex)
-    print(f"Generated {out}/booklet.tex (booklet imposition, {PW * 2}×{PH}mm)")
-    sizes.compile("booklet.tex", out)
+    # ── Booklet imposition via pdfpages (only if pages is multiple of 4) ──
+    if total_pages % 4 == 0:
+        booklet_tex = (
+            "\\documentclass[10pt]{article}\n"
+            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+            "\\usepackage{pdfpages}\n"
+            "\\begin{document}\n"
+            f"\\includepdf[pages=-, nup=2x1, signature={total_pages}, width={PW}mm, height={PH}mm]"
+            f"{{midori-grid-{size}.pdf}}\n"
+            "\\end{document}\n"
+        )
+        (out / "booklet.tex").write_text(booklet_tex)
+        print(f"Generated {out}/booklet.tex (booklet imposition, {PW * 2}×{PH}mm)")
+        sizes.compile("booklet.tex", out)
