@@ -37,12 +37,12 @@ def generate(size: str, sheets: int = 1) -> None:
 
     # 1. Helper dots (Calculate first to exclude extensions on dot lines)
     x_dots = set()
-    for i in range(0, num_x // 2 + 1, DOT_FREQ):
+    for i in range(DOT_FREQ, num_x // 2 + 1, DOT_FREQ):
         x_dots.add(i)
         x_dots.add(num_x - i)
 
     y_dots = set()
-    for i in range(0, num_y // 2 + 1, DOT_FREQ):
+    for i in range(DOT_FREQ, num_y // 2 + 1, DOT_FREQ):
         y_dots.add(i)
         y_dots.add(num_y - i)
 
@@ -57,8 +57,8 @@ def generate(size: str, sheets: int = 1) -> None:
             f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
         )
         
-        # Extensions every 2 rows, BUT NOT on rows with dots
-        if y_idx % 2 == 0 and y_idx not in y_dots:
+        # Extensions every 2 rows, BUT NOT on rows with dots, AND NOT on the very top/bottom borders
+        if y_idx % 2 == 0 and y_idx not in y_dots and y_idx != 0 and y_idx != num_y:
             lines.append(
                 f"  \\draw[cyan!40, very thin] "
                 f"({start_x - GAP - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x - GAP:.2f}mm, -{y:.2f}mm);"
@@ -73,8 +73,8 @@ def generate(size: str, sheets: int = 1) -> None:
         x = start_x + x_idx * STEP
         path_cmds = []
         
-        # Top and bottom extensions every 2 columns, BUT NOT on columns with dots
-        if x_idx % 2 == 0 and x_idx not in x_dots:
+        # Top and bottom extensions every 2 columns, BUT NOT on columns with dots, AND NOT on left/right borders
+        if x_idx % 2 == 0 and x_idx not in x_dots and x_idx != 0 and x_idx != num_x:
             path_cmds.append(f"({x:.2f}mm, -{start_y - GAP - EXT:.2f}mm) -- ({x:.2f}mm, -{start_y - GAP:.2f}mm)")
             
             y_last = start_y + num_y * STEP
