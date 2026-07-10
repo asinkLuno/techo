@@ -7,8 +7,16 @@ from pathlib import Path
 
 import sizes
 
+PEN = "{PEN}"
 
-def generate(size: str, sheets: int = 1) -> None:
+
+def _dot_indices(n, freq):
+    """Symmetric grid indices (excludes borders) for hollow-intersection dots."""
+    mid = n // 2
+    return {i for k in range(n) for i in (mid - k * freq, mid + k * freq) if 0 < i < n}
+
+
+def generate(size: str) -> None:
     s = sizes.SIZES[size]
     g = sizes.MIDORI_GRID[size]
     PW, PH = s["pw"], s["ph"]
@@ -36,34 +44,9 @@ def generate(size: str, sheets: int = 1) -> None:
     start_x_even = RIGHT + (usable_w - grid_w) / 2.0
     start_y = TOP + (usable_h - grid_h) / 2.0
 
-    # 1. Helper dots (Calculate first to exclude extensions on dot lines)
-    x_dots = set()
-    mid_x = num_x // 2
-    i = 0
-    while True:
-        left = mid_x - i
-        right = mid_x + i
-        if left <= 0 and right >= num_x:
-            break
-        if left > 0:
-            x_dots.add(left)
-        if right < num_x:
-            x_dots.add(right)
-        i += DOT_FREQ
-
-    y_dots = set()
-    mid_y = num_y // 2
-    i = 0
-    while True:
-        top = mid_y - i
-        bottom = mid_y + i
-        if top <= 0 and bottom >= num_y:
-            break
-        if top > 0:
-            y_dots.add(top)
-        if bottom < num_y:
-            y_dots.add(bottom)
-        i += DOT_FREQ
+    # 1. Helper dots (computed first to exclude extensions on dot rows/columns)
+    x_dots = _dot_indices(num_x, DOT_FREQ)
+    y_dots = _dot_indices(num_y, DOT_FREQ)
 
     def _generate_lines(start_x):
         lines = []
@@ -73,18 +56,18 @@ def generate(size: str, sheets: int = 1) -> None:
             
             # Main continuous line inside grid
             lines.append(
-                f"  \\draw[cyan!40, line width=0.7pt] "
+                f"  \\draw[{PEN}] "
                 f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
             )
             
             # Extensions every 2 rows, BUT NOT on rows with dots, AND NOT on the very top/bottom borders
             if y_idx % 2 == 0 and y_idx not in y_dots and y_idx != 0 and y_idx != num_y:
                 lines.append(
-                    f"  \\draw[cyan!40, line width=0.7pt] "
+                    f"  \\draw[{PEN}] "
                     f"({start_x - GAP - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x - GAP:.2f}mm, -{y:.2f}mm);"
                 )
                 lines.append(
-                    f"  \\draw[cyan!40, line width=0.7pt] "
+                    f"  \\draw[{PEN}] "
                     f"({start_x + grid_w + GAP:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + GAP + EXT:.2f}mm, -{y:.2f}mm);"
                 )
 
@@ -106,7 +89,7 @@ def generate(size: str, sheets: int = 1) -> None:
                 y_bottom = start_y + (y_idx + 1) * STEP
                 path_cmds.append(f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)")
                 
-            lines.append(f"  \\draw[cyan!40, line width=0.7pt] {' '.join(path_cmds)};")
+            lines.append(f"  \\draw[{PEN}] {' '.join(path_cmds)};")
 
         # 4. Draw Helper dots (Symmetric from edges)
         for x_idx in sorted(x_dots):
@@ -132,11 +115,10 @@ def generate(size: str, sheets: int = 1) -> None:
             "\\end{tikzpicture}%",
         ]
 
-    # ── Build exactly 2 pages (front and back) ──
-    total_pages = 2
+    # ── 2 pages: front (odd) + back (even) ──
     full = []
-    for i in range(total_pages):
-        full.extend(_page(is_odd=(i % 2 == 0)))
+    for is_odd in (True, False):
+        full.extend(_page(is_odd))
         full.append("\\null")
         full.append("\\clearpage")
 
@@ -148,21 +130,6 @@ def generate(size: str, sheets: int = 1) -> None:
     )
     print(
         f"Generated {out}/content.tex + midori-grid-{size}.tex "
-        f"({PW}×{PH}mm, {num_x}x{num_y} grid, {total_pages} pages)"
+        f"({PW}×{PH}mm, {num_x}x{num_y} grid, 2 pages)"
     )
     sizes.compile(f"midori-grid-{size}.tex", out)
-
-    # ── Booklet imposition via pdfpages (only if pages is multiple of 4) ──
-    if total_pages % 4 == 0:
-        booklet_tex = (
-            "\\documentclass[10pt]{article}\n"
-            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
-            "\\usepackage{pdfpages}\n"
-            "\\begin{document}\n"
-            f"\\includepdf[pages=-, nup=2x1, signature={total_pages}, width={PW}mm, height={PH}mm]"
-            f"{{midori-grid-{size}.pdf}}\n"
-            "\\end{document}\n"
-        )
-        (out / "booklet.tex").write_text(booklet_tex)
-        print(f"Generated {out}/booklet.tex (booklet imposition, {PW * 2}×{PH}mm)")
-        sizes.compile("booklet.tex", out)

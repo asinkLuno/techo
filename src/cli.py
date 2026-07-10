@@ -87,15 +87,9 @@ def seyes(size: str, sheets: int) -> None:
     show_default=True,
     type=click.Choice(list(sizes.MIDORI_GRID.keys())),
 )
-@click.option(
-    "--sheets",
-    default=1,
-    show_default=True,
-    help="Number of physical sheets (1 sheet = 4 pages)",
-)
-def midori_grid(size: str, sheets: int) -> None:
+def midori_grid(size: str) -> None:
     """Midori Grid — square grids with hollow intersections."""
-    gen_midori_grid(size, sheets=sheets)
+    gen_midori_grid(size)
 
 
 if __name__ == "__main__":
