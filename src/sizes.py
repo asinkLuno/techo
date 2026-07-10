@@ -43,6 +43,15 @@ LINEAR = {
     },
 }
 
+GREEN_DOT = {
+    "cozyca": {"binding": 15, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
+    "m5":     {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
+    "74m5":   {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
+    "m5l":    {"binding": 10, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
+    "a5s":    {"binding": 15, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
+    "tn":     {"binding": 3, "right_margin": 3, "top_margin": 3, "bottom_margin": 3},
+}
+
 NIGHTOWL = {
     "cozyca": {"binding": 15, "right_margin": 3, "row_gap": 7.5, "num_gap": 16},
     "m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 11},

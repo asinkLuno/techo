@@ -1,0 +1,27 @@
+% Shared dot-grid background — green dots, red center
+% Margins: set \DTOP/\DBOT/\DLEFT/\DRIGHT before \input to override 0 defaults
+\providecommand{\DTOP}{0}
+\providecommand{\DBOT}{0}
+\providecommand{\DLEFT}{0}
+\providecommand{\DRIGHT}{0}
+
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \pgfmathsetmacro{\gxmin}{\DLEFT+0.5}
+    \pgfmathsetmacro{\gxnext}{\gxmin+3}
+    \pgfmathsetmacro{\gxmax}{\PW-\DRIGHT-0.5}
+    \pgfmathsetmacro{\gymax}{-\DTOP-1.5}
+    \pgfmathsetmacro{\gynext}{\gymax-3}
+    \pgfmathsetmacro{\gymin}{-\PH+\DBOT+1.5}
+    \pgfmathsetmacro{\cx}{\PW/2}
+    \pgfmathsetmacro{\cy}{-\PH/2}
+    % Dot grid
+    \foreach \x in {\gxmin,\gxnext,...,\gxmax} {
+      \foreach \y in {\gymax,\gynext,...,\gymin} {
+        \fill[NeonGreen!50] (\x mm, \y mm) circle (0.35mm);
+      }
+    }
+    % Center dot → red
+    \fill[IronOxideRed!50] (\cx mm, \cy mm) circle (0.35mm);
+  \end{tikzpicture}%
+}

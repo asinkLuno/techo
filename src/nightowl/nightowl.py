@@ -5,7 +5,8 @@ Usage: techo nightowl --size m5|cozyca|74m5
 
 from pathlib import Path
 
-import sizes
+from .. import sizes
+from ..green_dot import content as green_dot_content
 
 ROWS = [1, 3, 4, 5, 1, 3, 4, 5, 1]  # 27 numbers total (0–26)
 
@@ -56,9 +57,7 @@ def generate(size: str) -> None:
         "\\end{tikzpicture}%",
         "\\null",
         "\\clearpage",
-        "\\thispagestyle{empty}%",
-        "\\null",
-        "\\clearpage",
+        *green_dot_content(),
     ]
     (out / "content.tex").write_text("\n".join(full) + "\n")
     (out / f"night-owl-{size}.tex").write_text(

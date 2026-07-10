@@ -16,8 +16,8 @@ from zoneinfo import ZoneInfo
 
 import ephem
 
-import sizes
-from sizes import FONT_CMD
+from .. import sizes
+from ..sizes import FONT_CMD
 
 # ── Calendar (front) ──
 COLS = 7
@@ -297,7 +297,7 @@ def generate(ym: str, tz_name: str = "UTC", location: str = "tranquility") -> No
     sizes.compile(f"{edition}.tex", out)
 
     # ── Day pages (one portrait m5 per day) ──
-    from senary.day import generate as _generate_day
+    from ..senary.day import generate as _generate_day
 
     for d in range(1, days + 1):
         _generate_day(f"{year}-{month:02d}-{d:02d}", tz_name, location)

@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import sizes
-from senary.senary import LOCATIONS, _moon_info, date_node
-from sizes import FONT_CMD
+from .. import sizes
+from ..senary import LOCATIONS, _moon_info, date_node
+from ..sizes import FONT_CMD
 
 # ── Layout ──
 LEFT_MARGIN = 9.0  # mm, date strip width (left of the divider)

@@ -8,13 +8,15 @@ All builds go through the `techo` command:
 
 import click
 
-import sizes
-from linear import generate as gen_linear
-from nightowl import generate as gen_nightowl
-from senary import LOCATIONS
-from senary import generate as gen_senary
-from seyes import generate as gen_seyes
-from midori_grid.midori_grid import generate as gen_midori_grid
+from . import sizes
+from .linear import generate as gen_linear
+from .green_dot import generate as gen_green_dot
+from .nightowl import generate as gen_nightowl
+from .tn_cover import generate as gen_tn_cover
+from .senary import LOCATIONS
+from .senary import generate as gen_senary
+from .seyes import generate as gen_seyes
+from .midori_grid.midori_grid import generate as gen_midori_grid
 
 
 @click.group()
@@ -80,6 +82,18 @@ def seyes(size: str, sheets: int) -> None:
     gen_seyes(size, sheets=sheets)
 
 
+@cli.command("green-dot")
+@click.option(
+    "--size",
+    default="m5",
+    show_default=True,
+    type=click.Choice(list(sizes.SIZES.keys())),
+)
+def green_dot(size: str) -> None:
+    """Single empty page with green-dot grid background."""
+    gen_green_dot(size)
+
+
 @cli.command("midori-grid")
 @click.option(
     "--size",
@@ -90,6 +104,18 @@ def seyes(size: str, sheets: int) -> None:
 def midori_grid(size: str) -> None:
     """Midori Grid — square grids with hollow intersections."""
     gen_midori_grid(size)
+
+
+@cli.command("tn-cover")
+@click.option(
+    "--size",
+    default="tn",
+    show_default=True,
+    type=click.Choice(list(sizes.SIZES.keys())),
+)
+def tn_cover(size: str) -> None:
+    """TN Cover — dark background with colorful confetti dots."""
+    gen_tn_cover(size)
 
 
 if __name__ == "__main__":

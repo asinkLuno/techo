@@ -5,7 +5,7 @@ Usage: techo linear --size a5s
 
 from pathlib import Path
 
-import sizes
+from .. import sizes
 
 
 def generate(size: str) -> None:

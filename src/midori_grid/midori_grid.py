@@ -5,7 +5,7 @@ Usage: techo midori-grid --size a5s
 
 from pathlib import Path
 
-import sizes
+from .. import sizes
 
 PEN = "cyan!40, line width=0.7pt"
 

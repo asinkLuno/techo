@@ -1,36 +1,25 @@
-% ──────────────────────────────────────────
-% Night Owl — triangular hourglass, numbers 0–26 colored by night sky
+% Green Dot — single empty page with dot-grid background
 % Size is set by \EDITION in each edition's generated wrapper.
-% Build: uv run python nightowl.py --size <m5|cozyca>
-%        cd night-owl-<size> && xelatex night-owl-<size>.tex
-% (run from the edition dir; sizes.tex is at the repo root)
-% ──────────────────────────────────────────
 \documentclass[10pt, twoside]{article}
 
 % ── Size ──
 \input{../../src/sizes.tex}
-% Materialize current size dims as plain numbers (dot grid derives from these)
 \edef\PW{\Size{\EDITION}{PW}}
 \edef\PH{\Size{\EDITION}{PH}}
 
 % ── Page geometry ──
 \usepackage[paperwidth=\PW mm, paperheight=\PH mm,
-  margin=0mm,
+  inner=\BINDING mm, outer=\RIGHTMARGIN mm,
+  top=\DTOP mm, bottom=\DBOT mm,
 twoside]{geometry}
 
 % ── Packages ──
 \usepackage{tikz}
 \input{../../src/colors.tex}
-\usepackage{fontspec}
 \usepackage{xcolor}
 
 % ── Background: dot-grid ──
 \input{../../src/dot-grid.tex}
-
-% ── 3270 Nerd Font (retro terminal numerals) ──
-\newfontfamily{\nightowlfont}{3270 Nerd Font Mono}[
-  Scale=1.0,
-]
 
 % ── Page style ──
 \pagestyle{empty}

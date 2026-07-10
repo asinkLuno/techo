@@ -9,7 +9,7 @@ Usage: techo seyes --size tn
 
 from pathlib import Path
 
-import sizes
+from .. import sizes
 
 
 def generate(size: str, sheets: int = 1) -> None:
