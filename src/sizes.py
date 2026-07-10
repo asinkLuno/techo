@@ -102,7 +102,7 @@ MIDORI_GRID = {
         "edge_extension": 1.5,
     },
     "tn": {
-        "binding": 12,
+        "binding": 5,
         "right_margin": 5,
         "top_margin": 10,
         "bottom_margin": 10,

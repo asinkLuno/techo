@@ -7,7 +7,7 @@ from pathlib import Path
 
 import sizes
 
-PEN = "{PEN}"
+PEN = "cyan!40, line width=0.7pt"
 
 
 def _dot_indices(n, freq):
@@ -133,3 +133,17 @@ def generate(size: str) -> None:
         f"({PW}×{PH}mm, {num_x}x{num_y} grid, 2 pages)"
     )
     sizes.compile(f"midori-grid-{size}.tex", out)
+
+    # ── Spread: 2 pages side-by-side (nup=2x1) ──
+    spread_tex = (
+        "\\documentclass[10pt]{article}\n"
+        f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+        "\\usepackage{pdfpages}\n"
+        "\\begin{document}\n"
+        f"\\includepdf[pages={{1,2}}, nup=2x1, width={PW}mm, height={PH}mm]"
+        f"{{midori-grid-{size}.pdf}}\n"
+        "\\end{document}\n"
+    )
+    (out / "spread.tex").write_text(spread_tex)
+    sizes.compile("spread.tex", out)
+    print(f"Generated {out}/spread.pdf (spread, {PW * 2}×{PH}mm)")
