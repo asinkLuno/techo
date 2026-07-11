@@ -7,18 +7,24 @@
 
 \AddToHook{shipout/background}{%
   \begin{tikzpicture}[remember picture, overlay]
-    \pgfmathsetmacro{\gxmin}{\DLEFT+0.5}
-    \pgfmathsetmacro{\gxnext}{\gxmin+3}
-    \pgfmathsetmacro{\gxmax}{\PW-\DRIGHT-0.5}
-    \pgfmathsetmacro{\gymax}{-\DTOP-1.5}
-    \pgfmathsetmacro{\gynext}{\gymax-3}
-    \pgfmathsetmacro{\gymin}{-\PH+\DBOT+1.5}
+    % Center dot position first — grid snaps to this
     \pgfmathsetmacro{\cx}{\PW/2}
     \pgfmathsetmacro{\cy}{-\PH/2}
-    % Dot grid
-    \foreach \x in {\gxmin,\gxnext,...,\gxmax} {
-      \foreach \y in {\gymax,\gynext,...,\gymin} {
-        \fill[NeonGreen!50] (\x mm, \y mm) circle (0.35mm);
+    \pgfmathsetmacro{\gs}{3}
+    % Grid offset ranges from center (integer steps of \gs)
+    \pgfmathsetmacro{\nmin}{ceil((\DLEFT+0.5-\cx)/\gs)}
+    \pgfmathsetmacro{\nmax}{floor((\PW-\DRIGHT-0.5-\cx)/\gs)}
+    \pgfmathsetmacro{\mmin}{ceil((-\PH+\DBOT+1.5-\cy)/\gs)}
+    \pgfmathsetmacro{\mmax}{floor((-\DTOP-1.5-\cy)/\gs)}
+    % Green dots (skip center — red dot goes there)
+    \foreach \n in {\nmin,...,\nmax} {
+      \foreach \m in {\mmin,...,\mmax} {
+        \pgfmathsetmacro{\dx}{\cx + \n*\gs}
+        \pgfmathsetmacro{\dy}{\cy + \m*\gs}
+        \pgfmathsetmacro{\iscenter}{\n==0 && \m==0 ? 1 : 0}
+        \ifnum\iscenter=0
+          \fill[NeonGreen!50] (\dx mm, \dy mm) circle (0.35mm);
+        \fi
       }
     }
     % Center dot → red
