@@ -270,7 +270,7 @@ def generate(ym: str, tz_name: str = "UTC", location: str = "tranquility") -> No
         sys.exit(1)
     lat, lon = LOCATIONS[location]
 
-    key = "m5l"
+    key = "67m5l"
     pw, ph = sizes.SIZES[key]["pw"], sizes.SIZES[key]["ph"]
     sizes.write_sizes_tex()
     days = calendar.monthrange(year, month)[1]
@@ -296,8 +296,34 @@ def generate(ym: str, tz_name: str = "UTC", location: str = "tranquility") -> No
     )
     sizes.compile(f"{edition}.tex", out)
 
-    # ── Day pages (one portrait m5 per day) ──
-    from ..senary.day import generate as _generate_day
+    # ── Day pages (all portrait m5 days in one PDF) ──
+    from ..senary.day import _day
 
+    day_key = "67m5"
+    pw_day, ph_day = sizes.SIZES[day_key]["pw"], sizes.SIZES[day_key]["ph"]
+    day_parts = []
     for d in range(1, days + 1):
-        _generate_day(f"{year}-{month:02d}-{d:02d}", tz_name, location)
+        day_parts.append("\\thispagestyle{empty}%")
+        day_parts.append(_day(year, month, d, pw_day, ph_day, tz_name, lat, lon))
+        day_parts.append("\\null")
+        day_parts.append("\\clearpage")
+    days_tex = (
+        "\\documentclass[10pt]{article}\n"
+        "\\input{../../src/sizes.tex}\n"
+        "\\usepackage[paperwidth=\\Size{67m5}{PW} mm, paperheight=\\Size{67m5}{PH} mm, margin=0mm]{geometry}\n"
+        "\\usepackage{tikz}\n"
+        "\\input{../../src/colors.tex}\n"
+        "\\usepackage{fontspec}\n"
+        "\\setmainfont{3270 Nerd Font Mono}\n"
+        "\\tikzset{gridline/.style={IronOxideRed!55, line width=0.5pt}}\n"
+        "\\pagestyle{empty}\n"
+        "\\setlength{\\parindent}{0pt}\n"
+        "\\setlength{\\parskip}{0pt}\n"
+        "\\setlength{\\topskip}{0pt}\n"
+        "\\begin{document}\n"
+        + "\n".join(day_parts) + "\n"
+        "\\end{document}\n"
+    )
+    (out / "days.tex").write_text(days_tex)
+    sizes.compile("days.tex", out)
+    print(f"  → days.pdf ({days} day pages)")

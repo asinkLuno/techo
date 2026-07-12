@@ -10,51 +10,27 @@ from pathlib import Path
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
 SIZES = {
     "cozyca": {"pw": 100, "ph": 90, "red_line": 8},
-    "m5": {"pw": 67, "ph": 105, "red_line": 13},
+    "67m5": {"pw": 67, "ph": 105, "red_line": 13},
+    "67m5l": {"pw": 105, "ph": 67, "red_line": 8},  # landscape m5 (senary)
     "74m5": {"pw": 74, "ph": 105, "red_line": 12},
-    "m5l": {"pw": 105, "ph": 67, "red_line": 8},  # landscape m5 (senary)
     "a5s": {"pw": 110, "ph": 210, "red_line": 15},
     "tn": {"pw": 110, "ph": 210, "red_line": 15},
-}
-
-# ── Design-specific layout params (consumed only by the generators) ──
-SEYES = {
-    "tn": {
-        "binding": 12,
-        "outer_margin": 5,
-        "top_margin": 10,
-        "bottom_margin": 10,
-        "row_height": 2,
-        "group_size": 4,
-        "thick_line": 0.3,
-        "thin_line": 0.1,
-        "red_line_width": 0.3,
-    },
-}
-
-LINEAR = {
-    "a5s": {
-        "binding": 15,
-        "right_margin": 5,
-        "top_margin": 10,
-        "bottom_margin": 10,
-        "line_gap": 7,
-        "line_width": 2,
-    },
+    "tnp": {"pw": 124, "ph": 89, "red_line": 10},
 }
 
 GREEN_DOT = {
     "cozyca": {"binding": 15, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "m5":     {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "74m5":   {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "m5l":    {"binding": 10, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "a5s":    {"binding": 15, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "tn":     {"binding": 3, "right_margin": 3, "top_margin": 3, "bottom_margin": 3},
+    "67m5": {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
+    "67m5l": {"binding": 10, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
+    "74m5": {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
+    "a5s": {"binding": 15, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
+    "tn": {"binding": 3, "right_margin": 3, "top_margin": 3, "bottom_margin": 3},
+    "tnp": {"binding": 3, "right_margin": 3, "top_margin": 3, "bottom_margin": 3},
 }
 
 NIGHTOWL = {
     "cozyca": {"binding": 15, "right_margin": 3, "row_gap": 7.5, "num_gap": 16},
-    "m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 11},
+    "67m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 11},
     "74m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 13},
     "a5s": {"binding": 18, "right_margin": 5, "row_gap": 14.0, "num_gap": 26},
 }
@@ -70,7 +46,7 @@ MIDORI_GRID = {
         "gap_size": 1.2,
         "edge_extension": 1.5,
     },
-    "m5": {
+    "67m5": {
         "binding": 12,
         "right_margin": 3,
         "top_margin": 5,
@@ -90,7 +66,7 @@ MIDORI_GRID = {
         "gap_size": 1.0,
         "edge_extension": 1.2,
     },
-    "m5l": {
+    "67m5l": {
         "binding": 10,
         "right_margin": 5,
         "top_margin": 5,
@@ -115,6 +91,16 @@ MIDORI_GRID = {
         "right_margin": 5,
         "top_margin": 10,
         "bottom_margin": 10,
+        "grid_step": 5,
+        "dot_freq": 10,
+        "gap_size": 1.2,
+        "edge_extension": 1.5,
+    },
+    "tnp": {
+        "binding": 5,
+        "right_margin": 5,
+        "top_margin": 5,
+        "bottom_margin": 5,
         "grid_step": 5,
         "dot_freq": 10,
         "gap_size": 1.2,

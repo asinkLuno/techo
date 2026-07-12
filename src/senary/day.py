@@ -138,7 +138,7 @@ def generate(datestr: str, tz_name: str = "UTC", location: str = "tranquility") 
         sys.exit(1)
     lat, lon = LOCATIONS[location]
 
-    key = "m5"
+    key = "67m5"
     pw, ph = sizes.SIZES[key]["pw"], sizes.SIZES[key]["ph"]
     sizes.write_sizes_tex()
 
