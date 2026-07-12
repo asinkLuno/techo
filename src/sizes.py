@@ -10,6 +10,7 @@ from pathlib import Path
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
 SIZES = {
     "cozyca": {"pw": 100, "ph": 90, "red_line": 8},
+    "62m5": {"pw": 62, "ph": 105, "red_line": 13},
     "67m5": {"pw": 67, "ph": 105, "red_line": 13},
     "67m5l": {"pw": 105, "ph": 67, "red_line": 8},  # landscape m5 (senary)
     "74m5": {"pw": 74, "ph": 105, "red_line": 12},
@@ -29,6 +30,7 @@ SIZES = {
 
 GREEN_DOT = {
     "cozyca": {"binding": 15, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
+    "62m5": {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
     "67m5": {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
     "67m5l": {"binding": 10, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
     "74m5": {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
@@ -53,6 +55,7 @@ GREEN_DOT = {
 
 NIGHTOWL = {
     "cozyca": {"binding": 15, "right_margin": 3, "row_gap": 7.5, "num_gap": 16},
+    "62m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 10},
     "67m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 11},
     "74m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 13},
     "a4": {"binding": 20, "right_margin": 5, "row_gap": 14.0, "num_gap": 42},
@@ -77,6 +80,16 @@ MIDORI_GRID = {
         "dot_freq": 10,
         "gap_size": 1.2,
         "edge_extension": 1.5,
+    },
+    "62m5": {
+        "binding": 12,
+        "right_margin": 3,
+        "top_margin": 5,
+        "bottom_margin": 5,
+        "grid_step": 5,
+        "dot_freq": 10,
+        "gap_size": 1.0,
+        "edge_extension": 1.2,
     },
     "67m5": {
         "binding": 12,
