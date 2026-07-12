@@ -38,7 +38,12 @@ GREEN_DOT = {
     "a5fc": {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
     "a6per": {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
     "a6s": {"binding": 10, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "a6standard": {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
+    "a6standard": {
+        "binding": 12,
+        "right_margin": 5,
+        "top_margin": 10,
+        "bottom_margin": 10,
+    },
     "127a7": {"binding": 10, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
     "120a7": {"binding": 10, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
     "a5s": {"binding": 15, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},

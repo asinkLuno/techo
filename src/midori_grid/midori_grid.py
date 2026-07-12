@@ -33,7 +33,7 @@ def generate(size: str) -> None:
 
     usable_w = PW - BINDING - RIGHT
     usable_h = PH - TOP - BOTTOM
-    
+
     num_x = int(usable_w // STEP)
     num_y = int(usable_h // STEP)
 
@@ -53,13 +53,13 @@ def generate(size: str) -> None:
         # 2. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows except on dot rows)
         for y_idx in range(num_y + 1):
             y = start_y + y_idx * STEP
-            
+
             # Main continuous line inside grid
             lines.append(
                 f"  \\draw[{PEN}] "
                 f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
             )
-            
+
             # Extensions every 2 rows, BUT NOT on rows with dots, AND NOT on the very top/bottom borders
             if y_idx % 2 == 0 and y_idx not in y_dots and y_idx != 0 and y_idx != num_y:
                 lines.append(
@@ -75,33 +75,47 @@ def generate(size: str) -> None:
         for x_idx in range(num_x + 1):
             x = start_x + x_idx * STEP
             path_cmds = []
-            
+
             # Top and bottom extensions every 2 columns, BUT NOT on columns with dots, AND NOT on left/right borders
             if x_idx % 2 == 0 and x_idx not in x_dots and x_idx != 0 and x_idx != num_x:
-                path_cmds.append(f"({x:.2f}mm, -{start_y - GAP - EXT:.2f}mm) -- ({x:.2f}mm, -{start_y - GAP:.2f}mm)")
-                
+                path_cmds.append(
+                    f"({x:.2f}mm, -{start_y - GAP - EXT:.2f}mm) -- ({x:.2f}mm, -{start_y - GAP:.2f}mm)"
+                )
+
                 y_last = start_y + num_y * STEP
-                path_cmds.append(f"({x:.2f}mm, -{y_last + GAP:.2f}mm) -- ({x:.2f}mm, -{y_last + GAP + EXT:.2f}mm)")
-            
+                path_cmds.append(
+                    f"({x:.2f}mm, -{y_last + GAP:.2f}mm) -- ({x:.2f}mm, -{y_last + GAP + EXT:.2f}mm)"
+                )
+
             # Grid segments (U-shape arms: touch bottom line, gap before top line)
             for y_idx in range(num_y):
                 y_top = start_y + y_idx * STEP
                 y_bottom = start_y + (y_idx + 1) * STEP
-                path_cmds.append(f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)")
-                
+                path_cmds.append(
+                    f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)"
+                )
+
             lines.append(f"  \\draw[{PEN}] {' '.join(path_cmds)};")
 
         # 4. Draw Helper dots (Symmetric from edges)
         for x_idx in sorted(x_dots):
             x = start_x + x_idx * STEP
-            lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 1.5:.2f}mm) circle (0.4mm);")
-            lines.append(f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y + grid_h + 1.5:.2f}mm) circle (0.4mm);")
-        
+            lines.append(
+                f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 1.5:.2f}mm) circle (0.4mm);"
+            )
+            lines.append(
+                f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y + grid_h + 1.5:.2f}mm) circle (0.4mm);"
+            )
+
         for y_idx in sorted(y_dots):
             y = start_y + y_idx * STEP
-            lines.append(f"  \\fill[cyan!40] ({start_x - 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
-            lines.append(f"  \\fill[cyan!40] ({start_x + grid_w + 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);")
-            
+            lines.append(
+                f"  \\fill[cyan!40] ({start_x - 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);"
+            )
+            lines.append(
+                f"  \\fill[cyan!40] ({start_x + grid_w + 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);"
+            )
+
         return lines
 
     lines_odd = _generate_lines(start_x_odd)

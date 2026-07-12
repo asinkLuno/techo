@@ -8,14 +8,12 @@ All builds go through the `techo` command:
 import click
 
 from . import sizes
-
 from .green_dot import generate as gen_green_dot
+from .midori_grid.midori_grid import generate as gen_midori_grid
 from .nightowl import generate as gen_nightowl
-from .tn_cover import generate as gen_tn_cover
 from .senary import LOCATIONS
 from .senary import generate as gen_senary
-
-from .midori_grid.midori_grid import generate as gen_midori_grid
+from .tn_cover import generate as gen_tn_cover
 
 
 @click.group()

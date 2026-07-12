@@ -320,8 +320,7 @@ def generate(ym: str, tz_name: str = "UTC", location: str = "tranquility") -> No
         "\\setlength{\\parindent}{0pt}\n"
         "\\setlength{\\parskip}{0pt}\n"
         "\\setlength{\\topskip}{0pt}\n"
-        "\\begin{document}\n"
-        + "\n".join(day_parts) + "\n"
+        "\\begin{document}\n" + "\n".join(day_parts) + "\n"
         "\\end{document}\n"
     )
     (out / "days.tex").write_text(days_tex)
