@@ -25,7 +25,7 @@ SIZES = {
     "120a7": {"pw": 80, "ph": 120, "red_line": 10},
     "a5s": {"pw": 110, "ph": 210, "red_line": 15},
     "tn": {"pw": 110, "ph": 210, "red_line": 15},
-    "tnp": {"pw": 124, "ph": 89, "red_line": 10},
+    "tnp": {"pw": 88, "ph": 125, "red_line": 10},
 }
 
 GREEN_DOT = {
@@ -235,7 +235,7 @@ MIDORI_GRID = {
         "binding": 5,
         "right_margin": 5,
         "top_margin": 5,
-        "bottom_margin": 5,
+        "bottom_margin": 10,
         "grid_step": 5,
         "dot_freq": 10,
         "gap_size": 1.2,

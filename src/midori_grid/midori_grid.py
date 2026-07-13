@@ -121,6 +121,44 @@ def generate(size: str) -> None:
     lines_odd = _generate_lines(start_x_odd)
     lines_even = _generate_lines(start_x_even)
 
+    out = Path("outputs") / f"midori-grid-{size}"
+    out.mkdir(parents=True, exist_ok=True)
+
+    # ── tn / tnp: facing-page spread (one physical sheet, two grids side-by-side) ──
+    if size in ("tn", "tnp"):
+        lines_right = _generate_lines(PW + start_x_even)
+        content = "\n".join(
+            [
+                "\\thispagestyle{empty}%",
+                "\\begin{tikzpicture}[remember picture, overlay]",
+                *lines_odd,
+                *lines_right,
+                "\\end{tikzpicture}%",
+            ]
+        )
+        (out / "content.tex").write_text(content + "\n")
+
+        spread_w = PW * 2
+        (out / f"midori-grid-{size}.tex").write_text(
+            "\\documentclass[10pt]{article}\n"
+            f"\\usepackage[paperwidth={spread_w}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+            "\\usepackage{tikz}\n"
+            "\\pagestyle{empty}\n"
+            "\\setlength{\\parindent}{0pt}\n"
+            "\\setlength{\\parskip}{0pt}\n"
+            "\\begin{document}\n"
+            "\\input{content.tex}\n"
+            "\\end{document}\n"
+        )
+        print(
+            f"Generated {out}/content.tex + midori-grid-{size}.tex "
+            f"({spread_w}×{PH}mm, {num_x}x{num_y} grid, facing-page spread)"
+        )
+        sizes.compile(f"midori-grid-{size}.tex", out)
+        print(f"Generated {out}/midori-grid-{size}.pdf (spread, {spread_w}×{PH}mm)")
+        return
+
+    # ── Other sizes: 2 single pages + optional spread preview ──
     def _page(is_odd: bool):
         return [
             "\\thispagestyle{empty}%",
@@ -129,15 +167,12 @@ def generate(size: str) -> None:
             "\\end{tikzpicture}%",
         ]
 
-    # ── 2 pages: front (odd) + back (even) ──
     full = []
     for is_odd in (True, False):
         full.extend(_page(is_odd))
         full.append("\\null")
         full.append("\\clearpage")
 
-    out = Path("outputs") / f"midori-grid-{size}"
-    out.mkdir(parents=True, exist_ok=True)
     (out / "content.tex").write_text("\n".join(full) + "\n")
     (out / f"midori-grid-{size}.tex").write_text(
         f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/midori_grid/midori_grid.tex}}%\n"
@@ -148,7 +183,6 @@ def generate(size: str) -> None:
     )
     sizes.compile(f"midori-grid-{size}.tex", out)
 
-    # ── Spread: 2 pages side-by-side (nup=2x1) ──
     spread_tex = (
         "\\documentclass[10pt]{article}\n"
         f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"

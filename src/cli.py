@@ -5,6 +5,8 @@ All builds go through the `techo` command:
   techo senary YYYY-MM [--tz Asia/Shanghai] [--location tranquility]
 """
 
+from pathlib import Path
+
 import click
 
 from . import sizes
@@ -74,15 +76,18 @@ def midori_grid(size: str) -> None:
 
 
 @cli.command("tn-cover")
+@click.argument(
+    "image-path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
+)
 @click.option(
     "--size",
     default="tn",
     show_default=True,
-    type=click.Choice(list(sizes.SIZES.keys())),
+    type=click.Choice(["tn", "tnp"]),
 )
-def tn_cover(size: str) -> None:
-    """TN Cover — dark background with colorful confetti dots."""
-    gen_tn_cover(size)
+def tn_cover(image_path: Path, size: str) -> None:
+    """Generate Traveler's Notebook (TN/TNP) cover spread from an image."""
+    gen_tn_cover(image_path, size)
 
 
 if __name__ == "__main__":

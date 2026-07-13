@@ -1,0 +1,45 @@
+% TN Cover LaTeX template
+% Size is set by \EDITION in each edition's generated wrapper.
+\documentclass[10pt]{article}
+
+% ── Size ──
+\input{../../src/sizes.tex}
+\edef\PW{\Size{\EDITION}{PW}}
+\edef\PH{\Size{\EDITION}{PH}}
+
+% Spread size: width is \PAPERWD mm, height is \PAPERHT mm
+\usepackage[
+  paperwidth=\PAPERWD mm,
+  paperheight=\PAPERHT mm,
+  margin=0mm,
+  noheadfoot
+]{geometry}
+
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{xcolor}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+\begin{document}
+\begin{tikzpicture}[remember picture, overlay]
+  % Center the image (rendered first, behind the border and ticks)
+  \node[anchor=center] at (current page.center) {%
+    \includegraphics[width=\IMGWIDTH mm, height=\IMGHEIGHT mm,
+    keepaspectratio]{\IMGNAME}%
+  };
+
+  % Draw faint outer border around the cover page (exactly on the
+  % boundary, on top of the image)
+  \draw[gray!35, line width=0.15mm] (current page.south west)
+  rectangle (current page.north east);
+
+  % Draw fold guide ticks at the center (top and bottom, on top of the image)
+  \ifnum\DRAWFOLD=1
+  \draw[gray!40, line width=0.25mm] (current page.north) -- ++(0, -4mm);
+  \draw[gray!40, line width=0.25mm] (current page.south) -- ++(0, 4mm);
+  \fi
+\end{tikzpicture}
+\end{document}
