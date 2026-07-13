@@ -124,41 +124,6 @@ def generate(size: str) -> None:
     out = Path("outputs") / f"midori-grid-{size}"
     out.mkdir(parents=True, exist_ok=True)
 
-    # ── tn / tnp: facing-page spread (one physical sheet, two grids side-by-side) ──
-    if size in ("tn", "tnp"):
-        lines_right = _generate_lines(PW + start_x_even)
-        content = "\n".join(
-            [
-                "\\thispagestyle{empty}%",
-                "\\begin{tikzpicture}[remember picture, overlay]",
-                *lines_odd,
-                *lines_right,
-                "\\end{tikzpicture}%",
-            ]
-        )
-        (out / "content.tex").write_text(content + "\n")
-
-        spread_w = PW * 2
-        (out / f"midori-grid-{size}.tex").write_text(
-            "\\documentclass[10pt]{article}\n"
-            f"\\usepackage[paperwidth={spread_w}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
-            "\\usepackage{tikz}\n"
-            "\\pagestyle{empty}\n"
-            "\\setlength{\\parindent}{0pt}\n"
-            "\\setlength{\\parskip}{0pt}\n"
-            "\\begin{document}\n"
-            "\\input{content.tex}\n"
-            "\\end{document}\n"
-        )
-        print(
-            f"Generated {out}/content.tex + midori-grid-{size}.tex "
-            f"({spread_w}×{PH}mm, {num_x}x{num_y} grid, facing-page spread)"
-        )
-        sizes.compile(f"midori-grid-{size}.tex", out)
-        print(f"Generated {out}/midori-grid-{size}.pdf (spread, {spread_w}×{PH}mm)")
-        return
-
-    # ── Other sizes: 2 single pages + optional spread preview ──
     def _page(is_odd: bool):
         return [
             "\\thispagestyle{empty}%",
@@ -183,15 +148,26 @@ def generate(size: str) -> None:
     )
     sizes.compile(f"midori-grid-{size}.tex", out)
 
-    spread_tex = (
-        "\\documentclass[10pt]{article}\n"
-        f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
-        "\\usepackage{pdfpages}\n"
-        "\\begin{document}\n"
-        f"\\includepdf[pages={{1,2}}, nup=2x1, width={PW}mm, height={PH}mm]"
-        f"{{midori-grid-{size}.pdf}}\n"
-        "\\end{document}\n"
-    )
+    if size in ("tn", "tnp"):
+        spread_tex = (
+            "\\documentclass[10pt]{article}\n"
+            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+            "\\usepackage{pdfpages}\n"
+            "\\begin{document}\n"
+            f"\\includepdf[pages=-, booklet=true, landscape]"
+            f"{{midori-grid-{size}.pdf}}\n"
+            "\\end{document}\n"
+        )
+    else:
+        spread_tex = (
+            "\\documentclass[10pt]{article}\n"
+            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+            "\\usepackage{pdfpages}\n"
+            "\\begin{document}\n"
+            f"\\includepdf[pages={{1,2}}, nup=2x1, width={PW}mm, height={PH}mm]"
+            f"{{midori-grid-{size}.pdf}}\n"
+            "\\end{document}\n"
+        )
     (out / "spread.tex").write_text(spread_tex)
     sizes.compile("spread.tex", out)
     print(f"Generated {out}/spread.pdf (spread, {PW * 2}×{PH}mm)")

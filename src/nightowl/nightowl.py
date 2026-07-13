@@ -65,3 +65,17 @@ def generate(size: str) -> None:
     )
     print(f"Generated {out}/content.tex + night-owl-{size}.tex ({PW}×{PH}mm)")
     sizes.compile(f"night-owl-{size}.tex", out)
+
+    if size in ("tn", "tnp"):
+        spread_tex = (
+            "\\documentclass[10pt]{article}\n"
+            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+            "\\usepackage{pdfpages}\n"
+            "\\begin{document}\n"
+            f"\\includepdf[pages=-, booklet=true, landscape]"
+            f"{{night-owl-{size}.pdf}}\n"
+            "\\end{document}\n"
+        )
+        (out / "spread.tex").write_text(spread_tex)
+        sizes.compile("spread.tex", out)
+        print(f"Generated {out}/spread.pdf (booklet spread, {PW * 2}×{PH}mm)")

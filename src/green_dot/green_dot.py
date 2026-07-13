@@ -45,16 +45,26 @@ def generate(size: str) -> None:
     print(f"Generated {out}/content.tex + green-dot-{size}.tex ({PW}×{PH}mm, 2 pages)")
     sizes.compile(f"green-dot-{size}.tex", out)
 
-    # Spread: 2 pages side-by-side
-    spread_tex = (
-        "\\documentclass[10pt]{article}\n"
-        f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
-        "\\usepackage{pdfpages}\n"
-        "\\begin{document}\n"
-        f"\\includepdf[pages={{1,2}}, nup=2x1, width={PW}mm, height={PH}mm]"
-        f"{{green-dot-{size}.pdf}}\n"
-        "\\end{document}\n"
-    )
+    if size in ("tn", "tnp"):
+        spread_tex = (
+            "\\documentclass[10pt]{article}\n"
+            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+            "\\usepackage{pdfpages}\n"
+            "\\begin{document}\n"
+            f"\\includepdf[pages=-, booklet=true, landscape]"
+            f"{{green-dot-{size}.pdf}}\n"
+            "\\end{document}\n"
+        )
+    else:
+        spread_tex = (
+            "\\documentclass[10pt]{article}\n"
+            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
+            "\\usepackage{pdfpages}\n"
+            "\\begin{document}\n"
+            f"\\includepdf[pages={{1,2}}, nup=2x1, width={PW}mm, height={PH}mm]"
+            f"{{green-dot-{size}.pdf}}\n"
+            "\\end{document}\n"
+        )
     (out / "spread.tex").write_text(spread_tex)
     sizes.compile("spread.tex", out)
     print(f"Generated {out}/spread.pdf (spread, {PW * 2}×{PH}mm)")
