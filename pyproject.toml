@@ -3,13 +3,16 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "xianzhang"
+name = "techo"
 version = "0.1.0"
-description = "Plain ruled notebook generator — LaTeX templates"
+description = "Printable notebook and book generator"
 requires-python = ">=3.13"
 dependencies = [
+    "beautifulsoup4>=4.12",
     "click>=8.4.2",
+    "ebooklib>=0.18",
     "ephem>=4.2.1",
+    "markdownify>=0.14",
     "pillow>=12.3.0",
 ]
 

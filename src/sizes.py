@@ -22,6 +22,7 @@ SIZES = {
     "a6s": {"pw": 80, "ph": 172, "red_line": 10},
     "a6standard": {"pw": 105, "ph": 148, "red_line": 12},
     "127a7": {"pw": 80, "ph": 127, "red_line": 10},
+    "a7l": {"pw": 85, "ph": 127, "red_line": 10},
     "120a7": {"pw": 80, "ph": 120, "red_line": 10},
     "a5s": {"pw": 110, "ph": 210, "red_line": 15},
     "tn": {"pw": 110, "ph": 210, "red_line": 15},

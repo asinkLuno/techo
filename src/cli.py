@@ -10,6 +10,7 @@ from pathlib import Path
 import click
 
 from . import sizes
+from .ebook import ebook
 from .green_dot import generate as gen_green_dot
 from .midori_grid.midori_grid import generate as gen_midori_grid
 from .nightowl import generate as gen_nightowl
@@ -21,6 +22,9 @@ from .tn_cover import generate as gen_tn_cover
 @click.group()
 def cli() -> None:
     pass
+
+
+cli.add_command(ebook)
 
 
 @cli.command("nightowl")
