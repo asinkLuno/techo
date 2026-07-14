@@ -6,9 +6,44 @@ LaTeX templates. Edit sizes here — never hand-edit sizes.tex.
 
 import subprocess
 from pathlib import Path
+from typing import TypedDict
+
+
+class PageSize(TypedDict):
+    """Physical page dimensions, in millimetres."""
+
+    pw: float
+    ph: float
+    red_line: float
+
+
+class GreenDotLayout(TypedDict):
+    binding: float
+    right_margin: float
+    top_margin: float
+    bottom_margin: float
+
+
+class NightOwlLayout(TypedDict):
+    binding: float
+    right_margin: float
+    row_gap: float
+    num_gap: float
+
+
+class MidoriGridLayout(TypedDict):
+    binding: float
+    right_margin: float
+    top_margin: float
+    bottom_margin: float
+    grid_step: float
+    dot_freq: int
+    gap_size: float
+    edge_extension: float
+
 
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
-SIZES = {
+SIZES: dict[str, PageSize] = {
     "cozyca": {"pw": 100, "ph": 90, "red_line": 8},
     "62m5": {"pw": 62, "ph": 105, "red_line": 13},
     "67m5": {"pw": 67, "ph": 105, "red_line": 13},
@@ -29,7 +64,7 @@ SIZES = {
     "tnp": {"pw": 88, "ph": 125, "red_line": 10},
 }
 
-GREEN_DOT = {
+GREEN_DOT: dict[str, GreenDotLayout] = {
     "cozyca": {"binding": 15, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
     "62m5": {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
     "67m5": {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
@@ -54,7 +89,7 @@ GREEN_DOT = {
     "tnp": {"binding": 3, "right_margin": 3, "top_margin": 3, "bottom_margin": 3},
 }
 
-NIGHTOWL = {
+NIGHTOWL: dict[str, NightOwlLayout] = {
     "cozyca": {"binding": 15, "right_margin": 3, "row_gap": 7.5, "num_gap": 16},
     "62m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 10},
     "67m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 11},
@@ -71,7 +106,7 @@ NIGHTOWL = {
     "a5s": {"binding": 18, "right_margin": 5, "row_gap": 14.0, "num_gap": 26},
 }
 
-MIDORI_GRID = {
+MIDORI_GRID: dict[str, MidoriGridLayout] = {
     "cozyca": {
         "binding": 15,
         "right_margin": 3,

@@ -10,7 +10,7 @@ from .. import sizes
 PEN = "cyan!40, line width=0.7pt"
 
 
-def _dot_indices(n, freq):
+def _dot_indices(n: int, freq: int) -> set[int]:
     """Symmetric grid indices (excludes borders) for hollow-intersection dots."""
     mid = n // 2
     return {i for k in range(n) for i in (mid - k * freq, mid + k * freq) if 0 < i < n}
@@ -48,8 +48,8 @@ def generate(size: str) -> None:
     x_dots = _dot_indices(num_x, DOT_FREQ)
     y_dots = _dot_indices(num_y, DOT_FREQ)
 
-    def _generate_lines(start_x):
-        lines = []
+    def _generate_lines(start_x: float) -> list[str]:
+        lines: list[str] = []
         # 2. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows except on dot rows)
         for y_idx in range(num_y + 1):
             y = start_y + y_idx * STEP
@@ -124,7 +124,7 @@ def generate(size: str) -> None:
     out = Path("outputs") / f"midori-grid-{size}"
     out.mkdir(parents=True, exist_ok=True)
 
-    def _page(is_odd: bool):
+    def _page(is_odd: bool) -> list[str]:
         return [
             "\\thispagestyle{empty}%",
             "\\begin{tikzpicture}[remember picture, overlay]",

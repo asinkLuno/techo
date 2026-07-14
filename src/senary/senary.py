@@ -9,7 +9,6 @@ Usage: techo senary 2026-07 [--tz Asia/Shanghai] [--location tranquility]
 
 import calendar
 import math
-import sys
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -18,6 +17,7 @@ import ephem
 
 from .. import sizes
 from ..sizes import FONT_CMD
+from ..validation import location_coordinates, parse_year_month
 
 # ── Calendar (front) ──
 COLS = 7
@@ -257,18 +257,8 @@ def _tracker(
 
 
 def generate(ym: str, tz_name: str = "UTC", location: str = "tranquility") -> None:
-    try:
-        year, month = (int(x) for x in ym.split("-"))
-    except ValueError:
-        print(f"Expected YYYY-MM (e.g. 2026-07), got '{ym}'")
-        sys.exit(1)
-    if not (1 <= month <= 12):
-        print(f"Bad month {month} (need 1–12)")
-        sys.exit(1)
-    if location not in LOCATIONS:
-        print(f"Unknown location '{location}'. Known: {list(LOCATIONS.keys())}")
-        sys.exit(1)
-    lat, lon = LOCATIONS[location]
+    year, month = parse_year_month(ym)
+    lat, lon = location_coordinates(location, LOCATIONS)
 
     key = "67m5l"
     pw, ph = sizes.SIZES[key]["pw"], sizes.SIZES[key]["ph"]

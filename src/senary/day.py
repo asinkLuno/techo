@@ -4,7 +4,6 @@ Usage: techo day 2026-07-15 [--tz Asia/Shanghai] [--location tranquility]
 """
 
 import calendar
-import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -12,6 +11,7 @@ from zoneinfo import ZoneInfo
 from .. import sizes
 from ..senary import LOCATIONS, _moon_info, date_node
 from ..sizes import FONT_CMD
+from ..validation import location_coordinates, parse_date
 
 # ── Layout ──
 LEFT_MARGIN = 9.0  # mm, date strip width (left of the divider)
@@ -20,7 +20,9 @@ FONT_DAY = FONT_CMD["medium"]
 FONT_HR = FONT_CMD["small"]
 
 
-def _utc_axis(year, month, day, tz_name, lat, lon):
+def _utc_axis(
+    year: int, month: int, day: int, tz_name: str, lat: float, lon: float
+) -> tuple[float, int, str]:
     """UTC offset (h), UTC date at UTC midnight within the local day, and its moon color."""
     local_midnight = datetime(year, month, day, tzinfo=ZoneInfo(tz_name))
     lm_utc = local_midnight.astimezone(ZoneInfo("UTC"))
@@ -125,18 +127,9 @@ def _day(
 
 
 def generate(datestr: str, tz_name: str = "UTC", location: str = "tranquility") -> None:
-    try:
-        year, month, day = (int(x) for x in datestr.split("-"))
-    except ValueError:
-        print(f"Expected YYYY-MM-DD (e.g. 2026-07-15), got '{datestr}'")
-        sys.exit(1)
-    if not (1 <= month <= 12):
-        print(f"Bad month {month} (need 1–12)")
-        sys.exit(1)
-    if location not in LOCATIONS:
-        print(f"Unknown location '{location}'. Known: {list(LOCATIONS.keys())}")
-        sys.exit(1)
-    lat, lon = LOCATIONS[location]
+    requested_date = parse_date(datestr)
+    year, month, day = requested_date.year, requested_date.month, requested_date.day
+    lat, lon = location_coordinates(location, LOCATIONS)
 
     key = "67m5"
     pw, ph = sizes.SIZES[key]["pw"], sizes.SIZES[key]["ph"]

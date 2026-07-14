@@ -26,8 +26,8 @@ def _header(
     font: str,
     sans_font: str,
     mono_font: str,
-    width: int,
-    height: int,
+    width: float,
+    height: float,
     twoside: bool,
     indent: str | None,
 ) -> str:

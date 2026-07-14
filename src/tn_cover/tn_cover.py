@@ -67,9 +67,9 @@ def generate(image_path: Path, size: str) -> None:
             print(
                 f"Cropped image from {img_w}x{img_h} to target aspect ratio {target_aspect:.4f} and saved."
             )
-        except Exception as e:
+        except (OSError, ValueError) as error:
             print(
-                f"Warning: Failed to crop image with Pillow: {e}. Copying original instead."
+                f"Warning: Failed to crop image with Pillow: {error}. Copying original instead."
             )
             shutil.copy2(image_path, dest_image_path)
     else:

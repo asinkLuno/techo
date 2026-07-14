@@ -21,7 +21,15 @@ from .tn_cover import generate as gen_tn_cover
 
 @click.group()
 def cli() -> None:
-    pass
+    """Generate printable notebooks, covers, and books."""
+
+
+def _run(generator, /, *args, **kwargs) -> None:
+    """Present domain and operating-system failures consistently in Click."""
+    try:
+        generator(*args, **kwargs)
+    except (OSError, RuntimeError, ValueError) as error:
+        raise click.ClickException(str(error)) from error
 
 
 cli.add_command(ebook)
@@ -36,7 +44,7 @@ cli.add_command(ebook)
 )
 def nightowl(size: str) -> None:
     """Triangular numbers 0–26 in hourglass layout."""
-    gen_nightowl(size)
+    _run(gen_nightowl, size)
 
 
 @cli.command("senary")
@@ -52,7 +60,7 @@ def nightowl(size: str) -> None:
 )
 def senary(ym: str, tz: str, location: str) -> None:
     """Monthly calendar (front) + habit tracker (back). YYYY-MM, e.g. 2026-07."""
-    gen_senary(ym, tz_name=tz, location=location)
+    _run(gen_senary, ym, tz_name=tz, location=location)
 
 
 @cli.command("green-dot")
@@ -64,7 +72,7 @@ def senary(ym: str, tz: str, location: str) -> None:
 )
 def green_dot(size: str) -> None:
     """Single empty page with green-dot grid background."""
-    gen_green_dot(size)
+    _run(gen_green_dot, size)
 
 
 @cli.command("midori-grid")
@@ -76,7 +84,7 @@ def green_dot(size: str) -> None:
 )
 def midori_grid(size: str) -> None:
     """Midori Grid — square grids with hollow intersections."""
-    gen_midori_grid(size)
+    _run(gen_midori_grid, size)
 
 
 @cli.command("tn-cover")
@@ -91,7 +99,7 @@ def midori_grid(size: str) -> None:
 )
 def tn_cover(image_path: Path, size: str) -> None:
     """Generate Traveler's Notebook (TN/TNP) cover spread from an image."""
-    gen_tn_cover(image_path, size)
+    _run(gen_tn_cover, image_path, size)
 
 
 if __name__ == "__main__":
