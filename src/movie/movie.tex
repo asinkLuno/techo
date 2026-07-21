@@ -1,0 +1,36 @@
+% ──────────────────────────────────────────
+% Movie / TV rating page
+% Size is set by \EDITION and the CJK font by \CJKFONT in the generated wrapper.
+% Build: techo movie "<query>"
+% ──────────────────────────────────────────
+\documentclass[10pt, twoside]{article}
+
+% ── Size ──
+\input{../../src/sizes.tex}
+\edef\PW{\Size{\EDITION}{PW}}
+\edef\PH{\Size{\EDITION}{PH}}
+
+% ── Page geometry ──
+\usepackage[paperwidth=\PW mm, paperheight=\PH mm,
+  margin=0mm,
+twoside]{geometry}
+
+% ── Packages ──
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric}
+\input{../../src/colors.tex}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+\setmainfont{3270 Nerd Font Mono}
+\setCJKmainfont{\CJKFONT}
+
+% ── Page style ──
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}
