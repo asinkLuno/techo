@@ -61,6 +61,7 @@ class MovieReportLayout(TypedDict):
     dither_px: float  # target longer-side px for Bayer dither pre-scale
     card_head_gap: float  # vspace between card header and its rule, pt
     card_rule_gap: float  # vspace between card rule and body, pt
+    card_vspace: float  # vspace between cards, pt
 
 
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
@@ -321,6 +322,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "62m5": {
         "bind": 12,
@@ -341,6 +343,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "67m5": {
         "bind": 12,
@@ -359,8 +362,9 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "footer_pt": 6.0,
         "letterspace": 32,
         "dither_px": 130,
-        "card_head_gap": 2,
+        "card_head_gap": 1,
         "card_rule_gap": 4,
+        "card_vspace": 4,
     },
     "67m5l": {
         "bind": 10,
@@ -379,8 +383,9 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "footer_pt": 6.5,
         "letterspace": 45,
         "dither_px": 200,
-        "card_head_gap": 2,
+        "card_head_gap": 1,
         "card_rule_gap": 4,
+        "card_vspace": 4,
     },
     "74m5": {
         "bind": 12,
@@ -399,8 +404,9 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "footer_pt": 6.5,
         "letterspace": 35,
         "dither_px": 140,
-        "card_head_gap": 2,
+        "card_head_gap": 1,
         "card_rule_gap": 4,
+        "card_vspace": 4,
     },
     "a4": {
         "bind": 20,
@@ -421,6 +427,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "b5": {
         "bind": 18,
@@ -441,6 +448,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "a5": {
         "bind": 15,
@@ -461,6 +469,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "a5fc": {
         "bind": 12,
@@ -481,6 +490,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "a6per": {
         "bind": 12,
@@ -501,6 +511,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "a6s": {
         "bind": 10,
@@ -521,6 +532,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "a6standard": {
         "bind": 12,
@@ -541,6 +553,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "127a7": {
         "bind": 10,
@@ -561,6 +574,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "a7l": {
         "bind": 10,
@@ -581,6 +595,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "120a7": {
         "bind": 10,
@@ -601,6 +616,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "a5s": {
         "bind": 15,
@@ -621,6 +637,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "tn": {
         "bind": 3,
@@ -641,6 +658,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
     "tnp": {
         "bind": 3,
@@ -661,6 +679,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
         "card_head_gap": 3,
         "card_rule_gap": 6,
+        "card_vspace": 7,
     },
 }
 
@@ -721,6 +740,7 @@ def write_sizes_tex(path: Path | None = None) -> None:
             ("LetterSpace", m["letterspace"]),
             ("CardHeadGap", m["card_head_gap"]),
             ("CardRuleGap", m["card_rule_gap"]),
+            ("CardVspace", m["card_vspace"]),
         ):
             lines.append(
                 rf"\expandafter\def\csname size@{key}@{field}\endcsname{{{val}}}"

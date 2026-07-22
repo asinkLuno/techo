@@ -345,12 +345,10 @@ def _date_tag(label: str, date: str) -> str:
     return rf"\hfill\caplabel{{{label}}}\,\datestamp{{{_format_date(date)}}}"
 
 
-def _season_cards(report: Report, cols: int, gap: float = 4.0) -> str:
-    """One dossier card per TV season, each with a grid of ``EP NN`` stamps.
-
-    Each card header carries that season's own air date as a red stamp (TV shows
-    date per season, not once at the top).
-    """
+def _season_cards(
+    report: Report, cols: int, gap: float = 4.0, card_vspace: float = 7.0
+) -> str:
+    """One dossier card per TV season, each with a grid of ``EP NN`` stamps."""
     lines: list[str] = []
     for season in report.seasons:
         header = rf"\caplabel{{SEASON {season.number:02d}}}"
@@ -359,7 +357,7 @@ def _season_cards(report: Report, cols: int, gap: float = 4.0) -> str:
         items = [rf"\epitem{{{n:02d}}}" for n in range(1, season.episodes + 1)]
         grid = _spread_grid(items, cols, gap)
         lines.append(rf"\dossiercard{{{header}}}{{{grid}}}")
-        lines.append(r"\vspace{7pt}")
+        lines.append(rf"\vspace{{{card_vspace}pt}}")
     return "\n".join(lines)
 
 
@@ -373,10 +371,12 @@ def _viewing_card(report: Report, cols: int, gap: float = 4.0) -> str:
     return rf"\dossierplain{{{grid}}}"
 
 
-def _progress_cards(report: Report, cols: int, gap: float = 4.0) -> str:
+def _progress_cards(
+    report: Report, cols: int, gap: float = 4.0, card_vspace: float = 7.0
+) -> str:
     """Season cards for TV, or a SEEN viewing-log card for a movie."""
     if report.kind == "tv" and report.seasons:
-        return _season_cards(report, cols, gap)
+        return _season_cards(report, cols, gap, card_vspace)
     return _viewing_card(report, cols, gap)
 
 
@@ -387,6 +387,7 @@ def _body(
     gap: float = 4.0,
     title_pt: float = 16,
     label_pt: float = 7,
+    card_vspace: float = 7.0,
 ) -> str:
     """Assemble the full document body — everything on the dossier sheet."""
     return "\n".join(
@@ -394,7 +395,7 @@ def _body(
             _title_section(report, poster_file, title_pt, label_pt),
             r"\vspace{10pt}",
             _progress_header(report),
-            _progress_cards(report, cols, gap),
+            _progress_cards(report, cols, gap, card_vspace),
             r"\vspace{2pt}",
             r"\perf",
             r"\notesbox",
@@ -456,6 +457,7 @@ def generate(
             gap=layout["gap"],
             title_pt=layout["title_pt"],
             label_pt=layout["label_pt"],
+            card_vspace=layout["card_vspace"],
         )
         + "\n"
     )
