@@ -138,18 +138,34 @@ _BAYER_4x4 = (
 )
 
 
-def _bayer_dither(image_bytes: bytes) -> bytes:
-    """Apply Bayer 4×4 colour dithering to *image_bytes*, returning a JPEG.
+# Target size (longer side, px) for the poster before dithering — low enough
+# that the Bayer 4×4 pattern is clearly visible, high enough to recognise.
+_DITHER_SIZE = 280
 
-    Each RGB channel is thresholded independently against the tiled Bayer
-    matrix so the poster gets a retro 8-colour halftone look (black, R, G, B,
-    C, M, Y, white).  If the image can't be decoded the raw bytes are returned
-    unchanged so a damaged download still produces *something*.
+
+def _bayer_dither(image_bytes: bytes) -> bytes:
+    """Downscale, then apply Bayer 4×4 colour dithering, returning a JPEG.
+
+    The image is first reduced so its longer dimension is *_DITHER_SIZE*
+    pixels; this makes every Bayer cell visible.  Each RGB channel is then
+    thresholded independently against the tiled Bayer matrix, giving an
+    8-colour retro halftone look (black, R, G, B, C, M, Y, white).
+
+    If the image can't be decoded the raw bytes are returned unchanged so a
+    damaged download still produces *something*.
     """
     try:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
     except Exception:
         return image_bytes
+
+    # Downscale so the dither cells are visible at print size.
+    w, h = img.size
+    longer = max(w, h)
+    if longer > _DITHER_SIZE:
+        ratio = _DITHER_SIZE / longer
+        img = img.resize((int(w * ratio), int(h * ratio)), Image.Resampling.LANCZOS)
+
     arr = np.array(img, dtype=np.float32)
     h, w, _ = arr.shape
 
