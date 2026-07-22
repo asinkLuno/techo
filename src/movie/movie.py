@@ -276,11 +276,29 @@ def _grid_background(geo: Geometry) -> list[str]:
     )
 
 
+# Pen for outlining cells the printer filled — red, reusing colors.tex's IronOxideRed.
+IRON_PEN = "IronOxideRed, line width=0.7pt"
+
+
+def _cell_box(geo: Geometry, row: int, col: int) -> str:
+    """Red outline of cell ``(row, col)``, marking a cell the printer filled."""
+    x0 = geo.start_x + col * geo.step
+    y0 = geo.start_y + row * geo.step
+    return (
+        f"  \\draw[{IRON_PEN}]"
+        f" {_coord_page(x0, y0)} rectangle {_coord_page(x0 + geo.step, y0 + geo.step)};"
+    )
+
+
 def _cell_node(geo: Geometry, row: int, col: int, content: str, font: str) -> str:
-    """One glyph centered in cell ``(row, col)`` of the background grid."""
+    """One glyph centered in cell ``(row, col)`` of the background grid.
+
+    The cell is outlined in red first, so every filled cell reads as a marked box.
+    """
     cx = geo.start_x + (col + 0.5) * geo.step
     cy = geo.start_y + (row + 0.5) * geo.step
     return (
+        f"{_cell_box(geo, row, col)}\n"
         f"  \\node[font=\\{font}, anchor=center]"
         f" at ([xshift={cx:.2f}mm, yshift={-cy:.2f}mm]current page.north west)"
         f" {{{content}}};"
@@ -328,17 +346,11 @@ def _stars_row(geo: Geometry, row: int, n: int = 5) -> list[str]:
 
 # ── Page builders ──
 
-# Fonts: the title leads at FontMedium; everything else steps down. Episode numbers
-# are tiny because a 5mm cell is small, matching the old per-cell numbering.
-NAME_FONT = "FontMedium"
-LINE_FONT = "FontSmall"
-NUM_FONT = "FontTiny"
-
-
-def _rating_font(geo: Geometry) -> str:
-    """Episode-number font: Tiny for small cells, Small once they're roomy."""
-    return NUM_FONT if geo.step < 6 else LINE_FONT
-
+# Fonts: two tiers. The localized title is the same size as the episode numbers;
+# the original title matches the season label beneath them.
+NAME_FONT = "FontSmall"  # localized (Chinese) title — matches the episode numbers
+LINE_FONT = "FontTiny"  # original title — matches the season label
+NUM_FONT = "FontSmall"  # episode numbers — matches the localized title
 
 HEADER_GAP_ROWS = 1  # blank grid rows between the rating header and the first season
 
@@ -396,7 +408,6 @@ def _pack_seasons(
     geo = _grid_geometry(size, pw, ph)
     cols = geo.num_x
     page_rows = geo.num_y
-    num_font = _rating_font(geo)
 
     def new_page() -> list[str]:
         return [
@@ -442,7 +453,7 @@ def _pack_seasons(
             rows_here = min(math.ceil(remaining / cols), space_rows)
             eps_here = min(rows_here * cols, remaining)
             nodes, _ = _print_numbers(
-                geo, row, list(range(placed + 1, placed + 1 + eps_here)), num_font
+                geo, row, list(range(placed + 1, placed + 1 + eps_here)), NUM_FONT
             )
             current += nodes
             row += rows_here
@@ -466,6 +477,26 @@ def _print_matches(results: list[dict]) -> None:
         print(f"  [{i}] {kind:<5} {name}{suffix}")
 
 
+def _resolve_cjk_font(cjk_font: str, out: Path) -> tuple[str, str | None]:
+    """Return ``(font_name, path_or_None)`` for the wrapper to feed movie.tex.
+
+    If ``cjk_font`` points at an existing font file (e.g. the bundled
+    ``src/索尼明体.ttf``), return its basename plus its directory relative to ``out``
+    so fontspec's ``Path`` option can load it from disk without a system install.
+    Anything else is treated as an installed font family name (no path).
+    """
+    candidate = Path(cjk_font)
+    looks_like_path = "/" in cjk_font or cjk_font.endswith((".ttf", ".otf", ".ttc"))
+    if candidate.is_file():
+        rel = os.path.relpath(candidate.resolve().parent, out.resolve()).replace(
+            os.sep, "/"
+        )
+        return candidate.name, rel
+    if looks_like_path:
+        raise FileNotFoundError(f"CJK font file not found: {cjk_font}")
+    return cjk_font, None
+
+
 def generate(
     query: str,
     *,
@@ -473,7 +504,7 @@ def generate(
     index: int = 0,
     kind: str | None = None,
     language: str = "zh-CN",
-    cjk_font: str = "FZBaoSong-Z04S",
+    cjk_font: str = "src/索尼明体.ttf",
     compile: bool = True,
 ) -> None:
     """Search TMDB and generate the rating page (+ TV season grids)."""
@@ -506,11 +537,12 @@ def generate(
     (out / "content.tex").write_text("\n".join("\n".join(p) for p in pages) + "\n")
 
     tex_name = f"movie-{slug}-{size}.tex"
-    (out / tex_name).write_text(
-        f"\\def\\EDITION{{{size}}}%\n"
-        f"\\def\\CJKFONT{{{cjk_font}}}%\n"
-        f"\\input{{../../src/movie/movie.tex}}%\n"
-    )
+    font_name, font_path = _resolve_cjk_font(cjk_font, out)
+    wrapper = [f"\\def\\EDITION{{{size}}}%\n", f"\\def\\CJKFONT{{{font_name}}}%\n"]
+    if font_path is not None:
+        wrapper.append(f"\\def\\CJKFONTPATH{{{font_path}/}}%\n")
+    wrapper.append("\\input{../../src/movie/movie.tex}%\n")
+    (out / tex_name).write_text("".join(wrapper))
 
     print(
         f"Generated {out}/content.tex + {tex_name} "

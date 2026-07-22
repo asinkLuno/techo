@@ -1,0 +1,160 @@
+% ──────────────────────────────────────────
+% Movie / TV "Archival Dossier" — fillable viewing report (optimized layout)
+% Size is set by \EDITION; the CJK font by \CJKFONT in the generated wrapper.
+% When \CJKFONT names a .ttf file rather than an installed family, \CJKFONTPATH
+% (also from the wrapper) gives its directory so fontspec can load it from disk.
+% Build: techo movie-report "<query>"
+%
+% Recreates the Stitch "观影报告 - 布局优化版 (Annotated Fix)": a pale-olive
+% dossier sheet holding a dashed poster slot, a TITLE | DATE(red stamp) row,
+% white season cards with a hard offset shadow and one checkable stamp per
+% episode, a perforated tear line, a tall field-notes box, and a ref-code /
+% FILE_ACTIVE footer.
+% ──────────────────────────────────────────
+\documentclass[10pt]{article}
+
+% ── Size ──
+\input{../../src/sizes.tex}
+\edef\PW{\Size{\EDITION}{PW}}
+\edef\PH{\Size{\EDITION}{PH}}
+
+% ── Page geometry: the page IS the dossier sheet ──
+\usepackage[paperwidth=\PW mm, paperheight=\PH mm,
+  margin=10mm,
+twoside]{geometry}
+
+% ── Packages ──
+\usepackage{tikz}
+\usetikzlibrary{positioning, calc}
+\usepackage{fontspec}
+\usepackage{graphicx}
+\usepackage{xeCJK}
+
+% ── Fonts: mono terminal body + serif display headings ──
+% 3270 Nerd Font Mono ships only Regular; AutoFakeBold gives the bold
+% caps labels.
+\setmainfont{3270 Nerd Font Mono}[AutoFakeBold=1.8]
+% Display serif for the title (Domine in the original). Graceful fallback chain.
+\IfFontExistsTF{Tinos}{%
+  \newfontfamily\displfont{Tinos}%
+}{%
+  \IfFontExistsTF{Nimbus Roman}{%
+    \newfontfamily\displfont{Nimbus Roman}%
+  }{%
+    \newcommand{\displfont}{}%
+  }%
+}
+% Letter-spaced caps for field labels / section headers.
+\newfontfamily\capfont{3270 Nerd Font Mono}[LetterSpace=45, AutoFakeBold=1.8]
+\ifdefined\CJKFONTPATH
+\setCJKmainfont{\CJKFONT}[Path=\CJKFONTPATH]
+\else
+\setCJKmainfont{\CJKFONT}
+\fi
+
+% ── Palette (line art on plain paper; no page fill) ──
+\definecolor{WhiteFill}{HTML}{ffffff}    % cards / notes boxes
+\definecolor{Ink}{HTML}{1b1c1c}          % charcoal — text
+\definecolor{Outline}{HTML}{757871}      % ruling lines / borders
+\definecolor{StampRed}{HTML}{a8322d}     % date / status stamps
+
+\color{Ink}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% ── Type macros ──
+% letter-spaced caps label (typewriter small caps)
+\newcommand{\caplabel}[1]{{\capfont\fontsize{7.5pt}{9pt}\selectfont\bfseries
+#1}}
+
+% the photo field: a dashed 2:3 outline labelled STAMP HERE.
+\newcommand{\posterfield}{%
+  \node[draw=Outline, dashed, line width=0.5pt, minimum width=42mm,
+    minimum height=63mm,
+  inner sep=0pt] (frame)
+  {\color{Outline}\fontsize{10pt}{12pt}\selectfont\bfseries STAMP HERE};%
+}
+% placeholder (no poster): labelled dashed field, ref code pinned under it
+\newcommand{\posterbox}{
+  \begin{tikzpicture}
+    \posterfield
+    \node[below=2mm of frame] {\caplabel{[ REF\_IMG\_001 ]}};
+\end{tikzpicture}}
+% fetched poster: the print is pasted on top, SAME size as the field, nudged and
+% tilted a hair so the dashed outline (and STAMP HERE) peek out — hand-pasted.
+% The ref code is pinned to the photo's bottom edge so it sits directly beneath.
+\newcommand{\posterimage}[1]{
+  \begin{tikzpicture}
+    \posterfield
+    \node[inner sep=0pt, draw=Outline, line width=0.3pt, rotate=1.8] (photo)
+    at ([shift={(1.4mm,-1.0mm)}]frame.center)
+    {\includegraphics[width=42mm,height=63mm,keepaspectratio]{#1}};
+    \node[below=2mm of photo] {\caplabel{[ REF\_IMG\_001 ]}};
+\end{tikzpicture}}
+
+% rotated red stamp (used for the DATE field)
+\newcommand{\datestamp}[1]{\tikz[baseline=-1.2ex]{\node[draw=StampRed,
+      line width=0.8pt,
+      rounded corners=1pt, inner sep=3pt, rotate=-3,
+font={\fontsize{10pt}{11pt}\selectfont\bfseries\color{StampRed}}]{#1};}}
+
+% empty episode check-box (5.5 mm square, to mark by hand)
+\newcommand{\epbox}{\tikz[baseline=-0.7ex]{\node[draw=Outline, line width=0.4pt,
+fill=WhiteFill, minimum size=5.5mm, inner sep=0pt]{};}}
+% a check-box plus its "EP NN" label
+\newcommand{\epitem}[1]{\epbox\,{\fontsize{7pt}{8pt}\selectfont EP #1}}
+% a plain numbered stamp (movie rewatch tally)
+\newcommand{\stamp}[1]{\tikz[baseline=-0.7ex]{\node[draw=Outline,
+      line width=0.4pt,
+minimum size=6mm, inner sep=0pt, font={\fontsize{7pt}{7pt}\selectfont}]{#1};}}
+
+% a white dossier card (plain bordered box, no shadow)
+% #1 = card title (e.g. SEASON 01), #2 = body LaTeX
+\newcommand{\dossiercard}[2]{%
+  \par\noindent\begingroup\setlength{\fboxsep}{6pt}%
+  \fcolorbox{Outline}{WhiteFill}{
+    \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}%
+      \caplabel{#1}\\[3pt]{\color{Outline}\rule{\linewidth}{0.4pt}}\\[6pt]%
+      #2%
+\end{minipage}}\endgroup\par}
+
+% perforated "tear here" line, label punched through in the sheet colour
+\newcommand{\perf}{\vspace{8pt}\par\noindent
+  \begin{tikzpicture}
+    \draw[dotted, line width=1.8pt, color=Outline] (0,0) -- (\linewidth,0);
+    \node[fill=white, inner xsep=5pt, inner ysep=1pt] at (0.5\linewidth,0)
+    {\caplabel{TEAR HERE FOR FILING}};
+\end{tikzpicture}\par\vspace{8pt}}
+
+% internal field notes — label kept with its tall white box (never split)
+\newcommand{\notesbox}{%
+  \par\noindent
+  \begin{minipage}{\linewidth}%
+    \caplabel{INTERNAL FIELD NOTES:}\vspace{4pt}\par
+    \noindent\fcolorbox{Outline}{WhiteFill}{%
+      \begin{minipage}[t][130pt]{\dimexpr\linewidth-2\fboxsep-2\fboxrule}
+    \end{minipage}}%
+\end{minipage}\par}
+
+% rotated FILE_ACTIVE status stamp
+\newcommand{\filestamp}[1]{\tikz[baseline=-1ex]{\node[draw=StampRed,
+      line width=1.4pt,
+      inner sep=4pt, rotate=-4,
+font={\capfont\fontsize{12pt}{13pt}\selectfont\bfseries\color{StampRed}}]{#1};}}
+
+% aesthetic footer: ref code / classification (left) + status stamp (right)
+\newcommand{\reportfooter}[1]{%
+  \vspace{10pt}\noindent
+  \begin{minipage}[c]{0.6\linewidth}
+    {\capfont\fontsize{6.5pt}{8pt}\selectfont\itshape
+    Ref Code: #1\\Classification: Top Secret / Eyes Only}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.35\linewidth}\raggedleft
+    \filestamp{FILE\_ACTIVE}
+\end{minipage}\par}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}

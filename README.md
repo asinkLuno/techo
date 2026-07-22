@@ -19,6 +19,7 @@ and typesets EPUB or Markdown books for any paper size defined in `src/sizes.py`
 - **night-owl** — numbers 0–26 in a triangular hourglass over a dot grid (3270 Nerd Font).
 - **senary** — monthly calendar (front) + habit tracker (back) + day pages (portrait m5, batch-generated for the whole month); landscape m5l, takes `YYYY-MM`.
 - **movie** — movie/TV rating page (74m5): searches [TMDB](https://www.themoviedb.org/) for the name and original name, prints five ☆ stars to fill in, and adds midori-style 5 mm episode grids for TV shows — one cell per episode, many seasons packed onto each page.
+- **movie-report** — movie/TV "archival dossier" viewing report (a5): TMDB fills the TITLE and a red DATE stamp; TV shows get one checkable stamp per episode in `SEASON` cards (with a hard offset shadow) for marking watched, and a blank field-notes box is left to fill in by hand. Recreates the *Retro Cinema Lab Report* Stitch design.
 
 ## Prerequisites
 
@@ -34,6 +35,8 @@ uv run techo senary 2026-07              # calendar + tracker + day pages for th
 uv run techo movie "盗梦空间"             # rating page; default size 74m5
 uv run techo movie "绝命毒师" --type tv   # rating page + packed season grids
 uv run techo movie "X" --index 1         # pick the 2nd search result
+uv run techo movie-report "绝命毒师" --type tv   # archival viewing dossier; default a5
+uv run techo movie-report "盗梦空间"             # movie screening card + field notes
 uv run techo ebook extract book.epub      # EPUB → Markdown directory
 uv run techo ebook split omnibus.epub     # omnibus → individual EPUB files
 uv run techo ebook render book.epub --size a5s
@@ -57,6 +60,7 @@ src/sizes.py                  # single source of truth for sizes → generates s
 src/cli.py                    # `techo` CLI — the single entry point
 src/nightowl/night-owl.tex    # night-owl template (size via \EDITION)
 src/movie/movie.{py,tex}      # movie/TV rating page (TMDB search + season grids)
+src/movie_report/movie_report.{py,tex}  # movie/TV archival viewing report (TMDB)
 src/senary/{senary,day}.tex   # senary (landscape m5) + day (portrait m5) templates
 src/sizes.tex                 # generated (gitignored) — \Size{<size>}{PW|PH|RedLine}
 <edition>/
