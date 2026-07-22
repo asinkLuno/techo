@@ -1,10 +1,11 @@
-"""Movie / TV rating page — TMDB search, poster, 5-star rating, TV season grids.
+"""Movie / TV rating page — TMDB search, 5-star rating, TV season grids.
 
 Usage: techo movie "<query>" --size 74m5
 
-The rating page prints the localized name, original name, and poster with five
-hollow stars to fill in by hand. TV shows additionally get one page per season,
-each a midori-style hollow-intersection grid of numbered episode cells.
+The title header (localized name, original name, five ☆ stars to fill in by
+hand) sits at the top of the first page. TV seasons then flow directly beneath
+it as compact midori-style hollow-intersection grids of numbered episode cells,
+many seasons per page rather than one page each.
 """
 
 from __future__ import annotations
@@ -22,11 +23,9 @@ from pathlib import Path
 from .. import sizes
 
 TMDB_API = "https://api.themoviedb.org/3"
-IMG_BASE = "https://image.tmdb.org/t/p"
 
 # midori_grid visual style (see src/midori_grid/midori_grid.py)
 PEN = "cyan!40, line width=0.7pt"
-STAR_COLOR = "black!70"
 
 
 # ── Domain types ──
@@ -49,7 +48,6 @@ class Title:
     tmdb_id: int
     name: str
     original_name: str
-    poster_path: str | None
     seasons: tuple[Season, ...] = ()
 
 
@@ -161,23 +159,8 @@ def fetch_title(kind: str, tmdb_id: int, *, language: str) -> Title:
         tmdb_id=tmdb_id,
         name=name,
         original_name=original,
-        poster_path=data.get("poster_path"),
         seasons=seasons,
     )
-
-
-def download_poster(poster_path: str | None, dest: Path) -> Path | None:
-    """Download a poster to ``dest``; return the path, or None when unavailable."""
-    if not poster_path:
-        return None
-    url = f"{IMG_BASE}/w500{poster_path}"
-    try:
-        with urllib.request.urlopen(url, timeout=30) as response:
-            data = response.read()
-    except urllib.error.URLError as error:
-        raise RuntimeError(f"could not download poster: {error.reason}") from error
-    dest.write_bytes(data)
-    return dest
 
 
 # ── Pure layout helpers (no I/O; unit-tested) ──
@@ -276,18 +259,13 @@ def _cell_numbers(
     return nodes
 
 
-def _stars(cx: float, y: float, n: int = 5, size: float = 4.5) -> list[str]:
-    """A centered row of ``n`` hollow stars at vertical position ``y``."""
-    start = cx - n * size / 2 + size / 2
-    nodes: list[str] = []
-    for i in range(n):
-        x = start + i * size
-        nodes.append(
-            f"  \\node[star, star points=5, draw={STAR_COLOR}, line width=0.3mm,"
-            f" minimum size={size:.2f}mm, inner sep=0pt, anchor=center]"
-            f" at ([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west) {{}};"
-        )
-    return nodes
+def _stars(cx: float, y: float, n: int = 5) -> list[str]:
+    """A centered row of ``n`` ☆ glyphs at vertical position ``y``."""
+    return [
+        f"  \\node[font=\\FontMedium, anchor=center]"
+        f" at ([xshift={cx:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
+        f" {{{{\\starfont {'☆' * n}}}}};"
+    ]
 
 
 # ── Page builders ──
@@ -302,53 +280,44 @@ def _margins(size: str) -> tuple[float, float, float, float]:
     return g["binding"], g["right_margin"], g["top_margin"], g["bottom_margin"]
 
 
-def _rating_page(
-    title: Title, size: str, pw: float, ph: float, have_poster: bool
-) -> list[str]:
-    """Poster + name + original name + five hollow stars."""
-    binding, right, _, _ = _margins(size)
+NAME_DOWN = 6.5  # mm, top → name → next line (FontMedium title)
+ORIG_DOWN = 5.0  # mm, original name line height
+STAR_PAD = 2.5  # mm, gap above the star row
+HEADER_GAP = 4.5  # mm, below the stars before the first season grid
+
+
+def _rating_header(title: Title, size: str, pw: float) -> tuple[list[str], float]:
+    """Name + original name + five ☆ stars as overlay tikz lines.
+
+    Returns ``(lines, height)``, where ``height`` is how far below the page's top
+    edge the header reaches — so the season packer can start the first grid right
+    beneath it on the same page instead of wasting a page on the header alone.
+    """
+    binding, right, top, _ = _margins(size)
     usable_w = pw - binding - right
     cx = pw / 2
-    lines = [
-        "\\thispagestyle{empty}%",
-        "\\begin{tikzpicture}[remember picture, overlay,"
-        " every node/.style={inner sep=0pt}]",
-    ]
-    if have_poster:
-        poster_w = 0.46 * pw
-        poster_h = poster_w * 1.5  # 2:3 poster aspect
-        px = (pw - poster_w) / 2
-        py = 0.08 * ph
-        lines.append(
-            f"  \\node[anchor=north west, inner sep=0pt]"
-            f" at ([xshift={px:.2f}mm, yshift={-py:.2f}mm]current page.north west)"
-            f" {{\\includegraphics[width={poster_w:.2f}mm]{{poster.jpg}}}};"
-        )
-        name_y = py + poster_h + 5
-    else:
-        name_y = 0.30 * ph
-
+    lines: list[str] = []
+    y = top
     lines.append(
-        f"  \\node[font=\\FontLarge, anchor=north, text width={usable_w:.2f}mm,"
+        f"  \\node[font=\\FontMedium, anchor=north, text width={usable_w:.2f}mm,"
         f" align=center]"
-        f" at ([xshift={cx:.2f}mm, yshift={-name_y:.2f}mm]current page.north west)"
+        f" at ([xshift={cx:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
         f" {{{_tex_escape(title.name)}}};"
     )
-    next_y = name_y + 11
-    if title.original_name and title.original_name.strip().lower() != (
-        title.name or ""
-    ).strip().lower():
+    y += NAME_DOWN
+    if (
+        title.original_name
+        and title.original_name.strip().lower() != (title.name or "").strip().lower()
+    ):
         lines.append(
             f"  \\node[font=\\FontSmall, anchor=north, text width={usable_w:.2f}mm,"
             f" align=center]"
-            f" at ([xshift={cx:.2f}mm, yshift={-next_y:.2f}mm]current page.north west)"
+            f" at ([xshift={cx:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
             f" {{{_tex_escape(title.original_name)}}};"
         )
-        next_y += 8
-    lines.extend(_stars(cx, next_y + 5))
-    lines.append("\\end{tikzpicture}%")
-    lines += ["\\null", "\\clearpage"]
-    return lines
+        y += ORIG_DOWN
+    lines.extend(_stars(cx, y + STAR_PAD))
+    return lines, y + STAR_PAD + HEADER_GAP
 
 
 HDR = 6.0  # mm, season header line
@@ -361,13 +330,24 @@ def _season_label(season: Season) -> str:
 
 
 def _pack_seasons(
-    seasons: tuple[Season, ...], size: str, pw: float, ph: float
+    seasons: tuple[Season, ...],
+    size: str,
+    pw: float,
+    ph: float,
+    *,
+    header: list[str] | None = None,
+    header_h: float = 0.0,
 ) -> list[list[str]]:
     """Pack compact per-season grids — exactly one cell per episode, many per page.
 
     Seasons flow top-to-bottom; each is a header plus a midori-style grid sized to its
     episode count. A season taller than the remaining page space continues on the next
     page (and a season taller than a full page splits its rows across pages).
+
+    When ``header`` is given (the title's name + stars), it is placed at the top of
+    the first page and the first season starts ``header_h`` below the top edge, so a
+    TV show's rating header shares page 1 with its first season grid instead of
+    taking a page to itself. With no seasons, the header still yields one page.
     """
     binding, right, top, bottom = _margins(size)
     usable_w = pw - binding - right
@@ -390,7 +370,11 @@ def _pack_seasons(
 
     pages: list[list[str]] = []
     current = new_page()
-    y = page_top
+    if header:
+        current += header
+        y = page_top + header_h
+    else:
+        y = page_top
     for season in seasons:
         rows = max(1, math.ceil(season.episodes / cols))
         block_h = HDR + rows * cell
@@ -475,12 +459,10 @@ def generate(
     out = Path("outputs") / f"movie-{slug}-{size}"
     out.mkdir(parents=True, exist_ok=True)
 
-    have_poster = (
-        download_poster(title.poster_path, out / "poster.jpg") is not None
+    header_lines, header_h = _rating_header(title, size, pw)
+    pages = _pack_seasons(
+        title.seasons, size, pw, ph, header=header_lines, header_h=header_h
     )
-
-    pages = [_rating_page(title, size, pw, ph, have_poster)]
-    pages.extend(_pack_seasons(title.seasons, size, pw, ph))
     (out / "content.tex").write_text("\n".join("\n".join(p) for p in pages) + "\n")
 
     tex_name = f"movie-{slug}-{size}.tex"
@@ -490,10 +472,9 @@ def generate(
         f"\\input{{../../src/movie/movie.tex}}%\n"
     )
 
-    page_count = 1 + len(title.seasons)
     print(
         f"Generated {out}/content.tex + {tex_name} "
-        f"({title.kind}: {title.name}, {page_count} page(s), {pw}×{ph}mm)"
+        f"({title.kind}: {title.name}, {len(pages)} page(s), {pw}×{ph}mm)"
     )
 
     if compile:

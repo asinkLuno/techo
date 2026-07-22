@@ -16,14 +16,15 @@
 twoside]{geometry}
 
 % ── Packages ──
-\usepackage{graphicx}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric}
 \input{../../src/colors.tex}
 \usepackage{fontspec}
 \usepackage{xeCJK}
 \setmainfont{3270 Nerd Font Mono}
 \setCJKmainfont{\CJKFONT}
+% ☆ (U+2606) is absent from 3270 Nerd Font Mono — render the rating
+% stars via DejaVu Sans Mono.
+\newfontfamily\starfont{DejaVu Sans Mono}
 
 % ── Page style ──
 \pagestyle{empty}

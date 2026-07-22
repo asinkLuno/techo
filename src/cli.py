@@ -97,7 +97,9 @@ def midori_grid(size: str) -> None:
     show_default=True,
     type=click.Choice(list(sizes.SIZES.keys())),
 )
-@click.option("--index", default=0, show_default=True, help="Pick the Nth search result.")
+@click.option(
+    "--index", default=0, show_default=True, help="Pick the Nth search result."
+)
 @click.option(
     "--type",
     "kind",
@@ -109,9 +111,15 @@ def midori_grid(size: str) -> None:
 @click.option("--cjk-font", default="FZBaoSong-Z04S", show_default=True)
 @click.option("--no-compile", is_flag=True, help="Write LaTeX only, skip xelatex.")
 def movie(
-    query: str, size: str, index: int, kind: str, language: str, cjk_font: str, no_compile: bool
+    query: str,
+    size: str,
+    index: int,
+    kind: str,
+    language: str,
+    cjk_font: str,
+    no_compile: bool,
 ) -> None:
-    """Movie/TV rating page (TMDB search, poster, 5-star rating, TV season grids)."""
+    """Movie/TV rating page (TMDB search, 5-star rating, TV season grids)."""
     _run(
         gen_movie,
         query,

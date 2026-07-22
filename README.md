@@ -18,7 +18,7 @@ and typesets EPUB or Markdown books for any paper size defined in `src/sizes.py`
 
 - **night-owl** — numbers 0–26 in a triangular hourglass over a dot grid (3270 Nerd Font).
 - **senary** — monthly calendar (front) + habit tracker (back) + day pages (portrait m5, batch-generated for the whole month); landscape m5l, takes `YYYY-MM`.
-- **movie** — movie/TV rating page (74m5): searches [TMDB](https://www.themoviedb.org/) for the name, original name, and poster, prints five hollow stars to fill in, and adds midori-style 5 mm episode grids for TV shows — one cell per episode, many seasons packed onto each page.
+- **movie** — movie/TV rating page (74m5): searches [TMDB](https://www.themoviedb.org/) for the name and original name, prints five ☆ stars to fill in, and adds midori-style 5 mm episode grids for TV shows — one cell per episode, many seasons packed onto each page.
 
 ## Prerequisites
 

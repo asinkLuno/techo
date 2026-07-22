@@ -74,8 +74,8 @@ class GridDrawingTests(unittest.TestCase):
         self.assertIn("{1}", nodes[0])
         self.assertIn("{10}", nodes[-1])
 
-    def test_stars_count(self) -> None:
-        self.assertEqual(len(movie._stars(37.0, 80.0)), 5)
+    def test_stars_five_glyphs(self) -> None:
+        self.assertEqual("".join(movie._stars(37.0, 80.0)).count("☆"), 5)
 
 
 class PackSeasonsTests(unittest.TestCase):
@@ -126,7 +126,9 @@ class ResultSummaryTests(unittest.TestCase):
                 "release_date": "2010-07-15",
             }
         )
-        self.assertEqual((kind, name, original, year), ("movie", "盗梦空间", "Inception", "2010"))
+        self.assertEqual(
+            (kind, name, original, year), ("movie", "盗梦空间", "Inception", "2010")
+        )
 
     def test_tv(self) -> None:
         kind, name, original, year = movie._result_summary(
@@ -137,7 +139,9 @@ class ResultSummaryTests(unittest.TestCase):
                 "first_air_date": "2008-01-20",
             }
         )
-        self.assertEqual((kind, name, original, year), ("tv", "绝命毒师", "Breaking Bad", "2008"))
+        self.assertEqual(
+            (kind, name, original, year), ("tv", "绝命毒师", "Breaking Bad", "2008")
+        )
 
     def test_person_has_no_year(self) -> None:
         kind, _, _, year = movie._result_summary(
@@ -197,7 +201,6 @@ class FetchTitleTests(unittest.TestCase):
             title = movie.fetch_title("tv", 2, language="zh-CN")
         self.assertEqual(title.kind, "tv")
         self.assertEqual(title.name, "绝命毒师")
-        self.assertEqual(title.poster_path, "/abc.jpg")
         # 0-episode season dropped; remaining sorted 1, 2
         self.assertEqual([s.number for s in title.seasons], [1, 2])
         self.assertEqual([s.episodes for s in title.seasons], [7, 13])
