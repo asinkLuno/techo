@@ -73,9 +73,10 @@ twoside]{geometry}
 #1}}
 
 % the photo field: a dashed 2:3 outline labelled STAMP HERE.
+% Frame is slightly larger than the poster so the dashed outline is visible.
 \newcommand{\posterfield}{%
-  \node[draw=Outline, dashed, line width=0.5pt, minimum width=42mm,
-    minimum height=63mm,
+  \node[draw=Outline, dashed, line width=0.5pt, minimum width=44mm,
+    minimum height=66mm,
   inner sep=0pt] (frame)
   {\color{Outline}\fontsize{10pt}{12pt}\selectfont\bfseries STAMP HERE};%
 }
@@ -85,14 +86,13 @@ twoside]{geometry}
     \posterfield
     \node[below=2mm of frame] {\caplabel{[ REF\_IMG\_001 ]}};
 \end{tikzpicture}}
-% fetched poster: the print is pasted on top, SAME size as the field, nudged and
-% tilted a hair so the dashed outline (and STAMP HERE) peek out — hand-pasted.
-% The ref code is pinned to the photo's bottom edge so it sits directly beneath.
+% fetched poster: the print is pasted inside a slightly larger dashed frame,
+% nudged and tilted subtly so it reads as hand-pasted rather than misaligned.
 \newcommand{\posterimage}[1]{
   \begin{tikzpicture}
     \posterfield
-    \node[inner sep=0pt, draw=Outline, line width=0.3pt, rotate=1.8] (photo)
-    at ([shift={(1.4mm,-1.0mm)}]frame.center)
+    \node[inner sep=0pt, draw=Outline, line width=0.3pt, rotate=0.8] (photo)
+    at ([shift={(0.6mm,-0.4mm)}]frame.center)
     {\includegraphics[width=42mm,height=63mm,keepaspectratio]{#1}};
     \node[below=2mm of photo] {\caplabel{[ REF\_IMG\_001 ]}};
 \end{tikzpicture}}
