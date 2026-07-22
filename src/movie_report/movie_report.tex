@@ -97,10 +97,15 @@ twoside]{geometry}
     \node[below=2mm of photo] {\caplabel{[ REF\_IMG\_001 ]}};
 \end{tikzpicture}}
 
-% rotated red stamp (used for the DATE field)
-\newcommand{\datestamp}[1]{\tikz[baseline=-1.2ex]{\node[draw=StampRed,
-      line width=0.8pt,
-      rounded corners=1pt, inner sep=3pt, rotate=-3,
+% rotated red stamp (used for the DATE field) — slight random
+% shift and rotation jitter so it reads as hand-stamped.
+\newcommand{\datestamp}[1]{\tikz[baseline=-1.2ex]{
+    \pgfmathsetmacro{\jx}{random()*1.2}
+    \pgfmathsetmacro{\jy}{random()*1.2}
+    \pgfmathsetmacro{\jr}{-3+random()*0.8}
+    \node[draw=StampRed, line width=0.8pt,
+      rounded corners=1pt, inner sep=3pt, rotate=\jr,
+      xshift=\jx mm, yshift=\jy mm,
 font={\fontsize{10pt}{11pt}\selectfont\bfseries\color{StampRed}}]{#1};}}
 
 % Dashed circle check-box — baseline at circle centre so \raisebox can
@@ -201,10 +206,15 @@ fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
     (\linewidth, 0);
 \end{tikzpicture}\par}
 
-% rotated FILE_ACTIVE status stamp
-\newcommand{\filestamp}[1]{\tikz[baseline=-1ex]{\node[draw=StampRed,
-      line width=1.4pt,
-      inner sep=4pt, rotate=-4,
+% rotated FILE_ACTIVE status stamp — slight random drift for a
+% hand-stamped look, same as \datestamp.
+\newcommand{\filestamp}[1]{\tikz[baseline=-1ex]{
+    \pgfmathsetmacro{\jx}{random()*1.5}
+    \pgfmathsetmacro{\jy}{random()*1.5}
+    \pgfmathsetmacro{\jr}{-4+random()*0.8}
+    \node[draw=StampRed, line width=1.4pt,
+      inner sep=4pt, rotate=\jr,
+      xshift=\jx mm, yshift=\jy mm,
 font={\capfont\fontsize{12pt}{13pt}\selectfont\bfseries\color{StampRed}}]{#1};}}
 
 % aesthetic footer: ref code / classification (left) + status stamp (right)
