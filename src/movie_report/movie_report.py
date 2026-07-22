@@ -140,6 +140,7 @@ _BAYER_4x4 = (
 
 # Target size (longer side, px) for the poster before dithering — low enough
 # that the Bayer 4×4 pattern is clearly visible, high enough to recognise.
+# (Default; overridden per-size via MovieReportLayout.dither_px.)
 _DITHER_SIZE = 200
 
 # Per-channel output levels for the Bayer threshold — not 0 / 255 so the
@@ -148,10 +149,10 @@ _DITHER_LO = 48
 _DITHER_HI = 207
 
 
-def _bayer_dither(image_bytes: bytes) -> bytes:
+def _bayer_dither(image_bytes: bytes, target_px: float = 200) -> bytes:
     """Downscale, then apply Bayer 4×4 colour dithering, returning a JPEG.
 
-    The image is first reduced so its longer dimension is *_DITHER_SIZE*
+    The image is first reduced so its longer dimension is *target_px*
     pixels; this makes every Bayer cell visible.  Each RGB channel is then
     thresholded independently against the tiled Bayer matrix, giving an
     8-colour retro halftone look (black, R, G, B, C, M, Y, white).
@@ -167,8 +168,8 @@ def _bayer_dither(image_bytes: bytes) -> bytes:
     # Downscale so the dither cells are visible at print size.
     w, h = img.size
     longer = max(w, h)
-    if longer > _DITHER_SIZE:
-        ratio = _DITHER_SIZE / longer
+    if longer > target_px:
+        ratio = target_px / longer
         img = img.resize((int(w * ratio), int(h * ratio)), Image.Resampling.LANCZOS)
 
     arr = np.array(img, dtype=np.float32)
@@ -187,7 +188,7 @@ def _bayer_dither(image_bytes: bytes) -> bytes:
     return buf.getvalue()
 
 
-def _download_poster(poster_path: str, dest: Path) -> bool:
+def _download_poster(poster_path: str, dest: Path, target_px: float = 200) -> bool:
     """Download the w500 poster, Bayer-dither it, and write to *dest*.
 
     Return ``False`` (and warn) on failure.
@@ -201,7 +202,7 @@ def _download_poster(poster_path: str, dest: Path) -> bool:
     except (urllib.error.URLError, urllib.error.HTTPError, OSError) as error:
         print(f"warning: poster download failed ({error}); using placeholder")
         return False
-    dithered = _bayer_dither(raw)
+    dithered = _bayer_dither(raw, target_px)
     dest.write_bytes(dithered)
     return True
 
@@ -444,7 +445,7 @@ def generate(
     if report.poster_path:
         ext = os.path.splitext(report.poster_path)[1] or ".jpg"
         dest = out / f"poster{ext}"
-        if _download_poster(report.poster_path, dest):
+        if _download_poster(report.poster_path, dest, layout["dither_px"]):
             poster_file = dest.name
 
     (out / "content.tex").write_text(

@@ -57,6 +57,7 @@ class MovieReportLayout(TypedDict):
     stamp_pt: float  # datestamp / filestamp font size, pt
     footer_pt: float  # footer ref-code font size, pt
     letterspace: float  # \capfont LetterSpace (percent of font size)
+    dither_px: float  # target longer-side px for Bayer dither pre-scale
 
 
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
@@ -313,6 +314,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "62m5": {
         "margin": 10,
@@ -329,6 +331,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "67m5": {
         "margin": 10,
@@ -345,6 +348,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "67m5l": {
         "margin": 10,
@@ -361,6 +365,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "74m5": {
         "margin": 8,
@@ -377,6 +382,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 8.0,
         "footer_pt": 6.5,
         "letterspace": 35,
+        "dither_px": 140,
     },
     "a4": {
         "margin": 10,
@@ -393,6 +399,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "b5": {
         "margin": 10,
@@ -409,6 +416,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "a5": {
         "margin": 10,
@@ -425,6 +433,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "a5fc": {
         "margin": 10,
@@ -441,6 +450,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "a6per": {
         "margin": 10,
@@ -457,6 +467,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "a6s": {
         "margin": 10,
@@ -473,6 +484,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "a6standard": {
         "margin": 10,
@@ -489,6 +501,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "127a7": {
         "margin": 10,
@@ -505,6 +518,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "a7l": {
         "margin": 10,
@@ -521,6 +535,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "120a7": {
         "margin": 10,
@@ -537,6 +552,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "a5s": {
         "margin": 10,
@@ -553,6 +569,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "tn": {
         "margin": 10,
@@ -569,6 +586,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
     "tnp": {
         "margin": 10,
@@ -585,6 +603,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "stamp_pt": 10,
         "footer_pt": 6.5,
         "letterspace": 45,
+        "dither_px": 200,
     },
 }
 
