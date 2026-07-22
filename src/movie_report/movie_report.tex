@@ -228,8 +228,7 @@ at (0,0) {};}}
     (\linewidth, 0);
 \end{tikzpicture}\par}
 
-% rotated FILE_ACTIVE status stamp — slight random drift for a
-% hand-stamped look, same as \datestamp.
+% rotated FILE ACTIVE status stamp — same font size as \datestamp.
 \newcommand{\filestamp}[1]{\tikz[baseline=-1ex]{
     \pgfmathsetmacro{\jx}{random()*1.5}
     \pgfmathsetmacro{\jy}{random()*1.5}
@@ -237,9 +236,8 @@ at (0,0) {};}}
     \node[draw=StampRed, line width=1.4pt,
       inner sep=4pt, rotate=\jr,
       xshift=\jx mm, yshift=\jy mm,
-      font={\capfont\fontsize{\dimexpr\StampPt
-        pt*6/5\relax}{\dimexpr\StampPt
-pt*3/2\relax}\selectfont\bfseries\color{StampRed}}]{#1};}}
+      font={\fontsize{\CaplabelPt pt}{\dimexpr\CaplabelPt
+pt*6/5\relax}\selectfont\bfseries\color{StampRed}}]{#1};}}
 
 % aesthetic footer: ref code / classification (left) + status stamp (right)
 \newcommand{\reportfooter}[1]{%
@@ -249,7 +247,7 @@ pt*3/2\relax}\selectfont\bfseries\color{StampRed}}]{#1};}}
     Ref Code: #1\\Classification: Top Secret / Eyes Only}
   \end{minipage}\hfill
   \begin{minipage}[c]{0.35\linewidth}\raggedleft
-    \filestamp{FILE\_ACTIVE}
+    \filestamp{FILE ACTIVE}
 \end{minipage}\par}
 
 % ──────────────────────────────────────────
