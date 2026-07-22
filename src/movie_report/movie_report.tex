@@ -17,7 +17,8 @@
 \input{../../src/sizes.tex}
 \edef\PW{\Size{\EDITION}{PW}}
 \edef\PH{\Size{\EDITION}{PH}}
-\edef\MovieMargin{\Size{\EDITION}{Margin}}
+\edef\MovieBind{\Size{\EDITION}{Bind}}
+\edef\MovieOuter{\Size{\EDITION}{Outer}}
 \edef\PosterW{\Size{\EDITION}{PosterW}}
 \edef\PosterH{\Size{\EDITION}{PosterH}}
 \edef\CircleSize{\Size{\EDITION}{CircleSize}}
@@ -32,7 +33,7 @@
 
 % ── Page geometry: the page IS the dossier sheet ──
 \usepackage[paperwidth=\PW mm, paperheight=\PH mm,
-  margin=\MovieMargin mm,
+  inner=\MovieBind mm, outer=\MovieOuter mm,
 twoside]{geometry}
 
 % ── Packages ──

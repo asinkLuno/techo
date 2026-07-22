@@ -252,9 +252,9 @@ def _ref_code(report: Report) -> str:
     return f"{_dossier_code(report)}-{year}"
 
 
-def _stamp_cols(pw_mm: float, margin: float, stamp_w: float) -> int:
+def _stamp_cols(pw_mm: float, bind: float, outer: float, stamp_w: float) -> int:
     """How many EP/SEEN stamps fit per row, given per-size layout."""
-    usable = pw_mm - 2.0 * margin
+    usable = pw_mm - bind - outer
     return max(3, min(8, int(usable // stamp_w)))
 
 
@@ -434,7 +434,7 @@ def generate(
     dims = sizes.SIZES[size]
     pw, ph = dims["pw"], dims["ph"]
     layout = sizes.MOVIE_REPORT[size]
-    cols = _stamp_cols(pw, layout["margin"], layout["stamp_w"])
+    cols = _stamp_cols(pw, layout["bind"], layout["outer"], layout["stamp_w"])
 
     slug = _slug(report.name or query)
     out = Path("outputs") / f"movie-report-{slug}-{size}"

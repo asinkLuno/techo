@@ -43,7 +43,8 @@ class MidoriGridLayout(TypedDict):
 
 
 class MovieReportLayout(TypedDict):
-    margin: float  # geometry margin, mm
+    bind: float  # inner / binding margin, mm
+    outer: float  # outer margin, mm
     poster_w: float  # poster slot width, mm
     poster_h: float  # poster slot height, mm
     stamp_w: float  # width of one EP/SEEN stamp (column calc), mm
@@ -300,7 +301,8 @@ MIDORI_GRID: dict[str, MidoriGridLayout] = {
 # ── Movie Report layout ──
 MOVIE_REPORT: dict[str, MovieReportLayout] = {
     "cozyca": {
-        "margin": 10,
+        "bind": 15,
+        "outer": 3,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -317,7 +319,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "62m5": {
-        "margin": 10,
+        "bind": 12,
+        "outer": 3,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -334,7 +337,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "67m5": {
-        "margin": 10,
+        "bind": 12,
+        "outer": 3,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -351,7 +355,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "67m5l": {
-        "margin": 10,
+        "bind": 10,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -368,7 +373,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "74m5": {
-        "margin": 8,
+        "bind": 12,
+        "outer": 5,
         "poster_w": 30,
         "poster_h": 45,
         "stamp_w": 16,
@@ -385,7 +391,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 140,
     },
     "a4": {
-        "margin": 10,
+        "bind": 20,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -402,7 +409,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "b5": {
-        "margin": 10,
+        "bind": 18,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -419,7 +427,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "a5": {
-        "margin": 10,
+        "bind": 15,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -436,7 +445,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "a5fc": {
-        "margin": 10,
+        "bind": 12,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -453,7 +463,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "a6per": {
-        "margin": 10,
+        "bind": 12,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -470,7 +481,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "a6s": {
-        "margin": 10,
+        "bind": 10,
+        "outer": 3,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -487,7 +499,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "a6standard": {
-        "margin": 10,
+        "bind": 12,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -504,7 +517,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "127a7": {
-        "margin": 10,
+        "bind": 10,
+        "outer": 3,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -521,7 +535,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "a7l": {
-        "margin": 10,
+        "bind": 10,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -538,7 +553,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "120a7": {
-        "margin": 10,
+        "bind": 10,
+        "outer": 3,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -555,7 +571,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "a5s": {
-        "margin": 10,
+        "bind": 15,
+        "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -572,7 +589,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "tn": {
-        "margin": 10,
+        "bind": 3,
+        "outer": 3,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -589,7 +607,8 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dither_px": 200,
     },
     "tnp": {
-        "margin": 10,
+        "bind": 3,
+        "outer": 3,
         "poster_w": 42,
         "poster_h": 63,
         "stamp_w": 24,
@@ -647,7 +666,8 @@ def write_sizes_tex(path: Path | None = None) -> None:
     lines.append(r"% Movie Report layout fields (mm / pt)")
     for key, m in MOVIE_REPORT.items():
         for field, val in (
-            ("Margin", m["margin"]),
+            ("Bind", m["bind"]),
+            ("Outer", m["outer"]),
             ("PosterW", m["poster_w"]),
             ("PosterH", m["poster_h"]),
             ("StampW", m["stamp_w"]),
