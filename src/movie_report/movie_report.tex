@@ -30,10 +30,6 @@
 \edef\FooterPt{\Size{\EDITION}{FooterPt}}
 \edef\LetterSpace{\Size{\EDITION}{LetterSpace}}
 
-% Letter-spaced caps — defined here so \LetterSpace is available.
-\newfontfamily\capfont{3270 Nerd Font Mono}[LetterSpace=\LetterSpace,
-AutoFakeBold=1.8]
-
 % ── Page geometry: the page IS the dossier sheet ──
 \usepackage[paperwidth=\PW mm, paperheight=\PH mm,
   margin=\MovieMargin mm,
@@ -60,13 +56,14 @@ twoside]{geometry}
     \newcommand{\displfont}{}%
   }%
 }
-% Letter-spaced caps for field labels / section headers.
-% (defined after \EDITION so LetterSpace is size-configurable)
 \ifdefined\CJKFONTPATH
 \setCJKmainfont{\CJKFONT}[Path=\CJKFONTPATH]
 \else
 \setCJKmainfont{\CJKFONT}
 \fi
+% Letter-spaced caps — defined after \EDITION so LetterSpace is configurable.
+\newfontfamily\capfont{3270 Nerd Font Mono}[LetterSpace=\LetterSpace,
+AutoFakeBold=1.8]
 
 % ── Palette (line art on plain paper; no page fill) ──
 \definecolor{WhiteFill}{HTML}{ffffff}    % cards / notes boxes
