@@ -14,7 +14,6 @@ from . import sizes
 from .ebook import ebook
 from .green_dot import generate as gen_green_dot
 from .midori_grid.midori_grid import generate as gen_midori_grid
-from .movie.movie import generate as gen_movie
 from .movie_report.movie_report import generate as gen_movie_report
 from .nightowl import generate as gen_nightowl
 from .senary import LOCATIONS
@@ -88,49 +87,6 @@ def green_dot(size: str) -> None:
 def midori_grid(size: str) -> None:
     """Midori Grid — square grids with hollow intersections."""
     _run(gen_midori_grid, size)
-
-
-@cli.command("movie")
-@click.argument("query")
-@click.option(
-    "--size",
-    default="74m5",
-    show_default=True,
-    type=click.Choice(list(sizes.SIZES.keys())),
-)
-@click.option(
-    "--index", default=0, show_default=True, help="Pick the Nth search result."
-)
-@click.option(
-    "--type",
-    "kind",
-    default=None,
-    type=click.Choice(["movie", "tv"]),
-    help="Restrict the search to movies or TV shows.",
-)
-@click.option("--language", default="zh-CN", show_default=True)
-@click.option("--cjk-font", default="src/索尼明体.ttf", show_default=True)
-@click.option("--no-compile", is_flag=True, help="Write LaTeX only, skip xelatex.")
-def movie(
-    query: str,
-    size: str,
-    index: int,
-    kind: str,
-    language: str,
-    cjk_font: str,
-    no_compile: bool,
-) -> None:
-    """Movie/TV rating page (TMDB search, 5-star rating, TV season grids)."""
-    _run(
-        gen_movie,
-        query,
-        size=size,
-        index=index,
-        kind=kind,
-        language=language,
-        cjk_font=cjk_font,
-        compile=not no_compile,
-    )
 
 
 @cli.command("movie-report")

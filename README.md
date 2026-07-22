@@ -59,7 +59,6 @@ Book rendering additionally requires Pandoc. PDF output uses XeLaTeX; pass
 src/sizes.py                  # single source of truth for sizes → generates sizes.tex
 src/cli.py                    # `techo` CLI — the single entry point
 src/nightowl/night-owl.tex    # night-owl template (size via \EDITION)
-src/movie/movie.{py,tex}      # movie/TV rating page (TMDB search + season grids)
 src/movie_report/movie_report.{py,tex}  # movie/TV archival viewing report (TMDB)
 src/senary/{senary,day}.tex   # senary (landscape m5) + day (portrait m5) templates
 src/sizes.tex                 # generated (gitignored) — \Size{<size>}{PW|PH|RedLine}

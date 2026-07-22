@@ -62,6 +62,7 @@ class MovieReportLayout(TypedDict):
     card_head_gap: float  # vspace between card header and its rule, pt
     card_rule_gap: float  # vspace between card rule and body, pt
     card_vspace: float  # vspace between cards, pt
+    compact: bool  # True → omit TEAR HERE + notes box (small pages)
 
 
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
@@ -323,6 +324,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": True,
     },
     "62m5": {
         "bind": 12,
@@ -344,6 +346,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": True,
     },
     "67m5": {
         "bind": 12,
@@ -365,6 +368,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 1,
         "card_rule_gap": 4,
         "card_vspace": 4,
+        "compact": True,
     },
     "67m5l": {
         "bind": 10,
@@ -386,6 +390,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 1,
         "card_rule_gap": 4,
         "card_vspace": 4,
+        "compact": True,
     },
     "74m5": {
         "bind": 12,
@@ -407,6 +412,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 1,
         "card_rule_gap": 4,
         "card_vspace": 4,
+        "compact": True,
     },
     "a4": {
         "bind": 20,
@@ -428,6 +434,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": False,
     },
     "b5": {
         "bind": 18,
@@ -449,6 +456,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": False,
     },
     "a5": {
         "bind": 15,
@@ -470,6 +478,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": False,
     },
     "a5fc": {
         "bind": 12,
@@ -491,6 +500,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": False,
     },
     "a6per": {
         "bind": 12,
@@ -512,6 +522,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": False,
     },
     "a6s": {
         "bind": 10,
@@ -533,6 +544,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": True,
     },
     "a6standard": {
         "bind": 12,
@@ -554,6 +566,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": False,
     },
     "127a7": {
         "bind": 10,
@@ -575,6 +588,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 1,
         "card_rule_gap": 3,
         "card_vspace": 4,
+        "compact": True,
     },
     "a7l": {
         "bind": 10,
@@ -596,6 +610,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 1,
         "card_rule_gap": 3,
         "card_vspace": 4,
+        "compact": True,
     },
     "120a7": {
         "bind": 10,
@@ -617,6 +632,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 1,
         "card_rule_gap": 3,
         "card_vspace": 4,
+        "compact": True,
     },
     "a5s": {
         "bind": 15,
@@ -638,6 +654,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": False,
     },
     "tn": {
         "bind": 3,
@@ -659,6 +676,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": False,
     },
     "tnp": {
         "bind": 3,
@@ -680,6 +698,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_head_gap": 3,
         "card_rule_gap": 6,
         "card_vspace": 7,
+        "compact": True,
     },
 }
 

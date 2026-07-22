@@ -19,9 +19,11 @@ tear line, and a FILE_ACTIVE stamp sit on top of it.
 from __future__ import annotations
 
 import io
+import json
 import os
 import re
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,15 +32,164 @@ import numpy as np
 from PIL import Image
 
 from .. import sizes
-from ..movie.movie import (
-    Season,
-    _print_matches,
-    _resolve_cjk_font,
-    _slug,
-    _tex_escape,
-    _tmdb_get,
-    search,
-)
+
+# ── TMDB client (stdlib urllib; auth read from the environment) ──
+
+TMDB_API = "https://api.themoviedb.org/3"
+
+
+def _credentials() -> tuple[str, bool]:
+    """Return ``(secret, is_bearer)``.
+
+    Prefers the v4 read access token (``TMDB_ACCESS_TOKEN``) over the v3 api key
+    (``TMDB_API_KEY``).
+    """
+    token = os.environ.get("TMDB_ACCESS_TOKEN")
+    if token:
+        return token.strip(), True
+    key = os.environ.get("TMDB_API_KEY")
+    if key:
+        return key.strip(), False
+    raise RuntimeError(
+        "set TMDB_ACCESS_TOKEN (v4) or TMDB_API_KEY (v3) to use the movie-report command"
+    )
+
+
+def _tmdb_get(path: str, params: dict[str, str], language: str) -> dict:
+    """GET a TMDB endpoint and return the parsed JSON, or raise RuntimeError."""
+    secret, is_bearer = _credentials()
+    query: dict[str, str] = {"language": language, **params}
+    if not is_bearer:
+        query["api_key"] = secret
+    url = f"{TMDB_API}{path}?{urllib.parse.urlencode(query)}"
+    request = urllib.request.Request(url)
+    if is_bearer:
+        request.add_header("Authorization", f"Bearer {secret}")
+    request.add_header("Accept", "application/json")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = response.read()
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", "replace")
+        raise RuntimeError(f"TMDB {path} failed ({error.code}): {detail}") from error
+    except urllib.error.URLError as error:
+        raise RuntimeError(f"could not reach TMDB: {error.reason}") from error
+    try:
+        return json.loads(payload)
+    except json.JSONDecodeError as error:
+        raise RuntimeError(f"TMDB {path} returned non-JSON data") from error
+
+
+# ── Shared domain types ──
+
+
+@dataclass(frozen=True)
+class Season:
+    """One season of a TV show: number, episode count, TMDB season name, air date."""
+
+    number: int
+    episodes: int
+    name: str
+    air_date: str = ""  # ISO YYYY-MM-DD the season first aired (TMDB air_date)
+
+
+# ── Pure utility helpers ──
+
+
+def _tex_escape(text: str | None) -> str:
+    """Escape LaTeX special characters."""
+    if not text:
+        return ""
+    replacements = {
+        "\\": r"\textbackslash{}",
+        "&": r"\&",
+        "%": r"\%",
+        "$": r"\$",
+        "#": r"\#",
+        "_": r"\_",
+        "{": r"\{",
+        "}": r"\}",
+        "~": r"\textasciitilde{}",
+        "^": r"\textasciicircum{}",
+    }
+    return "".join(replacements.get(ch, ch) for ch in text)
+
+
+def _slug(text: str) -> str:
+    """Filesystem-safe slug for the output directory (keeps CJK)."""
+    text = (text or "").strip().lower()
+    text = re.sub(r"[^\w]+", "-", text, flags=re.UNICODE)
+    return text.strip("-") or "untitled"
+
+
+# ── TMDB search helpers ──
+
+
+def _year(date_text: str | None) -> str:
+    return (date_text or "")[:4]
+
+
+def _result_summary(result: dict) -> tuple[str, str, str, str]:
+    """Return ``(kind, name, original_name, year)`` for a multi-search result."""
+    media = result.get("media_type")
+    if media == "movie":
+        name = result.get("title") or result.get("original_title") or "(untitled)"
+        original = result.get("original_title") or ""
+        year = _year(result.get("release_date"))
+    else:  # tv
+        name = result.get("name") or result.get("original_name") or "(untitled)"
+        original = result.get("original_name") or ""
+        year = _year(result.get("first_air_date"))
+    return media or "", name, original, year
+
+
+def search(query: str, *, language: str, kind: str | None = None) -> list[dict]:
+    """Return matching multi-search results (movie/tv only), optionally by kind."""
+    payload = _tmdb_get(
+        "/search/multi", {"query": query, "include_adult": "false"}, language
+    )
+    results = payload.get("results", [])
+    return [
+        r
+        for r in results
+        if r.get("media_type") in ("movie", "tv")
+        and (kind is None or r["media_type"] == kind)
+    ]
+
+
+def _print_matches(results: list[dict]) -> None:
+    """Echo a numbered list of search results so the user can pass --index."""
+    print(f"Found {len(results)} result(s):")
+    for i, result in enumerate(results):
+        kind, name, original, year = _result_summary(result)
+        extra = []
+        if original and original != name:
+            extra.append(original)
+        if year:
+            extra.append(year)
+        suffix = f" ({', '.join(extra)})" if extra else ""
+        print(f"  [{i}] {kind:<5} {name}{suffix}")
+
+
+def _resolve_cjk_font(cjk_font: str, out: Path) -> tuple[str, str | None]:
+    """Return ``(font_name, path_or_None)`` for the wrapper to feed the LaTeX template.
+
+    If ``cjk_font`` points at an existing font file (e.g. the bundled
+    ``src/索尼明体.ttf``), return its basename plus its directory relative to ``out``
+    so fontspec's ``Path`` option can load it from disk without a system install.
+    Anything else is treated as an installed font family name (no path).
+    """
+    candidate = Path(cjk_font)
+    looks_like_path = "/" in cjk_font or cjk_font.endswith((".ttf", ".otf", ".ttc"))
+    if candidate.is_file():
+        rel = os.path.relpath(candidate.resolve().parent, out.resolve()).replace(
+            os.sep, "/"
+        )
+        return candidate.name, rel
+    if looks_like_path:
+        raise FileNotFoundError(f"CJK font file not found: {cjk_font}")
+    return cjk_font, None
+
 
 _MONTHS = (
     "JAN",
@@ -388,20 +539,26 @@ def _body(
     title_pt: float = 16,
     label_pt: float = 7,
     card_vspace: float = 7.0,
+    *,
+    compact: bool = False,
 ) -> str:
     """Assemble the full document body — everything on the dossier sheet."""
-    return "\n".join(
-        [
-            _title_section(report, poster_file, title_pt, label_pt),
-            r"\vspace{10pt}",
-            _progress_header(report),
-            _progress_cards(report, cols, gap, card_vspace),
-            r"\vspace{2pt}",
-            r"\perf",
-            r"\notesbox",
-            rf"\reportfooter{{{_tex_escape(_ref_code(report))}}}",
-        ]
-    )
+    parts = [
+        _title_section(report, poster_file, title_pt, label_pt),
+        r"\vspace{10pt}",
+        _progress_header(report),
+        _progress_cards(report, cols, gap, card_vspace),
+    ]
+    if not compact:
+        parts.extend(
+            [
+                r"\vspace{2pt}",
+                r"\perf",
+                r"\notesbox",
+            ]
+        )
+    parts.append(rf"\reportfooter{{{_tex_escape(_ref_code(report))}}}")
+    return "\n".join(parts)
 
 
 # ── Entry point ──
@@ -458,6 +615,7 @@ def generate(
             title_pt=layout["title_pt"],
             label_pt=layout["label_pt"],
             card_vspace=layout["card_vspace"],
+            compact=layout["compact"],
         )
         + "\n"
     )
