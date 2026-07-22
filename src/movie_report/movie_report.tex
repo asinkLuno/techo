@@ -27,6 +27,7 @@
 \edef\LabelPt{\Size{\EDITION}{LabelPt}}
 \edef\CaplabelPt{\Size{\EDITION}{CaplabelPt}}
 \edef\StampPt{\Size{\EDITION}{StampPt}}
+\edef\FooterPt{\Size{\EDITION}{FooterPt}}
 
 % ── Page geometry: the page IS the dossier sheet ──
 \usepackage[paperwidth=\PW mm, paperheight=\PH mm,
@@ -242,7 +243,7 @@ pt*3/2\relax}\selectfont\bfseries\color{StampRed}}]{#1};}}
 \newcommand{\reportfooter}[1]{%
   \vspace{10pt}\noindent
   \begin{minipage}[c]{0.6\linewidth}\raggedright
-    {\fontsize{6.5pt}{8pt}\selectfont\itshape
+    {\fontsize{\FooterPt pt}{\dimexpr\FooterPt pt*6/5\relax}\selectfont\itshape
     Ref Code: #1\\Classification: Top Secret / Eyes Only}
   \end{minipage}\hfill
   \begin{minipage}[c]{0.35\linewidth}\raggedleft

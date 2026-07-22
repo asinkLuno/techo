@@ -55,6 +55,7 @@ class MovieReportLayout(TypedDict):
     label_pt: float  # EP01 / SEEN / date-blank font size, pt
     caplabel_pt: float  # section-header caps label font size, pt
     stamp_pt: float  # datestamp / filestamp font size, pt
+    footer_pt: float  # footer ref-code font size, pt
 
 
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
@@ -309,6 +310,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "62m5": {
         "margin": 10,
@@ -323,6 +325,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "67m5": {
         "margin": 10,
@@ -337,6 +340,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "67m5l": {
         "margin": 10,
@@ -351,6 +355,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "74m5": {
         "margin": 8,
@@ -365,6 +370,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 6,
         "caplabel_pt": 6.5,
         "stamp_pt": 9,
+        "footer_pt": 6.5,
     },
     "a4": {
         "margin": 10,
@@ -379,6 +385,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "b5": {
         "margin": 10,
@@ -393,6 +400,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "a5": {
         "margin": 10,
@@ -407,6 +415,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "a5fc": {
         "margin": 10,
@@ -421,6 +430,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "a6per": {
         "margin": 10,
@@ -435,6 +445,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "a6s": {
         "margin": 10,
@@ -449,6 +460,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "a6standard": {
         "margin": 10,
@@ -463,6 +475,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "127a7": {
         "margin": 10,
@@ -477,6 +490,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "a7l": {
         "margin": 10,
@@ -491,6 +505,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "120a7": {
         "margin": 10,
@@ -505,6 +520,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "a5s": {
         "margin": 10,
@@ -519,6 +535,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "tn": {
         "margin": 10,
@@ -533,6 +550,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
     "tnp": {
         "margin": 10,
@@ -547,6 +565,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 7,
         "caplabel_pt": 7.5,
         "stamp_pt": 10,
+        "footer_pt": 6.5,
     },
 }
 
@@ -602,6 +621,7 @@ def write_sizes_tex(path: Path | None = None) -> None:
             ("LabelPt", m["label_pt"]),
             ("CaplabelPt", m["caplabel_pt"]),
             ("StampPt", m["stamp_pt"]),
+            ("FooterPt", m["footer_pt"]),
         ):
             lines.append(
                 rf"\expandafter\def\csname size@{key}@{field}\endcsname{{{val}}}"
