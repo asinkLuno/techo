@@ -623,7 +623,7 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "outer": 5,
         "poster_w": 42,
         "poster_h": 63,
-        "stamp_w": 24,
+        "stamp_w": 22,
         "circle_size": 5.5,
         "dateblank_seg": 3.8,
         "gap": 4.0,
