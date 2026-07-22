@@ -57,23 +57,15 @@ twoside]{geometry}
 \definecolor{Ink}{HTML}{1b1c1c}          % charcoal — text
 \definecolor{Outline}{HTML}{757871}      % ruling lines / borders
 \definecolor{StampRed}{HTML}{a8322d}     % date / status stamps
-\definecolor{DotColor}{HTML}{cfcfcf}     % light-gray 5 mm dot grid
-% (writing guide)
+\input{../../src/colors.tex}             % NeonGreen (dot grid), etc.
 
 \color{Ink}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
 
-% 5 mm light-gray dot grid for the notes writing area (a tiled pattern, cheap)
+% Green-dot grid reused from green_dot: 3 mm spacing, same NeonGreen!50 dots.
 \newlength{\notesheight}
-\makeatletter
-\pgfdeclarepatternformonly{DotGrid}{\pgfpointorigin}{\pgfpoint{5mm}{5mm}}{%
-\pgfpoint{5mm}{5mm}}{%
-  \pgfpathcircle{\pgfpoint{2.5mm}{2.5mm}}{0.3mm}%
-  \pgfusepath{fill}%
-}
-\makeatother
 
 % ── Type macros ──
 % letter-spaced caps label (typewriter small caps)
@@ -170,8 +162,8 @@ fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
 \end{tikzpicture}\par\vspace{8pt}}
 
 % internal field notes — a memo area that fills the remaining page height/width,
-% ruled with a light-gray 5 mm dot grid. Height = leftover space on the page
-% minus what the footer (ref code + FILE_ACTIVE) needs.
+% ruled with the same 3 mm green-dot grid as green_dot.  Height = leftover space
+% on the page minus what the footer (ref code + FILE_ACTIVE) needs.
 \newcommand{\notesbox}{%
   \par
   \noindent\caplabel{INTERNAL FIELD NOTES:}\vspace{4pt}\par
@@ -181,8 +173,19 @@ fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
   \begin{tikzpicture}
     \useasboundingbox (0,-\notesheight) rectangle (\linewidth, 0);
     \fill[white] (0,-\notesheight) rectangle (\linewidth, 0);
-    \fill[pattern=DotGrid, pattern color=DotColor]
-    (0,-\notesheight) rectangle (\linewidth, 0);
+    % Green-dot grid (3 mm spacing, same as green_dot), inset 1.5 mm
+    % from the border so dots don't touch the ruling line.
+    \pgfmathsetmacro{\cx}{\linewidth/2}
+    \pgfmathsetmacro{\cy}{-\notesheight/2}
+    \pgfmathsetmacro{\nmax}{int(floor((\linewidth-1.5mm)/3mm))}
+    \pgfmathsetmacro{\mmax}{int(floor((\notesheight-1.5mm)/3mm))}
+    \foreach \n in {1,...,\nmax} {
+      \foreach \m in {1,...,\mmax} {
+        \fill[NeonGreen!50] (\n*3mm, -\m*3mm) circle (0.35mm);
+      }
+    }
+    % Red centre dot (IronOxideRed, same as green_dot) — drawn on top
+    \fill[IronOxideRed!50] (\cx, \cy) circle (0.35mm);
     \draw[Outline, line width=0.4pt] (0,-\notesheight) rectangle
     (\linewidth, 0);
 \end{tikzpicture}\par}

@@ -140,7 +140,12 @@ _BAYER_4x4 = (
 
 # Target size (longer side, px) for the poster before dithering — low enough
 # that the Bayer 4×4 pattern is clearly visible, high enough to recognise.
-_DITHER_SIZE = 280
+_DITHER_SIZE = 200
+
+# Per-channel output levels for the Bayer threshold — not 0 / 255 so the
+# 8-colour palette reads as muted ink on paper rather than pure RGB primaries.
+_DITHER_LO = 48
+_DITHER_HI = 207
 
 
 def _bayer_dither(image_bytes: bytes) -> bytes:
@@ -176,7 +181,7 @@ def _bayer_dither(image_bytes: bytes) -> bytes:
     # Same threshold per channel produces the classic 8-colour Bayer look.
     threshold = np.stack([threshold] * 3, axis=-1)
 
-    dithered = np.where(arr > threshold, 255, 0).astype(np.uint8)
+    dithered = np.where(arr > threshold, _DITHER_HI, _DITHER_LO).astype(np.uint8)
     buf = io.BytesIO()
     Image.fromarray(dithered, mode="RGB").save(buf, format="JPEG", quality=95)
     return buf.getvalue()
