@@ -16,6 +16,94 @@ def _dot_indices(n: int, freq: int) -> set[int]:
     return {i for k in range(n) for i in (mid - k * freq, mid + k * freq) if 0 < i < n}
 
 
+def _coord_raw(x: float, y: float) -> str:
+    """Raw TikZ coordinate ``({x}mm, -{y}mm)`` — midori_grid's own pages."""
+    return f"({x:.2f}mm, -{y:.2f}mm)"
+
+
+def grid_lines(
+    start_x: float,
+    start_y: float,
+    num_x: int,
+    num_y: int,
+    *,
+    step: float,
+    gap: float,
+    ext: float,
+    dot_freq: int,
+    pen: str = PEN,
+    coord=_coord_raw,
+) -> list[str]:
+    """A continuous midori grid drawn from top-left ``start`` over ``num_x`` by
+    ``num_y`` cells of size ``step``.
+
+    Produces continuous horizontals, U-shaped verticals that gap at every
+    intersection (the hollow crosses), every-other-line edge extensions (skipped on
+    dot rows/columns and on the borders), and the symmetric helper dots.
+
+    ``coord(x, y)`` formats each TikZ point, so callers can anchor differently:
+    midori_grid's own pages use raw coordinates, while movie anchors every line to
+    ``current page.north west`` so its printed characters land exactly on the cells.
+    """
+    grid_w = num_x * step
+    grid_h = num_y * step
+    x_dots = _dot_indices(num_x, dot_freq)
+    y_dots = _dot_indices(num_y, dot_freq)
+    lines: list[str] = []
+
+    # 1. Horizontal lines (continuous inside the grid), with extensions every 2 rows
+    #    — but not on dot rows, and not on the top/bottom borders.
+    for y_idx in range(num_y + 1):
+        y = start_y + y_idx * step
+        lines.append(
+            f"  \\draw[{pen}] {coord(start_x, y)} -- {coord(start_x + grid_w, y)};"
+        )
+        if y_idx % 2 == 0 and y_idx not in y_dots and y_idx != 0 and y_idx != num_y:
+            lines.append(
+                f"  \\draw[{pen}] {coord(start_x - gap - ext, y)}"
+                f" -- {coord(start_x - gap, y)};"
+            )
+            lines.append(
+                f"  \\draw[{pen}] {coord(start_x + grid_w + gap, y)}"
+                f" -- {coord(start_x + grid_w + gap + ext, y)};"
+            )
+
+    # 2. Vertical lines: top/bottom extensions every 2 columns, then U-shape arms
+    #    that touch each bottom line and gap before the top line.
+    for x_idx in range(num_x + 1):
+        x = start_x + x_idx * step
+        path_cmds = []
+        if x_idx % 2 == 0 and x_idx not in x_dots and x_idx != 0 and x_idx != num_x:
+            y_last = start_y + num_y * step
+            path_cmds.append(
+                f"{coord(x, start_y - gap - ext)} -- {coord(x, start_y - gap)}"
+            )
+            path_cmds.append(
+                f"{coord(x, y_last + gap)} -- {coord(x, y_last + gap + ext)}"
+            )
+        for y_idx in range(num_y):
+            y_top = start_y + y_idx * step
+            y_bottom = start_y + (y_idx + 1) * step
+            path_cmds.append(f"{coord(x, y_top + gap)} -- {coord(x, y_bottom)}")
+        lines.append(f"  \\draw[{pen}] {' '.join(path_cmds)};")
+
+    # 3. Helper dots (symmetric from the edges)
+    for x_idx in sorted(x_dots):
+        x = start_x + x_idx * step
+        lines.append(f"  \\fill[cyan!40] {coord(x, start_y - 1.5)} circle (0.4mm);")
+        lines.append(
+            f"  \\fill[cyan!40] {coord(x, start_y + grid_h + 1.5)} circle (0.4mm);"
+        )
+    for y_idx in sorted(y_dots):
+        y = start_y + y_idx * step
+        lines.append(f"  \\fill[cyan!40] {coord(start_x - 1.5, y)} circle (0.4mm);")
+        lines.append(
+            f"  \\fill[cyan!40] {coord(start_x + grid_w + 1.5, y)} circle (0.4mm);"
+        )
+
+    return lines
+
+
 def generate(size: str) -> None:
     s = sizes.SIZES[size]
     g = sizes.MIDORI_GRID[size]
@@ -44,82 +132,26 @@ def generate(size: str) -> None:
     start_x_even = RIGHT + (usable_w - grid_w) / 2.0
     start_y = TOP + (usable_h - grid_h) / 2.0
 
-    # 1. Helper dots (computed first to exclude extensions on dot rows/columns)
-    x_dots = _dot_indices(num_x, DOT_FREQ)
-    y_dots = _dot_indices(num_y, DOT_FREQ)
-
-    def _generate_lines(start_x: float) -> list[str]:
-        lines: list[str] = []
-        # 2. Horizontal lines (continuous inside grid, extensions with gaps every 2 rows except on dot rows)
-        for y_idx in range(num_y + 1):
-            y = start_y + y_idx * STEP
-
-            # Main continuous line inside grid
-            lines.append(
-                f"  \\draw[{PEN}] "
-                f"({start_x:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w:.2f}mm, -{y:.2f}mm);"
-            )
-
-            # Extensions every 2 rows, BUT NOT on rows with dots, AND NOT on the very top/bottom borders
-            if y_idx % 2 == 0 and y_idx not in y_dots and y_idx != 0 and y_idx != num_y:
-                lines.append(
-                    f"  \\draw[{PEN}] "
-                    f"({start_x - GAP - EXT:.2f}mm, -{y:.2f}mm) -- ({start_x - GAP:.2f}mm, -{y:.2f}mm);"
-                )
-                lines.append(
-                    f"  \\draw[{PEN}] "
-                    f"({start_x + grid_w + GAP:.2f}mm, -{y:.2f}mm) -- ({start_x + grid_w + GAP + EXT:.2f}mm, -{y:.2f}mm);"
-                )
-
-        # 3. Vertical lines (U-shaped segments with gaps)
-        for x_idx in range(num_x + 1):
-            x = start_x + x_idx * STEP
-            path_cmds = []
-
-            # Top and bottom extensions every 2 columns, BUT NOT on columns with dots, AND NOT on left/right borders
-            if x_idx % 2 == 0 and x_idx not in x_dots and x_idx != 0 and x_idx != num_x:
-                path_cmds.append(
-                    f"({x:.2f}mm, -{start_y - GAP - EXT:.2f}mm) -- ({x:.2f}mm, -{start_y - GAP:.2f}mm)"
-                )
-
-                y_last = start_y + num_y * STEP
-                path_cmds.append(
-                    f"({x:.2f}mm, -{y_last + GAP:.2f}mm) -- ({x:.2f}mm, -{y_last + GAP + EXT:.2f}mm)"
-                )
-
-            # Grid segments (U-shape arms: touch bottom line, gap before top line)
-            for y_idx in range(num_y):
-                y_top = start_y + y_idx * STEP
-                y_bottom = start_y + (y_idx + 1) * STEP
-                path_cmds.append(
-                    f"({x:.2f}mm, -{y_top + GAP:.2f}mm) -- ({x:.2f}mm, -{y_bottom:.2f}mm)"
-                )
-
-            lines.append(f"  \\draw[{PEN}] {' '.join(path_cmds)};")
-
-        # 4. Draw Helper dots (Symmetric from edges)
-        for x_idx in sorted(x_dots):
-            x = start_x + x_idx * STEP
-            lines.append(
-                f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y - 1.5:.2f}mm) circle (0.4mm);"
-            )
-            lines.append(
-                f"  \\fill[cyan!40] ({x:.2f}mm, -{start_y + grid_h + 1.5:.2f}mm) circle (0.4mm);"
-            )
-
-        for y_idx in sorted(y_dots):
-            y = start_y + y_idx * STEP
-            lines.append(
-                f"  \\fill[cyan!40] ({start_x - 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);"
-            )
-            lines.append(
-                f"  \\fill[cyan!40] ({start_x + grid_w + 1.5:.2f}mm, -{y:.2f}mm) circle (0.4mm);"
-            )
-
-        return lines
-
-    lines_odd = _generate_lines(start_x_odd)
-    lines_even = _generate_lines(start_x_even)
+    lines_odd = grid_lines(
+        start_x_odd,
+        start_y,
+        num_x,
+        num_y,
+        step=STEP,
+        gap=GAP,
+        ext=EXT,
+        dot_freq=DOT_FREQ,
+    )
+    lines_even = grid_lines(
+        start_x_even,
+        start_y,
+        num_x,
+        num_y,
+        step=STEP,
+        gap=GAP,
+        ext=EXT,
+        dot_freq=DOT_FREQ,
+    )
 
     out = Path("outputs") / f"midori-grid-{size}"
     out.mkdir(parents=True, exist_ok=True)

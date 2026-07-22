@@ -1,7 +1,18 @@
+import re
 import unittest
 from unittest import mock
 
 from src.movie import movie
+
+
+def _printed(joined: str) -> str:
+    """Node contents in document order, concatenated.
+
+    Season labels and the title are printed one glyph per cell, so ``S01`` lives in
+    the token stream as ``S`` ``0`` ``1`` rather than a contiguous substring. Reading
+    the cells back in order reconstructs the readable text.
+    """
+    return "".join(re.findall(r"\\node[^{]*\{([^{}]*)\};", joined))
 
 
 class TexEscapeTests(unittest.TestCase):
@@ -52,30 +63,74 @@ class ColsThatFitTests(unittest.TestCase):
         self.assertEqual(movie._cols_that_fit(1.0, 5.0), 1)
 
 
-class CellsTests(unittest.TestCase):
-    def test_four_edges_per_cell(self) -> None:
-        # each cell draws top, bottom, left, right -> 4 draws (shared edges doubled)
-        lines = movie._cells(0.0, 0.0, count=5, cols=11, cell=5.0)
-        self.assertEqual(len([ln for ln in lines if "\\draw" in ln]), 4 * 5)
+class GeometryTests(unittest.TestCase):
+    def test_known_size_keys(self) -> None:
+        # 74m5: 74×105, binding 12 / right 5 / top 4 / bottom 9, 5mm step → 11×18 centered at (13, 5).
+        geo = movie._grid_geometry("74m5", 74.0, 105.0)
+        self.assertEqual((geo.num_x, geo.num_y, geo.step), (11, 18, 5.0))
+        self.assertEqual((geo.start_x, geo.start_y), (13.0, 5.0))
 
-    def test_ragged_last_row_is_exact(self) -> None:
-        # 13 episodes at 11 cols -> two rows; exactly 13 cells (no padding)
-        lines = movie._cells(0.0, 0.0, count=13, cols=11, cell=5.0)
-        self.assertEqual(len([ln for ln in lines if "\\draw" in ln]), 4 * 13)
+    def test_unknown_size_falls_back(self) -> None:
+        geo = movie._grid_geometry("does-not-exist", 74.0, 105.0)
+        # default margins (12/5/5/5) → usable 57×95 → 11×19
+        self.assertEqual((geo.num_x, geo.num_y, geo.step), (11, 19, 5.0))
 
 
-class GridDrawingTests(unittest.TestCase):
-    def test_cell_numbers_one_per_number(self) -> None:
-        nodes = movie._cell_numbers(
-            0.0, 0.0, cols=4, cell=5.0, numbers=list(range(1, 11)), font="FontSmall"
-        )
+class PrintTextTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.geo = movie._grid_geometry("74m5", 74.0, 105.0)
+
+    def test_one_node_per_non_space_char(self) -> None:
+        nodes, rows = movie._print_text(self.geo, 0, "abc", "FontSmall")
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(rows, 1)
+        self.assertTrue(all("\\node" in n for n in nodes))
+
+    def test_wraps_at_num_x_and_skips_spaces(self) -> None:
+        # 12 non-space chars at 11 cols → 2 rows; the space occupies a cell but prints nothing.
+        nodes, rows = movie._print_text(self.geo, 0, "a" * 11 + " b", "FontSmall")
+        self.assertEqual(len(nodes), 12)  # 11 'a' + 1 'b', space printed nothing
+        self.assertEqual(rows, 2)
+
+    def test_empty(self) -> None:
+        self.assertEqual(movie._print_text(self.geo, 0, "", "FontSmall"), ([], 0))
+        self.assertEqual(movie._print_text(self.geo, 0, None, "FontSmall"), ([], 0))
+
+
+class PrintNumbersTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.geo = movie._grid_geometry("74m5", 74.0, 105.0)
+
+    def test_one_node_per_number(self) -> None:
+        nodes, rows = movie._print_numbers(self.geo, 0, list(range(1, 11)), "FontSmall")
         self.assertEqual(len(nodes), 10)
-        self.assertTrue(all("\\node" in ln for ln in nodes))
+        self.assertEqual(rows, 1)
+        self.assertTrue(all("\\node" in n for n in nodes))
         self.assertIn("{1}", nodes[0])
         self.assertIn("{10}", nodes[-1])
 
-    def test_stars_five_glyphs(self) -> None:
-        self.assertEqual("".join(movie._stars(37.0, 80.0)).count("☆"), 5)
+    def test_wraps_rows(self) -> None:
+        # 13 numbers at 11 cols → 2 rows
+        _, rows = movie._print_numbers(self.geo, 0, list(range(1, 14)), "FontSmall")
+        self.assertEqual(rows, 2)
+
+
+class StarsRowTests(unittest.TestCase):
+    def test_five_glyphs_one_per_cell(self) -> None:
+        geo = movie._grid_geometry("74m5", 74.0, 105.0)
+        nodes = movie._stars_row(geo, 2)
+        self.assertEqual(len(nodes), 5)
+        self.assertEqual("".join(nodes).count("☆"), 5)
+
+
+class BackgroundTests(unittest.TestCase):
+    def test_background_emits_draws(self) -> None:
+        geo = movie._grid_geometry("74m5", 74.0, 105.0)
+        lines = movie._grid_background(geo)
+        self.assertTrue(lines)
+        self.assertTrue(any("\\draw" in ln for ln in lines))
+        # page-corner anchored, like the content nodes
+        self.assertTrue(all("current page.north west" in ln for ln in lines))
 
 
 class PackSeasonsTests(unittest.TestCase):
@@ -94,26 +149,27 @@ class PackSeasonsTests(unittest.TestCase):
         pages = movie._pack_seasons(seasons, "74m5", 74.0, 105.0)
         joined = "\n".join("\n".join(p) for p in pages)
         self.assertIn("{7}", joined)  # last ep of season 1
-        self.assertIn("S01", joined)
-        self.assertIn("S02", joined)
+        # labels are printed one glyph per cell; reconstruct from the cell order
+        text = _printed(joined)
+        self.assertIn("S01", text)
+        self.assertIn("S02", text)
+
+    def test_background_grid_on_every_page(self) -> None:
+        seasons = tuple(movie.Season(n, 13, f"S{n}") for n in range(1, 21))
+        pages = movie._pack_seasons(seasons, "74m5", 74.0, 105.0)
+        # each page carries the full-page midori background
+        for page in pages:
+            joined = "\n".join(page)
+            self.assertIn("\\draw", joined)
 
     def test_preserves_given_season_order(self) -> None:
         # sorting (specials last) is fetch_title's job; _pack_seasons keeps given order
         seasons = (movie.Season(1, 7, "S1"), movie.Season(0, 3, "Specials"))
         pages = movie._pack_seasons(seasons, "74m5", 74.0, 105.0)
         joined = "\n".join("\n".join(p) for p in pages)
-        self.assertIn("S00", joined)
-        self.assertLess(joined.index("S01"), joined.index("S00"))
-
-
-class MarginsTests(unittest.TestCase):
-    def test_known_size_keys(self) -> None:
-        # 74m5 is defined in GREEN_DOT; locks the (binding, right, top, bottom) tuple.
-        self.assertEqual(movie._margins("74m5"), (12, 5, 10, 10))
-
-    def test_unknown_size_falls_back(self) -> None:
-        binding, right, top, bottom = movie._margins("does-not-exist")
-        self.assertEqual((binding, right, top, bottom), (12, 5, 10, 10))
+        text = _printed(joined)
+        self.assertIn("S00", text)
+        self.assertLess(text.index("S01"), text.index("S00"))
 
 
 class ResultSummaryTests(unittest.TestCase):

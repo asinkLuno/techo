@@ -2,10 +2,11 @@
 
 Usage: techo movie "<query>" --size 74m5
 
-The title header (localized name, original name, five ☆ stars to fill in by
-hand) sits at the top of the first page. TV seasons then flow directly beneath
-it as compact midori-style hollow-intersection grids of numbered episode cells,
-many seasons per page rather than one page each.
+The whole page is a continuous midori grid (the same one ``midori-grid`` prints),
+used as a full-page background. Onto it we "print" content one glyph per cell, like
+stamping text onto a ready-made grid notebook: the title (localized name, original
+name, five ☆ rating stars) across the top rows, then each TV season as a ``S01``
+label followed by its episode numbers 1..N flowing cell by cell.
 """
 
 from __future__ import annotations
@@ -21,11 +22,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .. import sizes
+from ..midori_grid.midori_grid import grid_lines as _midori_grid_lines
 
 TMDB_API = "https://api.themoviedb.org/3"
-
-# midori_grid visual style (see src/midori_grid/midori_grid.py)
-PEN = "cyan!40, line width=0.7pt"
 
 
 # ── Domain types ──
@@ -192,136 +191,183 @@ def _slug(text: str) -> str:
     return text.strip("-") or "untitled"
 
 
-GRID_CELL = 5.0  # mm — matches midori_grid grid_step
-
-
-def _cols_that_fit(usable_w: float, cell: float = GRID_CELL) -> int:
+def _cols_that_fit(usable_w: float, cell: float) -> int:
     """How many ``cell``-wide columns fit across ``usable_w`` mm (at least one)."""
     return max(1, int(usable_w // cell))
 
 
-def _cells(
-    x0: float, y0: float, count: int, cols: int, cell: float, pen: str = PEN
-) -> list[str]:
-    """Midori-style outline of exactly ``count`` cells wrapped at ``cols`` columns.
+# Midori grid fallback (matches sizes.MIDORI_GRID for the common 5mm sizes).
+_MIDORI_DEFAULTS = {
+    "binding": 12,
+    "right_margin": 5,
+    "top_margin": 5,
+    "bottom_margin": 5,
+    "grid_step": 5.0,
+    "dot_freq": 10,
+    "gap_size": 1.0,
+    "edge_extension": 1.2,
+}
 
-    Each cell is drawn with its four edges; verticals gap at the top, reproducing
-    midori_grid's hollow intersections. Overlapping shared edges are drawn twice
-    (visually identical), so a ragged last row needs no special handling.
+
+@dataclass(frozen=True)
+class Geometry:
+    """Centered midori-grid geometry shared by the background and the printed cells."""
+
+    start_x: float
+    start_y: float
+    num_x: int
+    num_y: int
+    step: float
+    gap: float
+    ext: float
+    dot_freq: int
+
+
+def _grid_geometry(size: str, pw: float, ph: float) -> Geometry:
+    """Centered midori grid for ``size`` — the full-page background the page prints on.
+
+    Both the background grid and every printed glyph are derived from this, so a
+    character at column ``c``, row ``r`` always sits in the cell whose outline the
+    background draws.
     """
-    gap = min(1.5, max(0.5, cell * 0.1))
-    lines: list[str] = []
-    for i in range(count):
-        r = i // cols
-        c = i % cols
-        xa = x0 + c * cell
-        xb = x0 + (c + 1) * cell
-        yt = y0 + r * cell
-        yb = y0 + (r + 1) * cell
-        lines.append(
-            f"  \\draw[{pen}]"
-            f" ([xshift={xa:.2f}mm, yshift={-yt:.2f}mm]current page.north west)"
-            f" -- ([xshift={xb:.2f}mm, yshift={-yt:.2f}mm]current page.north west);"
-        )
-        lines.append(
-            f"  \\draw[{pen}]"
-            f" ([xshift={xa:.2f}mm, yshift={-yb:.2f}mm]current page.north west)"
-            f" -- ([xshift={xb:.2f}mm, yshift={-yb:.2f}mm]current page.north west);"
-        )
-        lines.append(
-            f"  \\draw[{pen}]"
-            f" ([xshift={xa:.2f}mm, yshift={-(yt + gap):.2f}mm]current page.north west)"
-            f" -- ([xshift={xa:.2f}mm, yshift={-yb:.2f}mm]current page.north west);"
-        )
-        lines.append(
-            f"  \\draw[{pen}]"
-            f" ([xshift={xb:.2f}mm, yshift={-(yt + gap):.2f}mm]current page.north west)"
-            f" -- ([xshift={xb:.2f}mm, yshift={-yb:.2f}mm]current page.north west);"
-        )
-    return lines
+    g = sizes.MIDORI_GRID.get(size, _MIDORI_DEFAULTS)
+    binding = g["binding"]
+    right = g["right_margin"]
+    top = g["top_margin"]
+    bottom = g["bottom_margin"]
+    step = g["grid_step"]
+    usable_w = pw - binding - right
+    usable_h = ph - top - bottom
+    num_x = _cols_that_fit(usable_w, step)
+    num_y = _cols_that_fit(usable_h, step)
+    grid_w = num_x * step
+    grid_h = num_y * step
+    start_x = binding + (usable_w - grid_w) / 2.0
+    start_y = top + (usable_h - grid_h) / 2.0
+    return Geometry(
+        start_x,
+        start_y,
+        num_x,
+        num_y,
+        step,
+        g["gap_size"],
+        g["edge_extension"],
+        int(g["dot_freq"]),
+    )
 
 
-def _cell_numbers(
-    x0: float, y0: float, cols: int, cell: float, numbers: list[int], font: str
-) -> list[str]:
-    """Centered number nodes, placed left-to-right, top-to-bottom."""
+def _coord_page(x: float, y: float) -> str:
+    """TikZ point anchored to the page corner — matches the content nodes."""
+    return f"([xshift={x:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
+
+
+def _grid_background(geo: Geometry) -> list[str]:
+    """The full-page midori grid, page-corner-anchored so it underlays the cells."""
+    return _midori_grid_lines(
+        geo.start_x,
+        geo.start_y,
+        geo.num_x,
+        geo.num_y,
+        step=geo.step,
+        gap=geo.gap,
+        ext=geo.ext,
+        dot_freq=geo.dot_freq,
+        coord=_coord_page,
+    )
+
+
+def _cell_node(geo: Geometry, row: int, col: int, content: str, font: str) -> str:
+    """One glyph centered in cell ``(row, col)`` of the background grid."""
+    cx = geo.start_x + (col + 0.5) * geo.step
+    cy = geo.start_y + (row + 0.5) * geo.step
+    return (
+        f"  \\node[font=\\{font}, anchor=center]"
+        f" at ([xshift={cx:.2f}mm, yshift={-cy:.2f}mm]current page.north west)"
+        f" {{{content}}};"
+    )
+
+
+def _print_text(
+    geo: Geometry, start_row: int, text: str | None, font: str
+) -> tuple[list[str], int]:
+    """Print ``text`` one character per cell from ``(start_row, 0)``.
+
+    Whitespace occupies a cell but prints nothing (a blank cell). Wraps at
+    ``num_x`` columns. Returns ``(nodes, rows_consumed)``.
+    """
+    chars = list(text or "")
+    if not chars:
+        return [], 0
     nodes: list[str] = []
-    for i, num in enumerate(numbers):
-        r = i // cols
-        c = i % cols
-        cx = x0 + (c + 0.5) * cell
-        cy = y0 + (r + 0.5) * cell
-        nodes.append(
-            f"  \\node[font=\\{font}, anchor=center]"
-            f" at ([xshift={cx:.2f}mm, yshift={-cy:.2f}mm]current page.north west)"
-            f" {{{num}}};"
-        )
-    return nodes
+    for i, ch in enumerate(chars):
+        if ch.isspace():
+            continue
+        col = i % geo.num_x
+        row = start_row + i // geo.num_x
+        nodes.append(_cell_node(geo, row, col, _tex_escape(ch), font))
+    return nodes, math.ceil(len(chars) / geo.num_x)
 
 
-def _stars(cx: float, y: float, n: int = 5) -> list[str]:
-    """A centered row of ``n`` ☆ glyphs at vertical position ``y``."""
-    return [
-        f"  \\node[font=\\FontMedium, anchor=center]"
-        f" at ([xshift={cx:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
-        f" {{{{\\starfont {'☆' * n}}}}};"
+def _print_numbers(
+    geo: Geometry, start_row: int, numbers: list[int], font: str
+) -> tuple[list[str], int]:
+    """Print ``numbers`` one per cell, wrapping at ``num_x``. Returns ``(nodes, rows)``."""
+    if not numbers:
+        return [], 0
+    nodes = [
+        _cell_node(geo, start_row + i // geo.num_x, i % geo.num_x, str(n), font)
+        for i, n in enumerate(numbers)
     ]
+    return nodes, math.ceil(len(numbers) / geo.num_x)
+
+
+def _stars_row(geo: Geometry, row: int, n: int = 5) -> list[str]:
+    """A row of ``n`` ☆ glyphs, one per cell, starting at column 0."""
+    return [_cell_node(geo, row, i, r"\starfont ☆", "FontMedium") for i in range(n)]
 
 
 # ── Page builders ──
 
-
-def _margins(size: str) -> tuple[float, float, float, float]:
-    """``(binding, right, top, bottom)`` margins, from GREEN_DOT when available."""
-    g = sizes.GREEN_DOT.get(
-        size,
-        {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    )
-    return g["binding"], g["right_margin"], g["top_margin"], g["bottom_margin"]
+# Fonts: the title leads at FontMedium; everything else steps down. Episode numbers
+# are tiny because a 5mm cell is small, matching the old per-cell numbering.
+NAME_FONT = "FontMedium"
+LINE_FONT = "FontSmall"
+NUM_FONT = "FontTiny"
 
 
-NAME_DOWN = 6.5  # mm, top → name → next line (FontMedium title)
-ORIG_DOWN = 5.0  # mm, original name line height
-STAR_PAD = 2.5  # mm, gap above the star row
-HEADER_GAP = 4.5  # mm, below the stars before the first season grid
+def _rating_font(geo: Geometry) -> str:
+    """Episode-number font: Tiny for small cells, Small once they're roomy."""
+    return NUM_FONT if geo.step < 6 else LINE_FONT
 
 
-def _rating_header(title: Title, size: str, pw: float) -> tuple[list[str], float]:
-    """Name + original name + five ☆ stars as overlay tikz lines.
+HEADER_GAP_ROWS = 1  # blank grid rows between the rating header and the first season
 
-    Returns ``(lines, height)``, where ``height`` is how far below the page's top
-    edge the header reaches — so the season packer can start the first grid right
-    beneath it on the same page instead of wasting a page on the header alone.
+
+def _header_lines(title: Title, geo: Geometry) -> tuple[list[str], int]:
+    """Name + original name + five ☆ stars printed one glyph per cell.
+
+    Returns ``(nodes, rows_consumed)`` measured from grid row 0, including the
+    trailing blank gap rows so the season packer can start right beneath.
     """
-    binding, right, top, _ = _margins(size)
-    usable_w = pw - binding - right
-    cx = pw / 2
-    lines: list[str] = []
-    y = top
-    lines.append(
-        f"  \\node[font=\\FontMedium, anchor=north, text width={usable_w:.2f}mm,"
-        f" align=center]"
-        f" at ([xshift={cx:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
-        f" {{{_tex_escape(title.name)}}};"
-    )
-    y += NAME_DOWN
+    nodes: list[str] = []
+    row = 0
+    added, n = _print_text(geo, row, title.name, NAME_FONT)
+    nodes += added
+    row += max(n, 1)
     if (
         title.original_name
         and title.original_name.strip().lower() != (title.name or "").strip().lower()
     ):
-        lines.append(
-            f"  \\node[font=\\FontSmall, anchor=north, text width={usable_w:.2f}mm,"
-            f" align=center]"
-            f" at ([xshift={cx:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
-            f" {{{_tex_escape(title.original_name)}}};"
-        )
-        y += ORIG_DOWN
-    lines.extend(_stars(cx, y + STAR_PAD))
-    return lines, y + STAR_PAD + HEADER_GAP
+        added, n = _print_text(geo, row, title.original_name, LINE_FONT)
+        nodes += added
+        row += max(n, 1)
+    nodes += _stars_row(geo, row)
+    row += 1
+    row += HEADER_GAP_ROWS
+    return nodes, row
 
 
-HDR = 6.0  # mm, season header line
-GAP = 4.0  # mm, gap between season blocks
+HDR_FONT = LINE_FONT
 
 
 def _season_label(season: Season) -> str:
@@ -336,32 +382,28 @@ def _pack_seasons(
     ph: float,
     *,
     header: list[str] | None = None,
-    header_h: float = 0.0,
+    header_rows: int = 0,
 ) -> list[list[str]]:
-    """Pack compact per-season grids — exactly one cell per episode, many per page.
+    """Pack seasons onto full-page midori grids — one cell per episode, many per page.
 
-    Seasons flow top-to-bottom; each is a header plus a midori-style grid sized to its
-    episode count. A season taller than the remaining page space continues on the next
-    page (and a season taller than a full page splits its rows across pages).
-
-    When ``header`` is given (the title's name + stars), it is placed at the top of
-    the first page and the first season starts ``header_h`` below the top edge, so a
-    TV show's rating header shares page 1 with its first season grid instead of
-    taking a page to itself. With no seasons, the header still yields one page.
+    Every page begins with the continuous background grid; content is printed on top
+    in grid-row units. The rating ``header`` (if given) sits at the top of page 1 and
+    the first season starts ``header_rows`` down, so a TV show's header shares page 1
+    with its first season. Seasons flow top-to-bottom; a season taller than the
+    remaining page space continues on the next page (and one taller than a full page
+    splits its rows across pages). With no seasons, the header still yields one page.
     """
-    binding, right, top, bottom = _margins(size)
-    usable_w = pw - binding - right
-    cell = sizes.MIDORI_GRID.get(size, {}).get("grid_step", GRID_CELL)
-    cols = _cols_that_fit(usable_w, cell)
-    font = "FontTiny" if cell < 6 else "FontSmall"
-    page_top = top
-    page_bottom = ph - bottom
+    geo = _grid_geometry(size, pw, ph)
+    cols = geo.num_x
+    page_rows = geo.num_y
+    num_font = _rating_font(geo)
 
     def new_page() -> list[str]:
         return [
             "\\thispagestyle{empty}%",
             "\\begin{tikzpicture}[remember picture, overlay,"
             " every node/.style={inner sep=0pt}]",
+            *_grid_background(geo),
         ]
 
     def close(page: list[str]) -> None:
@@ -372,42 +414,39 @@ def _pack_seasons(
     current = new_page()
     if header:
         current += header
-        y = page_top + header_h
+        row = header_rows
     else:
-        y = page_top
+        row = 0
     for season in seasons:
-        rows = max(1, math.ceil(season.episodes / cols))
-        block_h = HDR + rows * cell
-        if block_h <= (page_bottom - page_top) and y + block_h > page_bottom:
+        episodes = season.episodes
+        ep_rows = max(1, math.ceil(episodes / cols))
+        block_rows = 1 + ep_rows  # label row + episode rows
+        # Move the whole block to a new page if it won't fit and we're not at the top.
+        if row + block_rows > page_rows and row > 0:
             close(current)
             pages.append(current)
             current = new_page()
-            y = page_top
-        current.append(
-            f"  \\node[font=\\FontSmall, anchor=north west]"
-            f" at ([xshift={binding:.2f}mm, yshift={-y:.2f}mm]current page.north west)"
-            f" {{{_tex_escape(_season_label(season))}}};"
-        )
-        y += HDR
-        placed_rows = 0
-        while placed_rows < rows:
-            space = page_bottom - y
-            if space < cell:
+            row = 0
+        label_nodes, _ = _print_text(geo, row, _season_label(season), HDR_FONT)
+        current += label_nodes
+        row += 1
+        placed = 0
+        while placed < episodes:
+            if row >= page_rows:
                 close(current)
                 pages.append(current)
                 current = new_page()
-                y = page_top
-                space = page_bottom - y
-            rows_here = min(rows - placed_rows, max(1, int(space // cell)))
-            start_ep = placed_rows * cols + 1
-            eps_here = min(cols * rows_here, season.episodes - placed_rows * cols)
-            current += _cells(binding, y, eps_here, cols, cell)
-            current += _cell_numbers(
-                binding, y, cols, cell, list(range(start_ep, start_ep + eps_here)), font
+                row = 0
+            space_rows = page_rows - row
+            remaining = episodes - placed
+            rows_here = min(math.ceil(remaining / cols), space_rows)
+            eps_here = min(rows_here * cols, remaining)
+            nodes, _ = _print_numbers(
+                geo, row, list(range(placed + 1, placed + 1 + eps_here)), num_font
             )
-            y += rows_here * cell
-            placed_rows += rows_here
-        y += GAP
+            current += nodes
+            row += rows_here
+            placed += eps_here
     close(current)
     pages.append(current)
     return pages
@@ -459,9 +498,10 @@ def generate(
     out = Path("outputs") / f"movie-{slug}-{size}"
     out.mkdir(parents=True, exist_ok=True)
 
-    header_lines, header_h = _rating_header(title, size, pw)
+    geo = _grid_geometry(size, pw, ph)
+    header_lines, header_rows = _header_lines(title, geo)
     pages = _pack_seasons(
-        title.seasons, size, pw, ph, header=header_lines, header_h=header_h
+        title.seasons, size, pw, ph, header=header_lines, header_rows=header_rows
     )
     (out / "content.tex").write_text("\n".join("\n".join(p) for p in pages) + "\n")
 
