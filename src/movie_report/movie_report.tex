@@ -192,22 +192,22 @@ at (0,0) {};}}
     {\caplabel{TEAR HERE FOR FILING}};
 \end{tikzpicture}\par\vspace{8pt}}
 
-% internal field notes — a memo area that fills the remaining page height/width,
-% ruled with the same 3 mm green-dot grid as green_dot.  Height = leftover space
-% on the page minus what the footer (ref code + FILE_ACTIVE) needs.
+% internal field notes — fills the remaining page height AND the full
+% paper width (bleeds into the margins).  Ruled with the same 3 mm
+% green-dot grid as green_dot.
 \newcommand{\notesbox}{%
   \par
   \noindent\caplabel{INTERNAL FIELD NOTES:}\vspace{4pt}\par
   \setlength{\notesheight}{\dimexpr\textheight-\pagetotal-44pt\relax}%
   \ifdim\notesheight<60pt\relax\setlength{\notesheight}{60pt}\relax\fi
-  \noindent
+  \noindent\hspace*{-\MovieBind mm}%
   \begin{tikzpicture}
-    \useasboundingbox (0,-\notesheight) rectangle (\linewidth, 0);
-    \fill[white] (0,-\notesheight) rectangle (\linewidth, 0);
+    \useasboundingbox (0,-\notesheight) rectangle (\PW mm, 0);
+    \fill[white] (0,-\notesheight) rectangle (\PW mm, 0);
     % Green-dot grid (3 mm spacing, same algorithm as dot-grid.tex):
     % dots radiate from the box centre so left/right and top/bottom
     % margins are guaranteed equal.
-    \pgfmathsetmacro{\bw}{\linewidth/1mm}         % box width (mm)
+    \pgfmathsetmacro{\bw}{\PW}                    % paper width (mm)
     \pgfmathsetmacro{\bh}{\notesheight/1mm}       % box height (mm)
     \pgfmathsetmacro{\cx}{\bw/2}                  % centre x
     \pgfmathsetmacro{\cy}{-\bh/2}                 % centre y
