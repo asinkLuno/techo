@@ -30,6 +30,8 @@
 \edef\StampPt{\Size{\EDITION}{StampPt}}
 \edef\FooterPt{\Size{\EDITION}{FooterPt}}
 \edef\LetterSpace{\Size{\EDITION}{LetterSpace}}
+\edef\CardHeadGap{\Size{\EDITION}{CardHeadGap}}
+\edef\CardRuleGap{\Size{\EDITION}{CardRuleGap}}
 
 % ── Page geometry: the page IS the dossier sheet ──
 \usepackage[paperwidth=\PW mm, paperheight=\PH mm,
@@ -169,7 +171,8 @@ at (0,0) {};}}
   \par\noindent\begingroup\setlength{\fboxsep}{6pt}%
   \fcolorbox{Outline}{WhiteFill}{
     \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}%
-      #1\\[3pt]{\color{Outline}\rule{\linewidth}{0.4pt}}\\[6pt]%
+      #1\\[\CardHeadGap
+      pt]{\color{Outline}\rule{\linewidth}{0.4pt}}\\[\CardRuleGap pt]%
       #2%
 \end{minipage}}\endgroup\par}
 
