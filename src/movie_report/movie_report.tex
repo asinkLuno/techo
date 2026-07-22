@@ -25,7 +25,7 @@ twoside]{geometry}
 
 % ── Packages ──
 \usepackage{tikz}
-\usetikzlibrary{positioning, calc}
+\usetikzlibrary{positioning, calc, patterns}
 \usepackage{fontspec}
 \usepackage{graphicx}
 \usepackage{xeCJK}
@@ -57,11 +57,23 @@ twoside]{geometry}
 \definecolor{Ink}{HTML}{1b1c1c}          % charcoal — text
 \definecolor{Outline}{HTML}{757871}      % ruling lines / borders
 \definecolor{StampRed}{HTML}{a8322d}     % date / status stamps
+\definecolor{DotColor}{HTML}{cfcfcf}     % light-gray 5 mm dot grid
+% (writing guide)
 
 \color{Ink}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
+
+% 5 mm light-gray dot grid for the notes writing area (a tiled pattern, cheap)
+\newlength{\notesheight}
+\makeatletter
+\pgfdeclarepatternformonly{DotGrid}{\pgfpointorigin}{\pgfpoint{5mm}{5mm}}{%
+\pgfpoint{5mm}{5mm}}{%
+  \pgfpathcircle{\pgfpoint{2.5mm}{2.5mm}}{0.3mm}%
+  \pgfusepath{fill}%
+}
+\makeatother
 
 % ── Type macros ──
 % letter-spaced caps label (typewriter small caps)
@@ -99,24 +111,54 @@ twoside]{geometry}
       rounded corners=1pt, inner sep=3pt, rotate=-3,
 font={\fontsize{10pt}{11pt}\selectfont\bfseries\color{StampRed}}]{#1};}}
 
-% empty episode check-box (5.5 mm square, to mark by hand)
-\newcommand{\epbox}{\tikz[baseline=-0.7ex]{\node[draw=Outline, line width=0.4pt,
-fill=WhiteFill, minimum size=5.5mm, inner sep=0pt]{};}}
-% a check-box plus its "EP NN" label
-\newcommand{\epitem}[1]{\epbox\,{\fontsize{7pt}{8pt}\selectfont EP #1}}
-% a plain numbered stamp (movie rewatch tally)
-\newcommand{\stamp}[1]{\tikz[baseline=-0.7ex]{\node[draw=Outline,
+% Dashed circle check-box — baseline at circle centre so \raisebox can
+% vertically centre it between the label and the date blank.
+\newcommand{\epbox}{\tikz[baseline=0pt]{\node[draw=Outline, dashed,
       line width=0.4pt,
-minimum size=6mm, inner sep=0pt, font={\fontsize{7pt}{7pt}\selectfont}]{#1};}}
+fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
+% Write-in date blank — ruled lines sit below the baseline so handwriting
+% rests on them. The \fontsize keeps slashes and spacing consistent with the
+% label above; \rule width is balanced so 5–6 stamps fit on an A5 row.
+\newcommand{\dateblank}{{\color{Outline}\fontsize{7pt}{8pt}\selectfont
+    \rule[-0.5ex]{3.8mm}{0.4pt}\hspace{1pt}/\hspace{1pt}%
+    \rule[-0.5ex]{3.8mm}{0.4pt}\hspace{1pt}/\hspace{1pt}%
+\rule[-0.5ex]{3.8mm}{0.4pt}}}
+% a check-box, its label, and a __/__/__ to fill the viewing date
+% \raisebox centres the circle vertically between the two text lines.
+\newcommand{\epitem}[1]{%
+  \raisebox{6.5pt}{\epbox}\enspace
+  \begin{tabular}[b]{@{}l@{}}%
+    {\fontsize{7pt}{8pt}\selectfont EP#1}\\[1pt]%
+    \dateblank%
+  \end{tabular}%
+}
+% a check-box labelled SEEN, with a __/__/__ viewing-date field
+\newcommand{\seenitem}{%
+  \raisebox{6.5pt}{\epbox}\enspace
+  \begin{tabular}[b]{@{}l@{}}%
+    {\fontsize{7pt}{8pt}\selectfont SEEN}\\[1pt]%
+    \dateblank%
+  \end{tabular}%
+}
 
 % a white dossier card (plain bordered box, no shadow)
-% #1 = card title (e.g. SEASON 01), #2 = body LaTeX
+% #1 = header LaTeX (caller styles it, e.g. \caplabel{SEASON
+% 01}\hfill\datestamp{...})
+% #2 = body LaTeX
 \newcommand{\dossiercard}[2]{%
   \par\noindent\begingroup\setlength{\fboxsep}{6pt}%
   \fcolorbox{Outline}{WhiteFill}{
     \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}%
-      \caplabel{#1}\\[3pt]{\color{Outline}\rule{\linewidth}{0.4pt}}\\[6pt]%
+      #1\\[3pt]{\color{Outline}\rule{\linewidth}{0.4pt}}\\[6pt]%
       #2%
+\end{minipage}}\endgroup\par}
+
+% a white dossier card with no header (body only) — for the movie viewing log
+\newcommand{\dossierplain}[1]{%
+  \par\noindent\begingroup\setlength{\fboxsep}{6pt}%
+  \fcolorbox{Outline}{WhiteFill}{%
+    \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}%
+      #1%
 \end{minipage}}\endgroup\par}
 
 % perforated "tear here" line, label punched through in the sheet colour
@@ -127,15 +169,23 @@ minimum size=6mm, inner sep=0pt, font={\fontsize{7pt}{7pt}\selectfont}]{#1};}}
     {\caplabel{TEAR HERE FOR FILING}};
 \end{tikzpicture}\par\vspace{8pt}}
 
-% internal field notes — label kept with its tall white box (never split)
+% internal field notes — a memo area that fills the remaining page height/width,
+% ruled with a light-gray 5 mm dot grid. Height = leftover space on the page
+% minus what the footer (ref code + FILE_ACTIVE) needs.
 \newcommand{\notesbox}{%
-  \par\noindent
-  \begin{minipage}{\linewidth}%
-    \caplabel{INTERNAL FIELD NOTES:}\vspace{4pt}\par
-    \noindent\fcolorbox{Outline}{WhiteFill}{%
-      \begin{minipage}[t][130pt]{\dimexpr\linewidth-2\fboxsep-2\fboxrule}
-    \end{minipage}}%
-\end{minipage}\par}
+  \par
+  \noindent\caplabel{INTERNAL FIELD NOTES:}\vspace{4pt}\par
+  \setlength{\notesheight}{\dimexpr\textheight-\pagetotal-44pt\relax}%
+  \ifdim\notesheight<60pt\relax\setlength{\notesheight}{60pt}\relax\fi
+  \noindent
+  \begin{tikzpicture}
+    \useasboundingbox (0,-\notesheight) rectangle (\linewidth, 0);
+    \fill[white] (0,-\notesheight) rectangle (\linewidth, 0);
+    \fill[pattern=DotGrid, pattern color=DotColor]
+    (0,-\notesheight) rectangle (\linewidth, 0);
+    \draw[Outline, line width=0.4pt] (0,-\notesheight) rectangle
+    (\linewidth, 0);
+\end{tikzpicture}\par}
 
 % rotated FILE_ACTIVE status stamp
 \newcommand{\filestamp}[1]{\tikz[baseline=-1ex]{\node[draw=StampRed,

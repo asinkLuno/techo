@@ -52,7 +52,7 @@ _MONTHS = (
 )
 
 # A movie gets this many blank stamps in its SCREENING card (a rewatch tally).
-_MOVIE_STAMPS = 8
+_VIEWING_SLOTS = 1
 
 
 # ── Domain type ──
@@ -68,6 +68,7 @@ class Report:
     date: str  # ISO YYYY-MM-DD (release_date / first_air_date)
     seasons: tuple[Season, ...]
     poster_path: str = ""  # TMDB poster_path, e.g. "/abc.jpg"
+    imdb_id: str = ""  # IMDb id (e.g. tt1375666) for the footer ref code
 
 
 # ── TMDB fetch (reuses movie's stdlib client) ──
@@ -76,7 +77,7 @@ class Report:
 def fetch_report(kind: str, tmdb_id: int, *, language: str) -> Report:
     """Fetch the report fields for one movie or TV show."""
     path = f"/{'movie' if kind == 'movie' else 'tv'}/{tmdb_id}"
-    data = _tmdb_get(path, {}, language)
+    data = _tmdb_get(path, {"append_to_response": "external_ids"}, language)
     if kind == "movie":
         name = data.get("title") or data.get("original_title") or ""
         original = data.get("original_title") or ""
@@ -93,6 +94,7 @@ def fetch_report(kind: str, tmdb_id: int, *, language: str) -> Report:
                         number=s["season_number"],
                         episodes=s["episode_count"],
                         name=s.get("name") or "",
+                        air_date=s.get("air_date") or "",
                     )
                     for s in data.get("seasons", [])
                     if s.get("episode_count", 0) > 0
@@ -101,6 +103,7 @@ def fetch_report(kind: str, tmdb_id: int, *, language: str) -> Report:
                 key=lambda s: (s.number == 0, s.number),
             )
         )
+    imdb_id = data.get("imdb_id") or data.get("external_ids", {}).get("imdb_id") or ""
     return Report(
         kind=kind,
         name=name,
@@ -108,6 +111,7 @@ def fetch_report(kind: str, tmdb_id: int, *, language: str) -> Report:
         date=date,
         seasons=seasons,
         poster_path=data.get("poster_path") or "",
+        imdb_id=imdb_id,
     )
 
 
@@ -168,25 +172,30 @@ def _dossier_code(report: Report) -> str:
 
 
 def _ref_code(report: Report) -> str:
-    """Footer ref code: ``{INITIALS}-{YEAR}``, e.g. ``BB-2008``."""
+    """Footer ref code: the IMDb id when TMDB has it, else an INITIALS-YEAR fallback."""
+    if report.imdb_id:
+        return report.imdb_id
     year = report.date[:4] if report.date else "0000"
     return f"{_dossier_code(report)}-{year}"
 
 
 def _stamp_cols(pw_mm: float) -> int:
-    """How many EP stamps fit per card row (clamped 4..10)."""
+    """How many EP/SEEN stamps (each now wider, with a date field) fit per row."""
     usable = pw_mm - 20.0  # 10 mm geometry margin each side
-    return max(4, min(10, int(usable // 18.0)))
+    return max(3, min(8, int(usable // 24.0)))
 
 
 # ── LaTeX section builders (pure; return LaTeX source) ──
 
 
 def _title_section(report: Report, poster_file: str | None = None) -> str:
-    """Poster slot, then TITLE (left, underlined) | DATE (right, red stamp).
+    """Poster slot, then TITLE (full width, underlined).
+
+    The DATE lives in the progress cards (each SEASON card / the movie viewing
+    card), so the title row is identical for movies and TV.
 
     ``poster_file`` (a filename in the output dir) shows the fetched TMDB
-    poster; without it the dashed "ATTACH POSTER HERE" placeholder is printed.
+    poster; without it the dashed "STAMP HERE" placeholder is printed.
     """
     poster = (
         rf"\posterimage{{{_tex_escape(poster_file)}}}" if poster_file else r"\posterbox"
@@ -196,7 +205,7 @@ def _title_section(report: Report, poster_file: str | None = None) -> str:
         poster,
         r"\end{center}",
         r"\vspace{8pt}",
-        r"\noindent\begin{minipage}[b]{0.57\linewidth}",
+        r"\noindent\begin{minipage}[b]{0.98\linewidth}",
         r"\caplabel{TITLE}\\[3pt]",
         rf"{{\fontsize{{16pt}}{{18pt}}\selectfont\displfont\bfseries"
         rf" \MakeUppercase{{{_tex_escape(report.name)}}}}}",
@@ -210,65 +219,84 @@ def _title_section(report: Report, poster_file: str | None = None) -> str:
             rf" {_tex_escape(report.original_name)}}}"
         )
     lines.append(r"\\[3pt]{\color{Outline}\rule{\linewidth}{0.8pt}}")
-    lines.append(r"\end{minipage}\hfill")
-    lines.append(r"\begin{minipage}[b]{0.40\linewidth}\raggedleft")
-    lines.append(r"\caplabel{DATE}\\[6pt]")
-    lines.append(rf"\datestamp{{{_tex_escape(_format_date(report.date))}}}")
     lines.append(r"\end{minipage}")
     lines.append(r"\par")
     return "\n".join(lines)
 
 
 def _progress_header(report: Report) -> str:
-    """Section rule: ``PROGRESS LOG: DOSSIER_xx_01`` … ``STAMP EPISODES AS COMPLETED``."""
-    code = _dossier_code(report)
-    label = _tex_escape(f"PROGRESS LOG: DOSSIER_{code}_01")
-    right = (
+    """Thin rule above the season cards carrying the stamping instruction."""
+    instruction = (
         "STAMP EPISODES AS COMPLETED" if report.kind == "tv" else "MARK AS COMPLETED"
     )
     return "\n".join(
         [
-            rf"\noindent\caplabel{{{label}}}"
-            rf"\hfill\caplabel{{{right}}}\par",
+            rf"\noindent\hfill\caplabel{{{instruction}}}\par",
             r"\vspace{1pt}{\color{Outline}\hrule height 0.5pt}\vspace{6pt}",
         ]
     )
 
 
 def _spread_grid(items: list[str], cols: int) -> str:
-    """Lay ``items`` (already-formatted LaTeX) ``cols`` per row, spread with \hfill."""
+    """Lay ``items`` ``cols`` per row; full rows spread evenly, partial rows
+    stay left-aligned."""
     if not items:
         return ""
-    rows = []
+    rows: list[str] = []
     for start in range(0, len(items), cols):
         chunk = items[start : start + cols]
-        rows.append(r"\noindent" + r"\hfill".join(chunk) + r"\par")
+        if len(chunk) == cols:
+            # Full row: spread items evenly — \nolinebreak prevents TeX from
+            # splitting the row mid-way, so the row is always kept together.
+            rows.append(
+                r"\noindent"
+                + r"\nolinebreak\hfil".join(chunk)
+                + r"\nolinebreak\hfil\null\par"
+            )
+        else:
+            # Partial last row: left-aligned with a comfortable gap
+            rows.append(r"\noindent" + r"\hspace{4mm}".join(chunk) + r"\par")
     return "\n".join(rows)
 
 
+def _date_tag(label: str, date: str) -> str:
+    """A right-aligned ``LABEL <red date stamp>`` for a card header."""
+    return rf"\hfill\caplabel{{{label}}}\enspace\datestamp{{{_format_date(date)}}}"
+
+
 def _season_cards(report: Report, cols: int) -> str:
-    """One dossier card per TV season, each with a grid of ``EP NN`` stamps."""
+    """One dossier card per TV season, each with a grid of ``EP NN`` stamps.
+
+    Each card header carries that season's own air date as a red stamp (TV shows
+    date per season, not once at the top).
+    """
     lines: list[str] = []
     for season in report.seasons:
+        header = rf"\caplabel{{SEASON {season.number:02d}}}"
+        if season.air_date:
+            header += _date_tag("AIR DATE", season.air_date)
         items = [rf"\epitem{{{n:02d}}}" for n in range(1, season.episodes + 1)]
         grid = _spread_grid(items, cols)
-        lines.append(rf"\dossiercard{{SEASON {season.number:02d}}}{{{grid}}}")
+        lines.append(rf"\dossiercard{{{header}}}{{{grid}}}")
         lines.append(r"\vspace{7pt}")
     return "\n".join(lines)
 
 
-def _screening_card(report: Report, cols: int) -> str:
-    """A single dossier card for a movie — a row of blank rewatch stamps."""
-    items = [rf"\stamp{{{n}}}" for n in range(1, _MOVIE_STAMPS + 1)]
+def _viewing_card(report: Report, cols: int) -> str:
+    """A movie viewing-log card: the release date (RELEASE DATE red stamp, same
+    corner as a TV season's AIR DATE) over a single SEEN check-box."""
+    items = [r"\seenitem"] * _VIEWING_SLOTS
     grid = _spread_grid(items, cols)
-    return rf"\dossiercard{{SCREENING}}{{{grid}}}"
+    if report.date:
+        return rf"\dossiercard{{{_date_tag('RELEASE DATE', report.date)}}}{{{grid}}}"
+    return rf"\dossierplain{{{grid}}}"
 
 
 def _progress_cards(report: Report, cols: int) -> str:
-    """Season cards for TV, or one screening card for a movie."""
+    """Season cards for TV, or a SEEN viewing-log card for a movie."""
     if report.kind == "tv" and report.seasons:
         return _season_cards(report, cols)
-    return _screening_card(report, cols)
+    return _viewing_card(report, cols)
 
 
 def _body(report: Report, cols: int, poster_file: str | None = None) -> str:
@@ -277,7 +305,6 @@ def _body(report: Report, cols: int, poster_file: str | None = None) -> str:
         [
             _title_section(report, poster_file),
             r"\vspace{10pt}",
-            "",
             _progress_header(report),
             _progress_cards(report, cols),
             r"\vspace{2pt}",

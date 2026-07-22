@@ -32,11 +32,12 @@ TMDB_API = "https://api.themoviedb.org/3"
 
 @dataclass(frozen=True)
 class Season:
-    """One season of a TV show: number, episode count, and TMDB season name."""
+    """One season of a TV show: number, episode count, TMDB season name, air date."""
 
     number: int
     episodes: int
     name: str
+    air_date: str = ""  # ISO YYYY-MM-DD the season first aired (TMDB air_date)
 
 
 @dataclass(frozen=True)
