@@ -42,6 +42,17 @@ class MidoriGridLayout(TypedDict):
     edge_extension: float
 
 
+class MovieReportLayout(TypedDict):
+    margin: float  # geometry margin, mm
+    poster_w: float  # poster slot width, mm
+    poster_h: float  # poster slot height, mm
+    stamp_w: float  # width of one EP/SEEN stamp (column calc), mm
+    circle_size: float  # checkbox circle diameter, mm
+    dateblank_seg: float  # width of one date-blank segment, mm
+    gap: float  # partial-row gap in _spread_grid, mm
+    raisebox_offset: float  # \raisebox offset for \epitem/\seenitem, pt
+
+
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
 SIZES: dict[str, PageSize] = {
     "cozyca": {"pw": 100, "ph": 90, "red_line": 8},
@@ -279,6 +290,190 @@ MIDORI_GRID: dict[str, MidoriGridLayout] = {
     },
 }
 
+# ── Movie Report layout ──
+MOVIE_REPORT: dict[str, MovieReportLayout] = {
+    "cozyca": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "62m5": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "67m5": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "67m5l": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "74m5": {
+        "margin": 8,
+        "poster_w": 32,
+        "poster_h": 48,
+        "stamp_w": 20,
+        "circle_size": 4.5,
+        "dateblank_seg": 3.0,
+        "gap": 3.0,
+        "raisebox_offset": 5.0,
+    },
+    "a4": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "b5": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "a5": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "a5fc": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "a6per": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "a6s": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "a6standard": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "127a7": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "a7l": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "120a7": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "a5s": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "tn": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+    "tnp": {
+        "margin": 10,
+        "poster_w": 42,
+        "poster_h": 63,
+        "stamp_w": 24,
+        "circle_size": 5.5,
+        "dateblank_seg": 3.8,
+        "gap": 4.0,
+        "raisebox_offset": 6.5,
+    },
+}
+
 # ── Font sizes in pt ──
 FONTS = {
     "large": 12,
@@ -311,6 +506,22 @@ def write_sizes_tex(path: Path | None = None) -> None:
             ("PW", s["pw"]),
             ("PH", s["ph"]),
             ("RedLine", s["red_line"]),
+        ):
+            lines.append(
+                rf"\expandafter\def\csname size@{key}@{field}\endcsname{{{val}}}"
+            )
+    lines.append("")
+    lines.append(r"% Movie Report layout fields (mm / pt)")
+    for key, m in MOVIE_REPORT.items():
+        for field, val in (
+            ("Margin", m["margin"]),
+            ("PosterW", m["poster_w"]),
+            ("PosterH", m["poster_h"]),
+            ("StampW", m["stamp_w"]),
+            ("CircleSize", m["circle_size"]),
+            ("DateblankSeg", m["dateblank_seg"]),
+            ("Gap", m["gap"]),
+            ("Raisebox", m["raisebox_offset"]),
         ):
             lines.append(
                 rf"\expandafter\def\csname size@{key}@{field}\endcsname{{{val}}}"

@@ -65,14 +65,18 @@ class DossierCodeTests(unittest.TestCase):
 
 class StampColsTests(unittest.TestCase):
     def test_a5(self) -> None:
-        # 148 mm → (148-20)//24 = 5
-        self.assertEqual(mr._stamp_cols(148.0), 5)
+        # 148 mm, margin=10, stamp_w=24 → (148-20)//24 = 5
+        self.assertEqual(mr._stamp_cols(148.0, 10.0, 24.0), 5)
 
     def test_tiny_page_clamps_to_three(self) -> None:
-        self.assertEqual(mr._stamp_cols(50.0), 3)
+        self.assertEqual(mr._stamp_cols(50.0, 10.0, 24.0), 3)
 
     def test_huge_page_clamps_to_eight(self) -> None:
-        self.assertEqual(mr._stamp_cols(400.0), 8)
+        self.assertEqual(mr._stamp_cols(400.0, 10.0, 24.0), 8)
+
+    def test_74m5(self) -> None:
+        # 74 mm, margin=8, stamp_w=20 → (74-16)//20 = 2, clamped to 3
+        self.assertEqual(mr._stamp_cols(74.0, 8.0, 20.0), 3)
 
 
 class SpreadGridTests(unittest.TestCase):
@@ -102,6 +106,11 @@ class SpreadGridTests(unittest.TestCase):
 
     def test_empty_returns_empty(self) -> None:
         self.assertEqual(mr._spread_grid([], 10), "")
+
+    def test_partial_row_gap_scales(self) -> None:
+        """Partial row uses the given gap, not always 4mm."""
+        grid = mr._spread_grid(["a", "b", "c"], 10, gap=3.0)
+        self.assertIn(r"\hspace{3.0mm}", grid)
 
 
 class TitleSectionTests(unittest.TestCase):

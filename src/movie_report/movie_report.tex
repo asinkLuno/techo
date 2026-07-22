@@ -17,10 +17,16 @@
 \input{../../src/sizes.tex}
 \edef\PW{\Size{\EDITION}{PW}}
 \edef\PH{\Size{\EDITION}{PH}}
+\edef\MovieMargin{\Size{\EDITION}{Margin}}
+\edef\PosterW{\Size{\EDITION}{PosterW}}
+\edef\PosterH{\Size{\EDITION}{PosterH}}
+\edef\CircleSize{\Size{\EDITION}{CircleSize}}
+\edef\DateblankSeg{\Size{\EDITION}{DateblankSeg}}
+\edef\Raisebox{\Size{\EDITION}{Raisebox}}
 
 % ── Page geometry: the page IS the dossier sheet ──
 \usepackage[paperwidth=\PW mm, paperheight=\PH mm,
-  margin=10mm,
+  margin=\MovieMargin mm,
 twoside]{geometry}
 
 % ── Packages ──
@@ -75,8 +81,8 @@ twoside]{geometry}
 % the photo field: a dashed 2:3 outline labelled STAMP HERE.
 % Frame is slightly larger than the poster so the dashed outline is visible.
 \newcommand{\posterfield}{%
-  \node[draw=Outline, dashed, line width=0.5pt, minimum width=42mm,
-    minimum height=63mm,
+  \node[draw=Outline, dashed, line width=0.5pt, minimum width=\PosterW mm,
+    minimum height=\PosterH mm,
   inner sep=0pt] (frame)
   {\color{Outline}\fontsize{10pt}{12pt}\selectfont\bfseries STAMP HERE};%
 }
@@ -94,7 +100,8 @@ twoside]{geometry}
     \pgfmathsetmacro{\pr}{random()*0.8}
     \node[inner sep=0pt, draw=Outline, line width=0.3pt, rotate=\pr] (photo)
     at ([shift={(0.6mm,-0.4mm)}]frame.center)
-    {\includegraphics[width=42mm,height=63mm,keepaspectratio]{#1}};
+    {\includegraphics[width=\PosterW mm,height=\PosterH
+    mm,keepaspectratio]{#1}};
     \node[below=2mm of photo] {\caplabel{[ REF\_IMG\_001 ]}};
 \end{tikzpicture}}
 
@@ -113,18 +120,19 @@ font={\fontsize{10pt}{11pt}\selectfont\bfseries\color{StampRed}}]{#1};}}
 % vertically centre it between the label and the date blank.
 \newcommand{\epbox}{\tikz[baseline=0pt]{\node[draw=Outline, dashed,
       line width=0.4pt,
-fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
+    fill=WhiteFill, circle, minimum size=\CircleSize mm, inner sep=0pt]
+at (0,0) {};}}
 % Write-in date blank — ruled lines sit below the baseline so handwriting
 % rests on them. The \fontsize keeps slashes and spacing consistent with the
 % label above; \rule width is balanced so 5–6 stamps fit on an A5 row.
 \newcommand{\dateblank}{{\color{Outline}\fontsize{7pt}{8pt}\selectfont
-    \rule[-0.5ex]{3.8mm}{0.4pt}\hspace{1pt}/\hspace{1pt}%
-    \rule[-0.5ex]{3.8mm}{0.4pt}\hspace{1pt}/\hspace{1pt}%
-\rule[-0.5ex]{3.8mm}{0.4pt}}}
+    \rule[-0.5ex]{\DateblankSeg mm}{0.4pt}\hspace{1pt}/\hspace{1pt}%
+    \rule[-0.5ex]{\DateblankSeg mm}{0.4pt}\hspace{1pt}/\hspace{1pt}%
+\rule[-0.5ex]{\DateblankSeg mm}{0.4pt}}}
 % a check-box, its label, and a __/__/__ to fill the viewing date
 % \raisebox centres the circle vertically between the two text lines.
 \newcommand{\epitem}[1]{%
-  \raisebox{6.5pt}{\epbox}\enspace
+  \raisebox{\Raisebox pt}{\epbox}\enspace
   \begin{tabular}[b]{@{}l@{}}%
     {\fontsize{7pt}{8pt}\selectfont EP#1}\\[1pt]%
     \dateblank%
@@ -132,7 +140,7 @@ fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
 }
 % a check-box labelled SEEN, with a __/__/__ viewing-date field
 \newcommand{\seenitem}{%
-  \raisebox{6.5pt}{\epbox}\enspace
+  \raisebox{\Raisebox pt}{\epbox}\enspace
   \begin{tabular}[b]{@{}l@{}}%
     {\fontsize{7pt}{8pt}\selectfont SEEN}\\[1pt]%
     \dateblank%

@@ -251,10 +251,10 @@ def _ref_code(report: Report) -> str:
     return f"{_dossier_code(report)}-{year}"
 
 
-def _stamp_cols(pw_mm: float) -> int:
-    """How many EP/SEEN stamps (each now wider, with a date field) fit per row."""
-    usable = pw_mm - 20.0  # 10 mm geometry margin each side
-    return max(3, min(8, int(usable // 24.0)))
+def _stamp_cols(pw_mm: float, margin: float, stamp_w: float) -> int:
+    """How many EP/SEEN stamps fit per row, given per-size layout."""
+    usable = pw_mm - 2.0 * margin
+    return max(3, min(8, int(usable // stamp_w)))
 
 
 # ── LaTeX section builders (pure; return LaTeX source) ──
@@ -309,7 +309,7 @@ def _progress_header(report: Report) -> str:
     )
 
 
-def _spread_grid(items: list[str], cols: int) -> str:
+def _spread_grid(items: list[str], cols: int, gap: float = 4.0) -> str:
     """Lay ``items`` ``cols`` per row; full rows spread evenly, partial rows
     stay left-aligned."""
     if not items:
@@ -327,7 +327,7 @@ def _spread_grid(items: list[str], cols: int) -> str:
             )
         else:
             # Partial last row: left-aligned with a comfortable gap
-            rows.append(r"\noindent" + r"\hspace{4mm}".join(chunk) + r"\par")
+            rows.append(r"\noindent" + rf"\hspace{{{gap}mm}}".join(chunk) + r"\par")
     return "\n".join(rows)
 
 
@@ -336,7 +336,7 @@ def _date_tag(label: str, date: str) -> str:
     return rf"\hfill\caplabel{{{label}}}\enspace\datestamp{{{_format_date(date)}}}"
 
 
-def _season_cards(report: Report, cols: int) -> str:
+def _season_cards(report: Report, cols: int, gap: float = 4.0) -> str:
     """One dossier card per TV season, each with a grid of ``EP NN`` stamps.
 
     Each card header carries that season's own air date as a red stamp (TV shows
@@ -348,37 +348,39 @@ def _season_cards(report: Report, cols: int) -> str:
         if season.air_date:
             header += _date_tag("AIR DATE", season.air_date)
         items = [rf"\epitem{{{n:02d}}}" for n in range(1, season.episodes + 1)]
-        grid = _spread_grid(items, cols)
+        grid = _spread_grid(items, cols, gap)
         lines.append(rf"\dossiercard{{{header}}}{{{grid}}}")
         lines.append(r"\vspace{7pt}")
     return "\n".join(lines)
 
 
-def _viewing_card(report: Report, cols: int) -> str:
+def _viewing_card(report: Report, cols: int, gap: float = 4.0) -> str:
     """A movie viewing-log card: the release date (RELEASE DATE red stamp, same
     corner as a TV season's AIR DATE) over a single SEEN check-box."""
     items = [r"\seenitem"] * _VIEWING_SLOTS
-    grid = _spread_grid(items, cols)
+    grid = _spread_grid(items, cols, gap)
     if report.date:
         return rf"\dossiercard{{{_date_tag('RELEASE DATE', report.date)}}}{{{grid}}}"
     return rf"\dossierplain{{{grid}}}"
 
 
-def _progress_cards(report: Report, cols: int) -> str:
+def _progress_cards(report: Report, cols: int, gap: float = 4.0) -> str:
     """Season cards for TV, or a SEEN viewing-log card for a movie."""
     if report.kind == "tv" and report.seasons:
-        return _season_cards(report, cols)
-    return _viewing_card(report, cols)
+        return _season_cards(report, cols, gap)
+    return _viewing_card(report, cols, gap)
 
 
-def _body(report: Report, cols: int, poster_file: str | None = None) -> str:
+def _body(
+    report: Report, cols: int, poster_file: str | None = None, gap: float = 4.0
+) -> str:
     """Assemble the full document body — everything on the dossier sheet."""
     return "\n".join(
         [
             _title_section(report, poster_file),
             r"\vspace{10pt}",
             _progress_header(report),
-            _progress_cards(report, cols),
+            _progress_cards(report, cols, gap),
             r"\vspace{2pt}",
             r"\perf",
             r"\notesbox",
@@ -417,7 +419,8 @@ def generate(
     sizes.write_sizes_tex()
     dims = sizes.SIZES[size]
     pw, ph = dims["pw"], dims["ph"]
-    cols = _stamp_cols(pw)
+    layout = sizes.MOVIE_REPORT[size]
+    cols = _stamp_cols(pw, layout["margin"], layout["stamp_w"])
 
     slug = _slug(report.name or query)
     out = Path("outputs") / f"movie-report-{slug}-{size}"
@@ -431,7 +434,9 @@ def generate(
         if _download_poster(report.poster_path, dest):
             poster_file = dest.name
 
-    (out / "content.tex").write_text(_body(report, cols, poster_file) + "\n")
+    (out / "content.tex").write_text(
+        _body(report, cols, poster_file, gap=layout["gap"]) + "\n"
+    )
 
     tex_name = f"movie-report-{slug}-{size}.tex"
     font_name, font_path = _resolve_cjk_font(cjk_font, out)
