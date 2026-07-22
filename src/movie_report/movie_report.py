@@ -341,7 +341,7 @@ def _spread_grid(items: list[str], cols: int, gap: float = 4.0) -> str:
 
 def _date_tag(label: str, date: str) -> str:
     """A right-aligned ``LABEL <red date stamp>`` for a card header."""
-    return rf"\hfill\caplabel{{{label}}}\enspace\datestamp{{{_format_date(date)}}}"
+    return rf"\hfill\caplabel{{{label}}}\,\datestamp{{{_format_date(date)}}}"
 
 
 def _season_cards(report: Report, cols: int, gap: float = 4.0) -> str:
