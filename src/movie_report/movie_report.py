@@ -18,12 +18,16 @@ tear line, and a FILE_ACTIVE stamp sit on top of it.
 
 from __future__ import annotations
 
+import io
 import os
 import re
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
+
+import numpy as np
+from PIL import Image
 
 from .. import sizes
 from ..movie.movie import (
@@ -119,18 +123,65 @@ def fetch_report(kind: str, tmdb_id: int, *, language: str) -> Report:
 
 TMDB_IMG = "https://image.tmdb.org/t/p/w500"
 
+# Bayer 4×4 ordered-dither matrix (normalised to [0, 1)).
+_BAYER_4x4 = (
+    np.array(
+        [
+            [0, 8, 2, 10],
+            [12, 4, 14, 6],
+            [3, 11, 1, 9],
+            [15, 7, 13, 5],
+        ],
+        dtype=np.float32,
+    )
+    / 16.0
+)
+
+
+def _bayer_dither(image_bytes: bytes) -> bytes:
+    """Apply Bayer 4×4 colour dithering to *image_bytes*, returning a JPEG.
+
+    Each RGB channel is thresholded independently against the tiled Bayer
+    matrix so the poster gets a retro 8-colour halftone look (black, R, G, B,
+    C, M, Y, white).  If the image can't be decoded the raw bytes are returned
+    unchanged so a damaged download still produces *something*.
+    """
+    try:
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    except Exception:
+        return image_bytes
+    arr = np.array(img, dtype=np.float32)
+    h, w, _ = arr.shape
+
+    # Tile the Bayer matrix to cover the image.
+    reps_y, reps_x = h // 4 + 1, w // 4 + 1
+    threshold = np.tile(_BAYER_4x4, (reps_y, reps_x))[:h, :w]
+    threshold = (threshold * 255.0).astype(np.float32)
+    # Same threshold per channel produces the classic 8-colour Bayer look.
+    threshold = np.stack([threshold] * 3, axis=-1)
+
+    dithered = np.where(arr > threshold, 255, 0).astype(np.uint8)
+    buf = io.BytesIO()
+    Image.fromarray(dithered, mode="RGB").save(buf, format="JPEG", quality=95)
+    return buf.getvalue()
+
 
 def _download_poster(poster_path: str, dest: Path) -> bool:
-    """Download the w500 poster to ``dest``; return False (and warn) on failure."""
+    """Download the w500 poster, Bayer-dither it, and write to *dest*.
+
+    Return ``False`` (and warn) on failure.
+    """
     request = urllib.request.Request(
         TMDB_IMG + poster_path, headers={"Accept": "image/*"}
     )
     try:
         with urllib.request.urlopen(request, timeout=20) as response:
-            dest.write_bytes(response.read())
+            raw = response.read()
     except (urllib.error.URLError, urllib.error.HTTPError, OSError) as error:
         print(f"warning: poster download failed ({error}); using placeholder")
         return False
+    dithered = _bayer_dither(raw)
+    dest.write_bytes(dithered)
     return True
 
 

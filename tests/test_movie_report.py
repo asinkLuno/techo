@@ -142,17 +142,29 @@ class TitleSectionTests(unittest.TestCase):
 
 class DownloadPosterTests(unittest.TestCase):
     def test_writes_file_and_returns_true(self) -> None:
+        import io
         import tempfile
         from pathlib import Path
+
+        from PIL import Image
+
+        # A minimal 8×8 red square so the Bayer dither has real pixels to work on.
+        img = Image.new("RGB", (8, 8), color=(180, 60, 60))
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG")
+        valid_jpeg: bytes = buf.getvalue()
 
         with tempfile.TemporaryDirectory() as tmp:
             dest_path = Path(tmp) / "poster.jpg"
             fake = mock.MagicMock()
-            fake.__enter__.return_value.read.return_value = b"\xff\xd8jpeg"
+            fake.__enter__.return_value.read.return_value = valid_jpeg
             with mock.patch.object(mr.urllib.request, "urlopen", return_value=fake):
                 ok = mr._download_poster("/abc.jpg", dest_path)
             self.assertTrue(ok)
-            self.assertEqual(dest_path.read_bytes(), b"\xff\xd8jpeg")
+            # Output must be a JPEG (starts with FF D8) and non-empty.
+            saved = dest_path.read_bytes()
+            self.assertTrue(saved[:2] == b"\xff\xd8", "output is not a JPEG")
+            self.assertGreater(len(saved), 100)
 
     def test_returns_false_on_network_error(self) -> None:
         import tempfile
