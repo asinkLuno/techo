@@ -78,6 +78,10 @@ class StampColsTests(unittest.TestCase):
         # 74 mm, bind=12, outer=5, stamp_w=16 → (74-17)//16 = 3
         self.assertEqual(mr._stamp_cols(74.0, 12.0, 5.0, 16.0), 3)
 
+    def test_67m5(self) -> None:
+        # 67 mm, bind=12, outer=3, stamp_w=15 → (67-15)//15 = 3
+        self.assertEqual(mr._stamp_cols(67.0, 12.0, 3.0, 15.0), 3)
+
 
 class SpreadGridTests(unittest.TestCase):
     def test_partial_row_left_aligned(self) -> None:
