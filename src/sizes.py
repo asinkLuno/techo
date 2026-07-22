@@ -51,6 +51,10 @@ class MovieReportLayout(TypedDict):
     dateblank_seg: float  # width of one date-blank segment, mm
     gap: float  # partial-row gap in _spread_grid, mm
     raisebox_offset: float  # \raisebox offset for \epitem/\seenitem, pt
+    title_pt: float  # title font size, pt
+    label_pt: float  # EP01 / SEEN / date-blank font size, pt
+    caplabel_pt: float  # section-header caps label font size, pt
+    stamp_pt: float  # datestamp / filestamp font size, pt
 
 
 # ── Page geometry + red margin (consumed by LaTeX templates via \Size) ──
@@ -301,6 +305,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "62m5": {
         "margin": 10,
@@ -311,6 +319,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "67m5": {
         "margin": 10,
@@ -321,6 +333,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "67m5l": {
         "margin": 10,
@@ -331,6 +347,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "74m5": {
         "margin": 8,
@@ -341,6 +361,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 2.2,
         "gap": 2.5,
         "raisebox_offset": 4.5,
+        "title_pt": 13,
+        "label_pt": 6,
+        "caplabel_pt": 6.5,
+        "stamp_pt": 9,
     },
     "a4": {
         "margin": 10,
@@ -351,6 +375,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "b5": {
         "margin": 10,
@@ -361,6 +389,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "a5": {
         "margin": 10,
@@ -371,6 +403,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "a5fc": {
         "margin": 10,
@@ -381,6 +417,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "a6per": {
         "margin": 10,
@@ -391,6 +431,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "a6s": {
         "margin": 10,
@@ -401,6 +445,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "a6standard": {
         "margin": 10,
@@ -411,6 +459,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "127a7": {
         "margin": 10,
@@ -421,6 +473,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "a7l": {
         "margin": 10,
@@ -431,6 +487,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "120a7": {
         "margin": 10,
@@ -441,6 +501,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "a5s": {
         "margin": 10,
@@ -451,6 +515,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "tn": {
         "margin": 10,
@@ -461,6 +529,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
     "tnp": {
         "margin": 10,
@@ -471,6 +543,10 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "dateblank_seg": 3.8,
         "gap": 4.0,
         "raisebox_offset": 6.5,
+        "title_pt": 16,
+        "label_pt": 7,
+        "caplabel_pt": 7.5,
+        "stamp_pt": 10,
     },
 }
 
@@ -522,6 +598,10 @@ def write_sizes_tex(path: Path | None = None) -> None:
             ("DateblankSeg", m["dateblank_seg"]),
             ("Gap", m["gap"]),
             ("Raisebox", m["raisebox_offset"]),
+            ("TitlePt", m["title_pt"]),
+            ("LabelPt", m["label_pt"]),
+            ("CaplabelPt", m["caplabel_pt"]),
+            ("StampPt", m["stamp_pt"]),
         ):
             lines.append(
                 rf"\expandafter\def\csname size@{key}@{field}\endcsname{{{val}}}"

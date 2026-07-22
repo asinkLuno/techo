@@ -260,7 +260,12 @@ def _stamp_cols(pw_mm: float, margin: float, stamp_w: float) -> int:
 # ── LaTeX section builders (pure; return LaTeX source) ──
 
 
-def _title_section(report: Report, poster_file: str | None = None) -> str:
+def _title_section(
+    report: Report,
+    poster_file: str | None = None,
+    title_pt: float = 16,
+    label_pt: float = 7,
+) -> str:
     """Poster slot, then TITLE (full width, underlined).
 
     The DATE lives in the progress cards (each SEASON card / the movie viewing
@@ -269,6 +274,9 @@ def _title_section(report: Report, poster_file: str | None = None) -> str:
     ``poster_file`` (a filename in the output dir) shows the fetched TMDB
     poster; without it the dashed "STAMP HERE" placeholder is printed.
     """
+    title_bs = title_pt * 1.2
+    sub_pt = label_pt + 1  # slightly larger than body label
+    sub_bs = sub_pt * 1.2
     poster = (
         rf"\posterimage{{{_tex_escape(poster_file)}}}" if poster_file else r"\posterbox"
     )
@@ -279,7 +287,7 @@ def _title_section(report: Report, poster_file: str | None = None) -> str:
         r"\vspace{8pt}",
         r"\noindent\begin{minipage}[b]{0.98\linewidth}",
         r"\caplabel{TITLE}\\[3pt]",
-        rf"{{\fontsize{{16pt}}{{18pt}}\selectfont\displfont\bfseries"
+        rf"{{\fontsize{{{title_pt}pt}}{{{title_bs:.1f}pt}}\selectfont\displfont\bfseries"
         rf" \MakeUppercase{{{_tex_escape(report.name)}}}}}",
     ]
     if (
@@ -287,7 +295,7 @@ def _title_section(report: Report, poster_file: str | None = None) -> str:
         and report.original_name.strip().lower() != report.name.strip().lower()
     ):
         lines.append(
-            rf"\\[2pt]{{\fontsize{{8pt}}{{9pt}}\selectfont\itshape"
+            rf"\\[2pt]{{\fontsize{{{sub_pt}pt}}{{{sub_bs:.1f}pt}}\selectfont\itshape"
             rf" {_tex_escape(report.original_name)}}}"
         )
     lines.append(r"\\[3pt]{\color{Outline}\rule{\linewidth}{0.8pt}}")
@@ -372,12 +380,17 @@ def _progress_cards(report: Report, cols: int, gap: float = 4.0) -> str:
 
 
 def _body(
-    report: Report, cols: int, poster_file: str | None = None, gap: float = 4.0
+    report: Report,
+    cols: int,
+    poster_file: str | None = None,
+    gap: float = 4.0,
+    title_pt: float = 16,
+    label_pt: float = 7,
 ) -> str:
     """Assemble the full document body — everything on the dossier sheet."""
     return "\n".join(
         [
-            _title_section(report, poster_file),
+            _title_section(report, poster_file, title_pt, label_pt),
             r"\vspace{10pt}",
             _progress_header(report),
             _progress_cards(report, cols, gap),
@@ -435,7 +448,15 @@ def generate(
             poster_file = dest.name
 
     (out / "content.tex").write_text(
-        _body(report, cols, poster_file, gap=layout["gap"]) + "\n"
+        _body(
+            report,
+            cols,
+            poster_file,
+            gap=layout["gap"],
+            title_pt=layout["title_pt"],
+            label_pt=layout["label_pt"],
+        )
+        + "\n"
     )
 
     tex_name = f"movie-report-{slug}-{size}.tex"

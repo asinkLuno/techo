@@ -23,6 +23,10 @@
 \edef\CircleSize{\Size{\EDITION}{CircleSize}}
 \edef\DateblankSeg{\Size{\EDITION}{DateblankSeg}}
 \edef\Raisebox{\Size{\EDITION}{Raisebox}}
+\edef\TitlePt{\Size{\EDITION}{TitlePt}}
+\edef\LabelPt{\Size{\EDITION}{LabelPt}}
+\edef\CaplabelPt{\Size{\EDITION}{CaplabelPt}}
+\edef\StampPt{\Size{\EDITION}{StampPt}}
 
 % ── Page geometry: the page IS the dossier sheet ──
 \usepackage[paperwidth=\PW mm, paperheight=\PH mm,
@@ -75,7 +79,8 @@ twoside]{geometry}
 
 % ── Type macros ──
 % letter-spaced caps label (typewriter small caps)
-\newcommand{\caplabel}[1]{{\capfont\fontsize{7.5pt}{9pt}\selectfont\bfseries
+\newcommand{\caplabel}[1]{{\capfont\fontsize{\CaplabelPt
+    pt}{\dimexpr\CaplabelPt pt*6/5\relax}\selectfont\bfseries
 #1}}
 
 % the photo field: a dashed 2:3 outline labelled STAMP HERE.
@@ -84,7 +89,8 @@ twoside]{geometry}
   \node[draw=Outline, dashed, line width=0.5pt, minimum width=\PosterW mm,
     minimum height=\PosterH mm,
   inner sep=0pt] (frame)
-  {\color{Outline}\fontsize{10pt}{12pt}\selectfont\bfseries STAMP HERE};%
+  {\color{Outline}\fontsize{\StampPt pt}{\dimexpr\StampPt
+  pt*6/5\relax}\selectfont\bfseries STAMP HERE};%
 }
 % placeholder (no poster): labelled dashed field, ref code pinned under it
 \newcommand{\posterbox}{
@@ -114,7 +120,8 @@ twoside]{geometry}
     \node[draw=StampRed, line width=0.8pt,
       rounded corners=1pt, inner sep=3pt, rotate=\jr,
       xshift=\jx mm, yshift=\jy mm,
-font={\fontsize{10pt}{11pt}\selectfont\bfseries\color{StampRed}}]{#1};}}
+      font={\fontsize{\StampPt pt}{\dimexpr\StampPt
+pt*6/5\relax}\selectfont\bfseries\color{StampRed}}]{#1};}}
 
 % Dashed circle check-box — baseline at circle centre so \raisebox can
 % vertically centre it between the label and the date blank.
@@ -125,7 +132,8 @@ at (0,0) {};}}
 % Write-in date blank — ruled lines sit below the baseline so handwriting
 % rests on them. The \fontsize keeps slashes and spacing consistent with the
 % label above; \rule width is balanced so 5–6 stamps fit on an A5 row.
-\newcommand{\dateblank}{{\color{Outline}\fontsize{7pt}{8pt}\selectfont
+\newcommand{\dateblank}{{\color{Outline}\fontsize{\LabelPt
+    pt}{\dimexpr\LabelPt pt*6/5\relax}\selectfont
     \rule[-0.5ex]{\DateblankSeg mm}{0.4pt}\hspace{1pt}/\hspace{1pt}%
     \rule[-0.5ex]{\DateblankSeg mm}{0.4pt}\hspace{1pt}/\hspace{1pt}%
 \rule[-0.5ex]{\DateblankSeg mm}{0.4pt}}}
@@ -134,7 +142,8 @@ at (0,0) {};}}
 \newcommand{\epitem}[1]{%
   \raisebox{\Raisebox pt}{\epbox}\enspace
   \begin{tabular}[b]{@{}l@{}}%
-    {\fontsize{7pt}{8pt}\selectfont EP#1}\\[1pt]%
+    {\fontsize{\LabelPt pt}{\dimexpr\LabelPt pt*6/5\relax}\selectfont
+    EP#1}\\[1pt]%
     \dateblank%
   \end{tabular}%
 }
@@ -142,7 +151,8 @@ at (0,0) {};}}
 \newcommand{\seenitem}{%
   \raisebox{\Raisebox pt}{\epbox}\enspace
   \begin{tabular}[b]{@{}l@{}}%
-    {\fontsize{7pt}{8pt}\selectfont SEEN}\\[1pt]%
+    {\fontsize{\LabelPt pt}{\dimexpr\LabelPt pt*6/5\relax}\selectfont
+    SEEN}\\[1pt]%
     \dateblank%
   \end{tabular}%
 }
@@ -224,7 +234,9 @@ at (0,0) {};}}
     \node[draw=StampRed, line width=1.4pt,
       inner sep=4pt, rotate=\jr,
       xshift=\jx mm, yshift=\jy mm,
-font={\capfont\fontsize{12pt}{13pt}\selectfont\bfseries\color{StampRed}}]{#1};}}
+      font={\capfont\fontsize{\dimexpr\StampPt
+        pt*6/5\relax}{\dimexpr\StampPt
+pt*3/2\relax}\selectfont\bfseries\color{StampRed}}]{#1};}}
 
 % aesthetic footer: ref code / classification (left) + status stamp (right)
 \newcommand{\reportfooter}[1]{%
