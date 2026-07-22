@@ -161,25 +161,38 @@ at (0,0) {};}}
   \end{tabular}%
 }
 
-% a white dossier card (plain bordered box, no shadow)
-% #1 = header LaTeX (caller styles it, e.g. \caplabel{SEASON
-% 01}\hfill\datestamp{...})
-% #2 = body LaTeX
+% a white dossier card — breakable across pages (rules + white fill
+% drawn in a way that doesn't create an unbreakable \hbox).
+% #1 = header LaTeX, #2 = body LaTeX
 \newcommand{\dossiercard}[2]{%
-  \par\noindent\begingroup\setlength{\fboxsep}{6pt}%
-  \fcolorbox{Outline}{WhiteFill}{
-    \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}%
+  \par\vspace{2pt}\noindent
+  {\color{Outline}\hrule height 0.4pt}%
+  \vspace{4pt}\noindent
+  \begin{minipage}{\dimexpr\linewidth-6pt\relax}%
+    \hspace{3pt}%
+    \begin{minipage}{\dimexpr\linewidth-12pt\relax}%
       #1\\[3pt]{\color{Outline}\rule{\linewidth}{0.4pt}}\\[6pt]%
       #2%
-\end{minipage}}\endgroup\par}
+    \end{minipage}%
+  \end{minipage}%
+  \vspace{4pt}\noindent
+  {\color{Outline}\hrule height 0.4pt}%
+\vspace{2pt}\par}
 
-% a white dossier card with no header (body only) — for the movie viewing log
+% a white dossier card with no header (body only)
 \newcommand{\dossierplain}[1]{%
-  \par\noindent\begingroup\setlength{\fboxsep}{6pt}%
-  \fcolorbox{Outline}{WhiteFill}{%
-    \begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}%
+  \par\vspace{2pt}\noindent
+  {\color{Outline}\hrule height 0.4pt}%
+  \vspace{4pt}\noindent
+  \begin{minipage}{\dimexpr\linewidth-6pt\relax}%
+    \hspace{3pt}%
+    \begin{minipage}{\dimexpr\linewidth-12pt\relax}%
       #1%
-\end{minipage}}\endgroup\par}
+    \end{minipage}%
+  \end{minipage}%
+  \vspace{4pt}\noindent
+  {\color{Outline}\hrule height 0.4pt}%
+\vspace{2pt}\par}
 
 % perforated "tear here" line, label punched through in the sheet colour
 \newcommand{\perf}{\vspace{8pt}\par\noindent
