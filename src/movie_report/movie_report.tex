@@ -175,8 +175,6 @@ fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
     \fill[white] (0,-\notesheight) rectangle (\linewidth, 0);
     % Green-dot grid (3 mm spacing, same as green_dot), inset 1.5 mm
     % from the border so dots don't touch the ruling line.
-    \pgfmathsetmacro{\cx}{\linewidth/2}
-    \pgfmathsetmacro{\cy}{-\notesheight/2}
     \pgfmathsetmacro{\nmax}{int(floor((\linewidth-1.5mm)/3mm))}
     \pgfmathsetmacro{\mmax}{int(floor((\notesheight-1.5mm)/3mm))}
     \foreach \n in {1,...,\nmax} {
@@ -184,8 +182,10 @@ fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
         \fill[NeonGreen!50] (\n*3mm, -\m*3mm) circle (0.35mm);
       }
     }
-    % Red centre dot (IronOxideRed, same as green_dot) — drawn on top
-    \fill[IronOxideRed!50] (\cx, \cy) circle (0.35mm);
+    % Red centre dot — must use explicit units (TikZ defaults to cm,
+    % but \linewidth / \notesheight are in pt).
+    \fill[IronOxideRed!50]
+    (0.5\linewidth, -0.5\notesheight) circle (0.35mm);
     \draw[Outline, line width=0.4pt] (0,-\notesheight) rectangle
     (\linewidth, 0);
 \end{tikzpicture}\par}
