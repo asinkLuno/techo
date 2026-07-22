@@ -91,7 +91,8 @@ twoside]{geometry}
 \newcommand{\posterimage}[1]{
   \begin{tikzpicture}
     \posterfield
-    \node[inner sep=0pt, draw=Outline, line width=0.3pt, rotate=0.8] (photo)
+    \pgfmathsetmacro{\pr}{random()*0.8}
+    \node[inner sep=0pt, draw=Outline, line width=0.3pt, rotate=\pr] (photo)
     at ([shift={(0.6mm,-0.4mm)}]frame.center)
     {\includegraphics[width=42mm,height=63mm,keepaspectratio]{#1}};
     \node[below=2mm of photo] {\caplabel{[ REF\_IMG\_001 ]}};
