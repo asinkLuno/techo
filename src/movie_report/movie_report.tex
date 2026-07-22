@@ -173,18 +173,30 @@ fill=WhiteFill, circle, minimum size=5.5mm, inner sep=0pt] at (0,0) {};}}
   \begin{tikzpicture}
     \useasboundingbox (0,-\notesheight) rectangle (\linewidth, 0);
     \fill[white] (0,-\notesheight) rectangle (\linewidth, 0);
-    % Green-dot grid (3 mm spacing, same as green_dot), inset 1.5 mm
-    % from the border so dots don't touch the ruling line.
-    \pgfmathsetmacro{\nmax}{int(floor((\linewidth-1.5mm)/3mm))}
-    \pgfmathsetmacro{\mmax}{int(floor((\notesheight-1.5mm)/3mm))}
-    \foreach \n in {1,...,\nmax} {
-      \foreach \m in {1,...,\mmax} {
-        \fill[NeonGreen!50] (\n*3mm, -\m*3mm) circle (0.35mm);
+    % Green-dot grid (3 mm spacing, same algorithm as dot-grid.tex):
+    % dots radiate from the box centre so left/right and top/bottom
+    % margins are guaranteed equal.
+    \pgfmathsetmacro{\bw}{\linewidth/1mm}         % box width (mm)
+    \pgfmathsetmacro{\bh}{\notesheight/1mm}       % box height (mm)
+    \pgfmathsetmacro{\cx}{\bw/2}                  % centre x
+    \pgfmathsetmacro{\cy}{-\bh/2}                 % centre y
+    \pgfmathsetmacro{\gs}{3}                      % grid spacing (mm)
+    \pgfmathsetmacro{\nmin}{ceil((1.5-\cx)/\gs)}
+    \pgfmathsetmacro{\nmax}{floor((\bw-1.5-\cx)/\gs)}
+    \pgfmathsetmacro{\mmin}{ceil((-\bh+1.5-\cy)/\gs)}
+    \pgfmathsetmacro{\mmax}{floor((-1.5-\cy)/\gs)}
+    \foreach \n in {\nmin,...,\nmax} {
+      \foreach \m in {\mmin,...,\mmax} {
+        \pgfmathsetmacro{\dx}{\cx+\n*\gs}
+        \pgfmathsetmacro{\dy}{\cy+\m*\gs}
+        \pgfmathsetmacro{\iscenter}{\n==0 && \m==0 ? 1 : 0}
+        \ifnum\iscenter=0
+        \fill[NeonGreen!50] (\dx mm, \dy mm) circle (0.35mm);
+        \fi
       }
     }
-    % Red centre dot — overdraws the green dot at the box centre.
-    \fill[IronOxideRed!50]
-    (0.5\linewidth, -0.5\notesheight) circle (0.35mm);
+    % Red centre dot
+    \fill[IronOxideRed!50] (\cx mm, \cy mm) circle (0.35mm);
     \draw[Outline, line width=0.4pt] (0,-\notesheight) rectangle
     (\linewidth, 0);
 \end{tikzpicture}\par}
