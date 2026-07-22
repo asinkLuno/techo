@@ -28,6 +28,11 @@
 \edef\CaplabelPt{\Size{\EDITION}{CaplabelPt}}
 \edef\StampPt{\Size{\EDITION}{StampPt}}
 \edef\FooterPt{\Size{\EDITION}{FooterPt}}
+\edef\LetterSpace{\Size{\EDITION}{LetterSpace}}
+
+% Letter-spaced caps — defined here so \LetterSpace is available.
+\newfontfamily\capfont{3270 Nerd Font Mono}[LetterSpace=\LetterSpace,
+AutoFakeBold=1.8]
 
 % ── Page geometry: the page IS the dossier sheet ──
 \usepackage[paperwidth=\PW mm, paperheight=\PH mm,
@@ -56,7 +61,7 @@ twoside]{geometry}
   }%
 }
 % Letter-spaced caps for field labels / section headers.
-\newfontfamily\capfont{3270 Nerd Font Mono}[LetterSpace=45, AutoFakeBold=1.8]
+% (defined after \EDITION so LetterSpace is size-configurable)
 \ifdefined\CJKFONTPATH
 \setCJKmainfont{\CJKFONT}[Path=\CJKFONTPATH]
 \else
