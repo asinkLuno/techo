@@ -1,10 +1,29 @@
+import os
+import subprocess
+import sys
 import unittest
 from datetime import date
+from pathlib import Path
 
 from click.testing import CliRunner
 
-from src.cli import cli
-from src.validation import location_coordinates, parse_date, parse_year_month
+from techo.cli import cli
+from techo.validation import location_coordinates, parse_date, parse_year_month
+
+
+class InstalledCliTests(unittest.TestCase):
+    def test_console_script_works_outside_repository(self) -> None:
+        executable = Path(sys.executable).with_name("techo")
+        result = subprocess.run(
+            [executable, "--help"],
+            cwd=Path(os.environ.get("TMPDIR", "/tmp")),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Generate printable notebooks", result.stdout)
 
 
 class ValidationTests(unittest.TestCase):

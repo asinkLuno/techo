@@ -1,8 +1,8 @@
 import unittest
 
-from src.ebook.extract import _safe_name
-from src.ebook.split import _safe
-from src.midori_grid.midori_grid import _dot_indices, grid_lines
+from techo.ebook.extract import _safe_name
+from techo.ebook.split import _safe
+from techo.midori_grid.midori_grid import _dot_indices, grid_lines
 
 
 class GeneratorHelperTests(unittest.TestCase):

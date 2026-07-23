@@ -18,10 +18,10 @@ dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/techo"]
 
 [project.scripts]
-techo = "src.cli:cli"
+techo = "techo.cli:cli"
 
 [[tool.uv.index]]
 url = "https://mirrors.aliyun.com/pypi/simple"

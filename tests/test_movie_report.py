@@ -2,7 +2,7 @@ import unittest
 from typing import Any
 from unittest import mock
 
-from src.movie_report import movie_report as mr
+from techo.movie_report import movie_report as mr
 
 
 class FormatDateTests(unittest.TestCase):
