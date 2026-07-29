@@ -87,7 +87,9 @@ def _title(nav_point: ET.Element) -> str:
 
 
 def _kept_ids(
-    package: EpubPackage, nav_point: ET.Element
+    package: EpubPackage,
+    nav_point: ET.Element,
+    next_nav_point: ET.Element | None = None,
 ) -> tuple[set[str], set[str]] | None:
     href_to_id = {
         item.get("href", ""): item_id for item_id, item in package.items.items()
@@ -102,7 +104,25 @@ def _kept_ids(
     ]
     if not positions:
         return None
-    spine_ids = set(package.spine_order[positions[0] : positions[-1] + 1])
+    start = positions[0]
+    if nav_point.findall(f"{{{NCX}}}navPoint"):
+        end = positions[-1] + 1
+    else:
+        end = len(package.spine_order)
+        if next_nav_point is not None:
+            next_content_ids = {
+                href_to_id[href]
+                for href in _sources(next_nav_point)
+                if href in href_to_id
+            }
+            next_positions = [
+                index
+                for index, item_id in enumerate(package.spine_order)
+                if item_id in next_content_ids and index > start
+            ]
+            if next_positions:
+                end = next_positions[0]
+    spine_ids = set(package.spine_order[start:end])
     keep_ids = spine_ids | content_ids | {package.ncx_id}
     for item_id, item in package.items.items():
         media_type = item.get("media-type", "")
@@ -176,7 +196,7 @@ def _write_epub(
 
 
 def split_omnibus(epub_path: str | Path, output_dir: str | Path) -> list[Path]:
-    """Create one EPUB for every non-leaf top-level NCX entry."""
+    """Create one EPUB for every top-level NCX entry."""
     source = Path(epub_path)
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
@@ -187,10 +207,12 @@ def split_omnibus(epub_path: str | Path, output_dir: str | Path) -> list[Path]:
         if nav_map is None:
             raise ValueError("NCX has no navigation map")
         written: list[Path] = []
-        for nav_point in nav_map.findall(f"{{{NCX}}}navPoint"):
-            if not nav_point.findall(f"{{{NCX}}}navPoint"):
-                continue
-            ids = _kept_ids(package, nav_point)
+        nav_points = nav_map.findall(f"{{{NCX}}}navPoint")
+        for index, nav_point in enumerate(nav_points):
+            next_nav_point = (
+                nav_points[index + 1] if index + 1 < len(nav_points) else None
+            )
+            ids = _kept_ids(package, nav_point, next_nav_point)
             if ids is None:
                 continue
             keep_ids, spine_ids = ids

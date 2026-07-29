@@ -35,6 +35,7 @@ extend-select = ["I"]
 
 [dependency-groups]
 dev = [
+    "pytest",
     "radon>=6.0.1",
     "ruff>=0.15.20",
     "ty>=0.0.55",

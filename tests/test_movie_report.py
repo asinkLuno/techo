@@ -1,8 +1,16 @@
 import unittest
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
 from techo.movie_report import movie_report as mr
+
+
+class TemplatePathTests(unittest.TestCase):
+    def test_generated_wrapper_template_path_exists(self) -> None:
+        output_dir = Path("outputs") / "movie-report-example-a5"
+        template = output_dir / mr._TEMPLATE_PATH
+        self.assertTrue(template.resolve().is_file())
 
 
 class FormatDateTests(unittest.TestCase):

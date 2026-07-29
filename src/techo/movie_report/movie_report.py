@@ -563,6 +563,8 @@ def _body(
 
 # ── Entry point ──
 
+_TEMPLATE_PATH = "../../src/techo/movie_report/movie_report.tex"
+
 
 def generate(
     query: str,
@@ -625,7 +627,7 @@ def generate(
     wrapper = [f"\\def\\EDITION{{{size}}}%\n", f"\\def\\CJKFONT{{{font_name}}}%\n"]
     if font_path is not None:
         wrapper.append(f"\\def\\CJKFONTPATH{{{font_path}/}}%\n")
-    wrapper.append("\\input{../../src/movie_report/movie_report.tex}%\n")
+    wrapper.append(f"\\input{{{_TEMPLATE_PATH}}}%\n")
     (out / tex_name).write_text("".join(wrapper))
 
     n_seasons = len(report.seasons)
