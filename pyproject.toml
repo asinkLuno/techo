@@ -28,7 +28,7 @@ url = "https://mirrors.aliyun.com/pypi/simple"
 default = true
 
 [tool.uv.sources]
-eink-image-processor = { git = "ssh://git@github.com/asinkLuno/gEInk.git" }
+eink-image-processor = { git = "https://github.com/asinkLuno/gEInk.git" }
 
 [tool.ruff.lint]
 extend-select = ["I"]
