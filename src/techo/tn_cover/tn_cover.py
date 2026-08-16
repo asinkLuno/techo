@@ -87,7 +87,7 @@ def generate(image_path: Path, size: str) -> None:
         f"\\def\\PAPERWD{{{paper_width:.2f}}}%\n"
         f"\\def\\PAPERHT{{{paper_height:.2f}}}%\n"
         f"\\def\\DRAWFOLD{{1}}%\n"
-        f"\\input{{../../src/tn_cover/tn_cover.tex}}%\n"
+        f"\\input{{../../src/techo/tn_cover/tn_cover.tex}}%\n"
     )
     (out / f"tn-cover-{size}.tex").write_text(wrapper_tex_content)
 

@@ -17,7 +17,19 @@ and typesets EPUB or Markdown books for any paper size defined in `src/sizes.py`
 | m5l | 105×67 | | ✓ |
 
 - **night-owl** — numbers 0–26 in a triangular hourglass over a dot grid (3270 Nerd Font).
-- **senary** — monthly calendar (front) + habit tracker (back) + day pages (portrait m5, batch-generated for the whole month); landscape m5l, takes `YYYY-MM`.
+- **senary** — lunar-almanac month book (landscape m5l, takes `YYYY-MM`): the
+  front page is a month calendar whose date badges are coloured by **lunar
+  day/night** at the base and whose cells carry an **Earth-phase** square
+  (the lunar resident's “moon phase”); the back is a habit tracker; day
+  pages (portrait m5, batch-generated for the whole month) carry a
+  three-layer almanac header — LTC date/lunation, Earth-partner time and
+  work window, and the lunar sky (solar altitude & next transition, Earth
+  phase).  `--base` selects the selenographic site (`tranquillity` or the
+  polar `shackleton`, which switches to terrain-horizon **direct light**
+  logic), `--partner` the Earth relay organisation (`cnsa`/`houston`/`esa`,
+  IANA timezone with DST + scheduled work hours).  A pre-computed
+  `almanac_YYYY-MM.json` (per-day sky + partner data, doc-schema) is written
+  next to the pages, keeping astronomy and typesetting fully separate.
 - **movie** — movie/TV rating page (74m5): searches [TMDB](https://www.themoviedb.org/) for the name and original name, prints five ☆ stars to fill in, and adds midori-style 5 mm episode grids for TV shows — one cell per episode, many seasons packed onto each page.
 - **movie-report** — movie/TV "archival dossier" viewing report (a5): TMDB fills the TITLE and a red DATE stamp; TV shows get one checkable stamp per episode in `SEASON` cards (with a hard offset shadow) for marking watched, and a blank field-notes box is left to fill in by hand. Recreates the *Retro Cinema Lab Report* Stitch design.
 
@@ -31,7 +43,8 @@ and typesets EPUB or Markdown books for any paper size defined in `src/sizes.py`
 
 ```bash
 uv run techo nightowl --size m5          # or cozyca, 74m5
-uv run techo senary 2026-07              # calendar + tracker + day pages for the month
+uv run techo senary 2047-08 --base tranquillity --partner cnsa   # lunar-almanac month book
+uv run techo senary 2047-08 --base shackleton --partner esa      # polar base, direct-light logic
 uv run techo movie "盗梦空间"             # rating page; default size 74m5
 uv run techo movie "绝命毒师" --type tv   # rating page + packed season grids
 uv run techo movie "X" --index 1         # pick the 2nd search result
@@ -43,8 +56,10 @@ uv run techo ebook render book.epub --size a5s
 uv run techo ebook render book.md --size a7l --tex
 ```
 
-`senary` accepts `--tz` (IANA name, e.g. `Asia/Shanghai`) and
-`--location` (default `tranquility`); a non-UTC `--tz` adds a UTC strip to day pages.
+`senary` accepts `--base` (selenographic site: `tranquillity` (Mare
+Tranquillitatis) or `shackleton` (south-pole rim, terrain-horizon direct
+light)) and `--partner` (Earth relay org: `cnsa` Beijing, `houston`, `esa`
+Darmstadt; IANA timezone with automatic DST + scheduled work window).
 
 `movie` searches both movies and TV (use `--type movie|tv` to restrict), lists
 matches, and picks the first by default (`--index N` to choose another).

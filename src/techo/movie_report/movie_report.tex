@@ -46,9 +46,9 @@ twoside]{geometry}
 \usepackage{xeCJK}
 
 % ── Fonts: mono terminal body + serif display headings ──
-% 3270 Nerd Font Mono ships only Regular; AutoFakeBold gives the bold
+% 3270 Nerd Font ships only Regular; AutoFakeBold gives the bold
 % caps labels.
-\setmainfont{3270 Nerd Font Mono}[AutoFakeBold=1.8]
+\setmainfont{3270 Nerd Font}[AutoFakeBold=1.8]
 % Display serif for the title (Domine in the original). Graceful fallback chain.
 \IfFontExistsTF{Tinos}{%
   \newfontfamily\displfont{Tinos}%
@@ -65,7 +65,7 @@ twoside]{geometry}
 \setCJKmainfont{\CJKFONT}
 \fi
 % Letter-spaced caps — defined after \EDITION so LetterSpace is configurable.
-\newfontfamily\capfont{3270 Nerd Font Mono}[LetterSpace=\LetterSpace,
+\newfontfamily\capfont{3270 Nerd Font}[LetterSpace=\LetterSpace,
 AutoFakeBold=1.8]
 
 % ── Palette (line art on plain paper; no page fill) ──
