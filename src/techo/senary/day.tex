@@ -1,8 +1,8 @@
 % ──────────────────────────────────────────
-% Day view — single day on vertical m5 (67×105)
-% Build: uv run python src/senary/day.py 2026-07-15
-%        cd day-2026-07-15 && xelatex day-2026-07-15.tex && xelatex
-% day-2026-07-15.tex
+% Day view — single day on vertical m5 (67×105), layout v2
+% Build: uv run python -m techo.senary.day 2026-08-16 [base]
+%        cd day-2026-08-16 && xelatex day-2026-08-16.tex && xelatex
+% day-2026-08-16.tex
 % ──────────────────────────────────────────
 \documentclass[10pt]{article}
 
@@ -17,7 +17,7 @@ margin=0mm]{geometry}
 \usepackage{fontspec}
 \setmainfont{3270 Nerd Font}
 
-\tikzset{gridline/.style={IronOxideRed!55, line width=0.5pt}}
+\tikzset{gridline/.style={SenaryBrick, line width=0.4pt}}
 
 \pagestyle{empty}
 \setlength{\parindent}{0pt}

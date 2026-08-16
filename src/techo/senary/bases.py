@@ -90,31 +90,55 @@ TRANQUILLITY = LunarBase(
 )
 
 # Shackleton Base — lunar south pole rim country (doc §17–19).  The horizon
-# profile is an illustrative north-facing ridge (the rim of Shackleton and
-# the Malapert massif country); swap in real terrain data for production.
+# profile is an illustrative ridge: the broad envelope (high ridge toward the
+# north / Malapert massif, low spill toward the south) plus fine-scale crater-rim
+# crests every ~9° of azimuth, so direct sunlight switches on and off several
+# times a day as the Sun's azimuth sweeps (doc v2 §4).  Swap in LOLA-derived
+# terrain data for production.
+
+def _shackleton_profile() -> HorizonProfile:
+    """Envelope (30° skeleton) + 9°-period ripple, sampled every 4°."""
+    import math
+
+    skeleton = [
+        (0.0, 2.6),
+        (30.0, 2.2),
+        (60.0, 1.4),
+        (90.0, 0.8),
+        (120.0, 0.6),
+        (150.0, 0.5),
+        (180.0, 0.6),
+        (210.0, 0.8),
+        (240.0, 1.1),
+        (270.0, 1.6),
+        (300.0, 2.2),
+        (330.0, 2.5),
+        (360.0, 2.6),
+    ]
+
+    def envelope(az: float) -> float:
+        for (a0, e0), (a1, e1) in zip(skeleton, skeleton[1:]):
+            if a0 <= az <= a1:
+                return e0 + (e1 - e0) * (az - a0) / (a1 - a0)
+        return skeleton[0][1]
+
+    ripple_amp = 0.55  # °, ridge crests ≈ sun altitude during polar summer
+    ripple_period = 9.0  # ° of azimuth — several crests per day's ~12° sweep
+    ripple_phase = 20.0  # ° — keep 0°/360° south-of-north consistent
+    pairs = []
+    for az in range(0, 360, 4):
+        ripple = ripple_amp * math.sin((az - ripple_phase) * 2 * math.pi / ripple_period)
+        pairs.append((float(az), round(envelope(az) + ripple, 3)))
+    return HorizonProfile.from_pairs(pairs)
+
+
 SHACKLETON = LunarBase(
     id="shackleton",
     name="Shackleton Base",
     latitude_deg=-89.67,
     longitude_deg=0.09,
     altitude_m=0.0,
-    horizon_profile=HorizonProfile.from_pairs(
-        [
-            (0.0, 2.6),
-            (30.0, 2.2),
-            (60.0, 1.4),
-            (90.0, 0.8),
-            (120.0, 0.6),
-            (150.0, 0.5),
-            (180.0, 0.6),
-            (210.0, 0.8),
-            (240.0, 1.1),
-            (270.0, 1.6),
-            (300.0, 2.2),
-            (330.0, 2.5),
-            (360.0, 2.6),
-        ]
-    ),
+    horizon_profile=_shackleton_profile(),
 )
 
 BASES: dict[str, LunarBase] = {b.id: b for b in (TRANQUILLITY, SHACKLETON)}

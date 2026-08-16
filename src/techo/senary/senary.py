@@ -261,7 +261,9 @@ def generate(ym: str, base_id: str = "tranquillity", partner_id: str = "cnsa") -
     pw_day, ph_day = sizes.SIZES[day_key]["pw"], sizes.SIZES[day_key]["ph"]
     day_parts = []
     for d in range(1, days + 1):
-        page, _ = day_page(f"{year:04d}-{month:02d}-{d:02d}", almanac, pw_day, ph_day)
+        page, _ = day_page(
+            f"{year:04d}-{month:02d}-{d:02d}", almanac, pw_day, ph_day, page_no=d
+        )
         day_parts.append("\\thispagestyle{empty}%")
         day_parts.append(page)
         day_parts.append("\\null")
@@ -274,7 +276,7 @@ def generate(ym: str, base_id: str = "tranquillity", partner_id: str = "cnsa") -
         "\\input{../../src/techo/colors.tex}\n"
         "\\usepackage{fontspec}\n"
         "\\setmainfont{3270 Nerd Font}\n"
-        "\\tikzset{gridline/.style={IronOxideRed!55, line width=0.5pt}}\n"
+        "\\tikzset{gridline/.style={SenaryBrick, line width=0.4pt}}\n"
         "\\pagestyle{empty}\n"
         "\\setlength{\\parindent}{0pt}\n"
         "\\setlength{\\parskip}{0pt}\n"
