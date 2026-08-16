@@ -187,17 +187,9 @@ def next_crossing(
         crossed_up = increasing and prev_v <= 0.0 < v
         crossed_down = (not increasing) and prev_v >= 0.0 > v
         if crossed_up or crossed_down:
-            lo, hi = t, nxt
-            for _ in range(40):  # bisect to sub-second
-                mid = lo + (hi - lo) / 2
-                mid_v = f(mid)
-                crossed_mid_up = increasing and mid_v <= 0.0
-                crossed_mid_down = (not increasing) and mid_v >= 0.0
-                if crossed_mid_up or crossed_mid_down:
-                    lo = mid
-                else:
-                    hi = mid
-            return hi
+            # up semantics match _bisect_zero: True = crossing ≤0 → >0,
+            # which is exactly the "increasing" direction.
+            return _bisect_zero(f, t, nxt, up=increasing)
         t, prev_v = nxt, v
     return None
 

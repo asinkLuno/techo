@@ -6,7 +6,7 @@ Usage: techo tn-cover <image-path> --size tn|tnp --margin 10
 import shutil
 from pathlib import Path
 
-from .. import sizes
+from .. import build, sizes
 
 
 def generate(image_path: Path, size: str) -> None:
@@ -18,18 +18,15 @@ def generate(image_path: Path, size: str) -> None:
     PW = s["pw"]
     PH = s["ph"]
 
-    # 2. Ensure sizes.tex is generated
-    sizes.write_sizes_tex()
-
-    # 3. Create output directory
-    out = Path("outputs") / f"tn-cover-{size}"
-    out.mkdir(parents=True, exist_ok=True)
-
-    # 4. Calculate printable area dimensions (full spread, no margin)
+    # 2. Calculate printable area dimensions (full spread, no margin)
     img_width = 2 * PW
     img_height = PH
 
-    # 5. Copy or crop the cover image to the output folder
+    # 3. Copy or crop the cover image to the output folder (directory must
+    #    exist before the cropped image is written; build_edition re-creates it).
+    out = build.OUTPUTS / f"tn-cover-{size}"
+    out.mkdir(parents=True, exist_ok=True)
+
     image_path = Path(image_path)
     suffix = image_path.suffix.lower()
     if suffix not in [".png", ".jpg", ".jpeg", ".pdf"]:
@@ -76,23 +73,26 @@ def generate(image_path: Path, size: str) -> None:
         # Vector PDF or other files are copied directly
         shutil.copy2(image_path, dest_image_path)
 
-    # 6. Generate the cover wrapper tex file
+    # 4. Generate the cover wrapper tex and compile (no content.tex)
     paper_width = 2 * PW
     paper_height = PH
-    wrapper_tex_content = (
-        f"\\def\\EDITION{{{size}}}%\n"
-        f"\\def\\IMGNAME{{{copied_img_name}}}%\n"
-        f"\\def\\IMGWIDTH{{{img_width:.2f}}}%\n"
-        f"\\def\\IMGHEIGHT{{{img_height:.2f}}}%\n"
-        f"\\def\\PAPERWD{{{paper_width:.2f}}}%\n"
-        f"\\def\\PAPERHT{{{paper_height:.2f}}}%\n"
-        f"\\def\\DRAWFOLD{{1}}%\n"
-        f"\\input{{../../src/techo/tn_cover/tn_cover.tex}}%\n"
+    out = build.build_edition(
+        f"tn-cover-{size}",
+        None,
+        "../../src/techo/tn_cover/tn_cover.tex",
+        defs={
+            "EDITION": size,
+            "IMGNAME": copied_img_name,
+            "IMGWIDTH": f"{img_width:.2f}",
+            "IMGHEIGHT": f"{img_height:.2f}",
+            "PAPERWD": f"{paper_width:.2f}",
+            "PAPERHT": f"{paper_height:.2f}",
+            "DRAWFOLD": "1",
+        },
+        # TikZ anchors to `current page` are only correct from the second
+        # pass on (the first records picture positions in the .aux).
+        passes=2,
     )
-    (out / f"tn-cover-{size}.tex").write_text(wrapper_tex_content)
 
     print(f"Generated {out}/tn-cover-{size}.tex (full bleed)")
-
-    # 7. Compile the cover PDF
-    sizes.compile(f"tn-cover-{size}.tex", out)
     print(f"Compiled {out}/tn-cover-{size}.pdf")

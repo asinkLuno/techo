@@ -2,9 +2,16 @@
 
 Imported by both generators; `write_sizes_tex()` emits `sizes.tex` for the
 LaTeX templates. Edit sizes here — never hand-edit sizes.tex.
+
+Layout tables use a "defaults + per-size overrides" pattern: a shared
+``_<NAME>_DEFAULTS`` holds the common field values and each size only
+lists the fields that differ (``{**_DEFAULTS, **overrides}``).  This
+removes the hundreds of lines that were copy-pasted per size.  The
+resolved tables are exposed as before, plus per-table accessors
+(``green_dot(size)`` …) that raise a friendly ``ValueError`` for sizes a
+generator does not support.
 """
 
-import subprocess
 from pathlib import Path
 from typing import TypedDict
 
@@ -87,31 +94,47 @@ SIZES: dict[str, PageSize] = {
     "tnp": {"pw": 88, "ph": 125, "red_line": 10},
 }
 
-GREEN_DOT: dict[str, GreenDotLayout] = {
-    "cozyca": {"binding": 15, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "62m5": {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "67m5": {"binding": 12, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "67m5l": {"binding": 10, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "74m5": {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "a4": {"binding": 20, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "b5": {"binding": 18, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "a5": {"binding": 15, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "a5fc": {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "a6per": {"binding": 12, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
-    "a6s": {"binding": 10, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "a6standard": {
-        "binding": 12,
-        "right_margin": 5,
-        "top_margin": 10,
-        "bottom_margin": 10,
-    },
-    "127a7": {"binding": 10, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "120a7": {"binding": 10, "right_margin": 3, "top_margin": 10, "bottom_margin": 10},
-    "a5s": {"binding": 15, "right_margin": 5, "top_margin": 10, "bottom_margin": 10},
+
+def _merged(defaults: dict, overrides: dict[str, dict]) -> dict[str, dict]:
+    """Resolve ``{**_defaults, **per_size}`` for every size in *overrides*.
+
+    Dict order follows *overrides* (which lists sizes in their canonical
+    order) so the emitted sizes.tex stays byte-stable.
+    """
+    return {size: {**defaults, **ov} for size, ov in overrides.items()}
+
+
+# ── Green Dot layout: default margins, per-size binding / outer overrides ──
+_GREEN_DOT_DEFAULTS: GreenDotLayout = {
+    "binding": 12,
+    "right_margin": 5,
+    "top_margin": 10,
+    "bottom_margin": 10,
+}
+_GREEN_DOT_OVERRIDES: dict[str, GreenDotLayout] = {
+    "cozyca": {"binding": 15, "right_margin": 3},
+    "62m5": {"right_margin": 3},
+    "67m5": {"right_margin": 3},
+    "67m5l": {"binding": 10},
+    "74m5": {},
+    "a4": {"binding": 20},
+    "b5": {"binding": 18},
+    "a5": {"binding": 15},
+    "a5fc": {},
+    "a6per": {},
+    "a6s": {"binding": 10, "right_margin": 3},
+    "a6standard": {},
+    "127a7": {"binding": 10, "right_margin": 3},
+    "120a7": {"binding": 10, "right_margin": 3},
+    "a5s": {"binding": 15},
     "tn": {"binding": 3, "right_margin": 3, "top_margin": 3, "bottom_margin": 3},
     "tnp": {"binding": 3, "right_margin": 3, "top_margin": 3, "bottom_margin": 3},
 }
+GREEN_DOT: dict[str, GreenDotLayout] = _merged(_GREEN_DOT_DEFAULTS, _GREEN_DOT_OVERRIDES)
 
+# ── Night Owl layout ──
+# Every size has distinct row_gap / num_gap values, so there is no shared
+# block to factor out — the table stays fully explicit.
 NIGHTOWL: dict[str, NightOwlLayout] = {
     "cozyca": {"binding": 15, "right_margin": 3, "row_gap": 7.5, "num_gap": 16},
     "62m5": {"binding": 12, "right_margin": 3, "row_gap": 8.0, "num_gap": 10},
@@ -129,227 +152,77 @@ NIGHTOWL: dict[str, NightOwlLayout] = {
     "a5s": {"binding": 18, "right_margin": 5, "row_gap": 14.0, "num_gap": 26},
 }
 
-MIDORI_GRID: dict[str, MidoriGridLayout] = {
-    "cozyca": {
-        "binding": 15,
-        "right_margin": 3,
-        "top_margin": 5,
-        "bottom_margin": 5,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.2,
-        "edge_extension": 1.5,
-    },
-    "62m5": {
-        "binding": 12,
-        "right_margin": 3,
-        "top_margin": 5,
-        "bottom_margin": 5,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.0,
-        "edge_extension": 1.2,
-    },
-    "67m5": {
-        "binding": 12,
-        "right_margin": 3,
-        "top_margin": 5,
-        "bottom_margin": 5,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.0,
-        "edge_extension": 1.2,
-    },
-    "74m5": {
-        "binding": 12,
-        "right_margin": 5,
-        "top_margin": 4,
-        "bottom_margin": 9,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.0,
-        "edge_extension": 1.2,
-    },
-    "67m5l": {
-        "binding": 10,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 5,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.2,
-        "edge_extension": 1.5,
-    },
-    "a4": {
-        "binding": 20,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.5,
-        "edge_extension": 2.0,
-    },
-    "b5": {
-        "binding": 18,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.5,
-        "edge_extension": 2.0,
-    },
-    "a5": {
-        "binding": 15,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.2,
-        "edge_extension": 1.5,
-    },
-    "a5fc": {
-        "binding": 12,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.2,
-        "edge_extension": 1.5,
-    },
-    "a6per": {
-        "binding": 12,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.0,
-        "edge_extension": 1.2,
-    },
-    "a6s": {
-        "binding": 10,
-        "right_margin": 3,
-        "top_margin": 5,
-        "bottom_margin": 5,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.0,
-        "edge_extension": 1.2,
-    },
-    "a6standard": {
-        "binding": 12,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.0,
-        "edge_extension": 1.2,
-    },
-    "127a7": {
-        "binding": 10,
-        "right_margin": 3,
-        "top_margin": 5,
-        "bottom_margin": 5,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.0,
-        "edge_extension": 1.2,
-    },
-    "120a7": {
-        "binding": 10,
-        "right_margin": 3,
-        "top_margin": 5,
-        "bottom_margin": 5,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.0,
-        "edge_extension": 1.2,
-    },
-    "a5s": {
-        "binding": 15,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.2,
-        "edge_extension": 1.5,
-    },
-    "tn": {
-        "binding": 5,
-        "right_margin": 5,
-        "top_margin": 10,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.2,
-        "edge_extension": 1.5,
-    },
-    "tnp": {
-        "binding": 5,
-        "right_margin": 5,
-        "top_margin": 5,
-        "bottom_margin": 10,
-        "grid_step": 5,
-        "dot_freq": 10,
-        "gap_size": 1.2,
-        "edge_extension": 1.5,
-    },
+# ── Midori Grid layout: default grid (5 mm, gap 1.0, ext 1.2), overrides ──
+_MIDORI_GRID_DEFAULTS: MidoriGridLayout = {
+    "binding": 12,
+    "right_margin": 5,
+    "top_margin": 5,
+    "bottom_margin": 10,
+    "grid_step": 5,
+    "dot_freq": 10,
+    "gap_size": 1.0,
+    "edge_extension": 1.2,
 }
-
-# ── Movie Report layout ──
-MOVIE_REPORT: dict[str, MovieReportLayout] = {
+_MIDORI_GRID_OVERRIDES: dict[str, MidoriGridLayout] = {
     "cozyca": {
-        "bind": 15,
-        "outer": 3,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": True,
+        "binding": 15,
+        "right_margin": 3,
+        "bottom_margin": 5,
+        "gap_size": 1.2,
+        "edge_extension": 1.5,
     },
-    "62m5": {
-        "bind": 12,
-        "outer": 3,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": True,
-    },
+    "62m5": {"right_margin": 3, "bottom_margin": 5},
+    "67m5": {"right_margin": 3, "bottom_margin": 5},
+    "74m5": {"top_margin": 4, "bottom_margin": 9},
+    "67m5l": {"binding": 10, "bottom_margin": 5, "gap_size": 1.2, "edge_extension": 1.5},
+    "a4": {"binding": 20, "gap_size": 1.5, "edge_extension": 2.0},
+    "b5": {"binding": 18, "gap_size": 1.5, "edge_extension": 2.0},
+    "a5": {"binding": 15, "gap_size": 1.2, "edge_extension": 1.5},
+    "a5fc": {"gap_size": 1.2, "edge_extension": 1.5},
+    "a6per": {},
+    "a6s": {"binding": 10, "right_margin": 3, "bottom_margin": 5},
+    "a6standard": {},
+    "127a7": {"binding": 10, "right_margin": 3, "bottom_margin": 5},
+    "120a7": {"binding": 10, "right_margin": 3, "bottom_margin": 5},
+    "a5s": {"binding": 15, "gap_size": 1.2, "edge_extension": 1.5},
+    "tn": {"binding": 5, "top_margin": 10, "gap_size": 1.2, "edge_extension": 1.5},
+    "tnp": {"binding": 5, "gap_size": 1.2, "edge_extension": 1.5},
+}
+MIDORI_GRID: dict[str, MidoriGridLayout] = _merged(
+    _MIDORI_GRID_DEFAULTS, _MIDORI_GRID_OVERRIDES
+)
+
+# ── Movie Report layout: default "full-size" dossier, per-size overrides ──
+# ~8 sizes (a4/b5/a5/a5fc/a6per/a6standard/…) share one identical block;
+# the defaults below are that block, and each size only overrides what
+# actually differs (mostly bind / outer / compact, plus the small-page
+# 67m5/127a7/a7l/120a7 poster-stamp clusters).
+_MOVIE_REPORT_DEFAULTS: MovieReportLayout = {
+    "bind": 12,
+    "outer": 5,
+    "poster_w": 42,
+    "poster_h": 63,
+    "stamp_w": 24,
+    "circle_size": 5.5,
+    "dateblank_seg": 3.8,
+    "gap": 4.0,
+    "raisebox_offset": 6.5,
+    "title_pt": 16,
+    "label_pt": 7,
+    "caplabel_pt": 7.5,
+    "stamp_pt": 10,
+    "footer_pt": 6.5,
+    "letterspace": 45,
+    "dither_px": 200,
+    "card_head_gap": 3,
+    "card_rule_gap": 6,
+    "card_vspace": 7,
+    "compact": False,
+}
+_MOVIE_REPORT_OVERRIDES: dict[str, MovieReportLayout] = {
+    "cozyca": {"bind": 15, "outer": 3, "compact": True},
+    "62m5": {"outer": 3, "compact": True},
     "67m5": {
-        "bind": 12,
         "outer": 3,
         "poster_w": 27,
         "poster_h": 41,
@@ -372,29 +245,12 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
     },
     "67m5l": {
         "bind": 10,
-        "outer": 5,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
         "card_head_gap": 1,
         "card_rule_gap": 4,
         "card_vspace": 4,
         "compact": True,
     },
     "74m5": {
-        "bind": 12,
-        "outer": 5,
         "poster_w": 30,
         "poster_h": 45,
         "stamp_w": 16,
@@ -406,7 +262,6 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "label_pt": 6,
         "caplabel_pt": 6.0,
         "stamp_pt": 8.0,
-        "footer_pt": 6.5,
         "letterspace": 35,
         "dither_px": 140,
         "card_head_gap": 1,
@@ -414,160 +269,13 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_vspace": 4,
         "compact": True,
     },
-    "a4": {
-        "bind": 20,
-        "outer": 5,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": False,
-    },
-    "b5": {
-        "bind": 18,
-        "outer": 5,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": False,
-    },
-    "a5": {
-        "bind": 15,
-        "outer": 5,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": False,
-    },
-    "a5fc": {
-        "bind": 12,
-        "outer": 5,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": False,
-    },
-    "a6per": {
-        "bind": 12,
-        "outer": 5,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": False,
-    },
-    "a6s": {
-        "bind": 10,
-        "outer": 3,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": True,
-    },
-    "a6standard": {
-        "bind": 12,
-        "outer": 5,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": False,
-    },
+    "a4": {"bind": 20},
+    "b5": {"bind": 18},
+    "a5": {"bind": 15},
+    "a5fc": {},
+    "a6per": {},
+    "a6s": {"bind": 10, "outer": 3, "compact": True},
+    "a6standard": {},
     "127a7": {
         "bind": 10,
         "outer": 3,
@@ -592,7 +300,6 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
     },
     "a7l": {
         "bind": 10,
-        "outer": 5,
         "poster_w": 34,
         "poster_h": 50,
         "stamp_w": 18,
@@ -634,73 +341,14 @@ MOVIE_REPORT: dict[str, MovieReportLayout] = {
         "card_vspace": 4,
         "compact": True,
     },
-    "a5s": {
-        "bind": 15,
-        "outer": 5,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 28,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": False,
-    },
-    "tn": {
-        "bind": 3,
-        "outer": 3,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": False,
-    },
-    "tnp": {
-        "bind": 3,
-        "outer": 3,
-        "poster_w": 42,
-        "poster_h": 63,
-        "stamp_w": 24,
-        "circle_size": 5.5,
-        "dateblank_seg": 3.8,
-        "gap": 4.0,
-        "raisebox_offset": 6.5,
-        "title_pt": 16,
-        "label_pt": 7,
-        "caplabel_pt": 7.5,
-        "stamp_pt": 10,
-        "footer_pt": 6.5,
-        "letterspace": 45,
-        "dither_px": 200,
-        "card_head_gap": 3,
-        "card_rule_gap": 6,
-        "card_vspace": 7,
-        "compact": True,
-    },
+    "a5s": {"bind": 15, "stamp_w": 28},
+    "tn": {"bind": 3, "outer": 3},
+    "tnp": {"bind": 3, "outer": 3, "compact": True},
 }
+MOVIE_REPORT: dict[str, MovieReportLayout] = _merged(
+    _MOVIE_REPORT_DEFAULTS, _MOVIE_REPORT_OVERRIDES
+)
+
 
 # ── Font sizes in pt ──
 FONTS = {
@@ -726,6 +374,39 @@ COLORS = {
 }
 
 FONT_CMD = {k: f"Font{k.title()}" for k in FONTS}
+
+
+# ── Layout accessors (friendly errors instead of bare KeyError) ──
+
+def _require(table: dict, name: str, size: str) -> dict:
+    """Return ``table[size]`` or raise a friendly ``ValueError``."""
+    try:
+        return table[size]
+    except KeyError as error:
+        supported = ", ".join(table)
+        raise ValueError(
+            f"size {size!r} has no {name} layout; supported sizes: {supported}"
+        ) from error
+
+
+def green_dot(size: str) -> GreenDotLayout:
+    """Green-dot layout for *size*, with a friendly error if unsupported."""
+    return _require(GREEN_DOT, "green-dot", size)
+
+
+def nightowl(size: str) -> NightOwlLayout:
+    """Night-owl layout for *size*, with a friendly error if unsupported."""
+    return _require(NIGHTOWL, "nightowl", size)
+
+
+def midori_grid(size: str) -> MidoriGridLayout:
+    """Midori-grid layout for *size*, with a friendly error if unsupported."""
+    return _require(MIDORI_GRID, "midori-grid", size)
+
+
+def movie_report(size: str) -> MovieReportLayout:
+    """Movie-report layout for *size*, with a friendly error if unsupported."""
+    return _require(MOVIE_REPORT, "movie-report", size)
 
 
 def write_sizes_tex(path: Path | None = None) -> None:
@@ -791,12 +472,6 @@ def write_colors_tex(path: Path | None = None) -> None:
     for name, hex_val in COLORS.items():
         lines.append(rf"\definecolor{{{name}}}{{HTML}}{{{hex_val}}}")
     path.write_text("\n".join(lines) + "\n")
-
-
-def compile(tex_file: str, cwd: Path) -> None:
-    """Run xelatex twice."""
-    for _ in range(2):
-        subprocess.run(["xelatex", tex_file], cwd=cwd, check=True)
 
 
 if __name__ == "__main__":

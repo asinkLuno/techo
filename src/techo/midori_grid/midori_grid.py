@@ -3,9 +3,7 @@
 Usage: techo midori-grid --size a5s
 """
 
-from pathlib import Path
-
-from .. import sizes
+from .. import build, sizes
 
 PEN = "cyan!40, line width=0.7pt"
 
@@ -106,7 +104,7 @@ def grid_lines(
 
 def generate(size: str) -> None:
     s = sizes.SIZES[size]
-    g = sizes.MIDORI_GRID[size]
+    g = sizes.midori_grid(size)
     PW, PH = s["pw"], s["ph"]
     BINDING = g["binding"]
     RIGHT = g["right_margin"]
@@ -116,8 +114,6 @@ def generate(size: str) -> None:
     GAP = g["gap_size"]
     EXT = g["edge_extension"]
     DOT_FREQ = g["dot_freq"]
-
-    sizes.write_sizes_tex()
 
     usable_w = PW - BINDING - RIGHT
     usable_h = PH - TOP - BOTTOM
@@ -153,9 +149,6 @@ def generate(size: str) -> None:
         dot_freq=DOT_FREQ,
     )
 
-    out = Path("outputs") / f"midori-grid-{size}"
-    out.mkdir(parents=True, exist_ok=True)
-
     def _page(is_odd: bool) -> list[str]:
         return [
             "\\thispagestyle{empty}%",
@@ -170,36 +163,15 @@ def generate(size: str) -> None:
         full.append("\\null")
         full.append("\\clearpage")
 
-    (out / "content.tex").write_text("\n".join(full) + "\n")
-    (out / f"midori-grid-{size}.tex").write_text(
-        f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/techo/midori_grid/midori_grid.tex}}%\n"
+    out = build.build_edition(
+        f"midori-grid-{size}",
+        full,
+        "../../src/techo/midori_grid/midori_grid.tex",
+        defs={"EDITION": size},
     )
     print(
         f"Generated {out}/content.tex + midori-grid-{size}.tex "
         f"({PW}×{PH}mm, {num_x}x{num_y} grid, 2 pages)"
     )
-    sizes.compile(f"midori-grid-{size}.tex", out)
-
-    if size in ("tn", "tnp"):
-        spread_tex = (
-            "\\documentclass[10pt]{article}\n"
-            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
-            "\\usepackage{pdfpages}\n"
-            "\\begin{document}\n"
-            f"\\includepdf[pages=-, booklet=true, landscape]"
-            f"{{midori-grid-{size}.pdf}}\n"
-            "\\end{document}\n"
-        )
-    else:
-        spread_tex = (
-            "\\documentclass[10pt]{article}\n"
-            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
-            "\\usepackage{pdfpages}\n"
-            "\\begin{document}\n"
-            f"\\includepdf[pages={{1,2}}, nup=2x1, width={PW}mm, height={PH}mm]"
-            f"{{midori-grid-{size}.pdf}}\n"
-            "\\end{document}\n"
-        )
-    (out / "spread.tex").write_text(spread_tex)
-    sizes.compile("spread.tex", out)
+    build.write_spread(out, f"midori-grid-{size}", PW, PH, booklet=size in ("tn", "tnp"))
     print(f"Generated {out}/spread.pdf (spread, {PW * 2}×{PH}mm)")

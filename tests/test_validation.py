@@ -8,7 +8,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from techo.cli import cli
-from techo.validation import location_coordinates, parse_date, parse_year_month
+from techo.validation import parse_date, parse_year_month
 
 
 class InstalledCliTests(unittest.TestCase):
@@ -41,12 +41,6 @@ class ValidationTests(unittest.TestCase):
     def test_parse_date_rejects_impossible_date(self) -> None:
         with self.assertRaises(ValueError):
             parse_date("2025-02-29")
-
-    def test_location_coordinates(self) -> None:
-        locations = {"home": (1.0, 2.0)}
-        self.assertEqual(location_coordinates("home", locations), (1.0, 2.0))
-        with self.assertRaisesRegex(ValueError, "known locations: home"):
-            location_coordinates("away", locations)
 
     def test_cli_turns_domain_error_into_click_error(self) -> None:
         result = CliRunner().invoke(cli, ["senary", "2026-13"])

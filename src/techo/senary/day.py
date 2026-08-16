@@ -20,10 +20,10 @@ mirrored per the spread (doc v2 §6).
 
 import calendar
 from datetime import datetime, timedelta
-from pathlib import Path
 
-from .. import sizes
+from .. import build, sizes
 from ..sizes import FONT_CMD
+from ..texutil import tex_escape
 from ..validation import parse_date
 from .almanac import AlmanacDay, LunarAlmanac
 from .astronomy import sunlight_segments
@@ -102,22 +102,6 @@ def _date_label(day: AlmanacDay) -> str:
     return (
         f"{year} {calendar.month_abbr[month].upper()} {d:02d}"
         f" · {calendar.day_abbr[day.weekday].upper()}"
-    )
-
-
-def _tex(text: str) -> str:
-    """Escape the few TeX-active characters we may emit."""
-    return (
-        text.replace("\\", "\\textbackslash{}")
-        .replace("&", "\\&")
-        .replace("%", "\\%")
-        .replace("$", "\\$")
-        .replace("#", "\\#")
-        .replace("_", "\\_")
-        .replace("{", "\\{")
-        .replace("}", "\\}")
-        .replace("~", "\\textasciitilde{}")
-        .replace("^", "\\textasciicircum{}")
     )
 
 
@@ -209,19 +193,19 @@ def _day(
     out.append(
         f"  \\node[font=\\{FONT_L1}, anchor=north west]"
         f" at ([xshift={date_x:.2f}mm, yshift={-HEADER_ROW1_Y:.2f}mm]current page.north west)"
-        f" {{{_tex(_date_label(day))}}};"
+        f" {{{tex_escape(_date_label(day))}}};"
     )
     lunation = f"{day.lunation_label} · {day.lunation_percent}%"
     out.append(
         f"  \\node[font=\\{FONT_L3}, anchor=north east]"
         f" at ([xshift={lun_x:.2f}mm, yshift={-HEADER_ROW1_Y:.2f}mm]current page.north west)"
-        f" {{{_tex(lunation)}}};"
+        f" {{{tex_escape(lunation)}}};"
     )
     # row 2: the sky line, full content width
     out.append(
         f"  \\node[font=\\{FONT_L2}, anchor=north west]"
         f" at ([xshift={fl + 0.5:.2f}mm, yshift={-HEADER_ROW2_Y:.2f}mm]current page.north west)"
-        f" {{{_tex(_sky_line(day))}}};"
+        f" {{{tex_escape(_sky_line(day))}}};"
     )
 
     # ── BJT | LTC time column: 24 whole-hour rows, no column headers ──
@@ -276,12 +260,9 @@ def generate(
 
     key = "67m5"
     pw, ph = sizes.SIZES[key]["pw"], sizes.SIZES[key]["ph"]
-    sizes.write_sizes_tex()
 
     requested = parse_date(datestr)
     edition = f"day-{requested.isoformat()}-{base_id}"
-    out = Path("outputs") / edition
-    out.mkdir(parents=True, exist_ok=True)
 
     content, _ = day_page(datestr, almanac, pw, ph, page_no=1)
     tex = [
@@ -290,10 +271,9 @@ def generate(
         "\\null",
         "\\clearpage",
     ]
-    (out / "content.tex").write_text("\n".join(tex) + "\n")
-    (out / f"{edition}.tex").write_text("\\input{../../src/techo/senary/day.tex}%\n")
+    # Day pages anchor to `current page`; second pass places them.
+    build.build_edition(edition, tex, "../../src/techo/senary/day.tex", passes=2)
     print(f"Generated {edition}/content.tex + {edition}.tex ({pw}×{ph}mm portrait)")
-    sizes.compile(f"{edition}.tex", out)
 
 
 if __name__ == "__main__":
