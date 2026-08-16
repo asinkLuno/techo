@@ -31,7 +31,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from .. import sizes
+from .. import build, sizes
+from ..texutil import tex_escape
 
 # ── TMDB client (stdlib urllib; auth read from the environment) ──
 
@@ -94,25 +95,6 @@ class Season:
 
 
 # ── Pure utility helpers ──
-
-
-def _tex_escape(text: str | None) -> str:
-    """Escape LaTeX special characters."""
-    if not text:
-        return ""
-    replacements = {
-        "\\": r"\textbackslash{}",
-        "&": r"\&",
-        "%": r"\%",
-        "$": r"\$",
-        "#": r"\#",
-        "_": r"\_",
-        "{": r"\{",
-        "}": r"\}",
-        "~": r"\textasciitilde{}",
-        "^": r"\textasciicircum{}",
-    }
-    return "".join(replacements.get(ch, ch) for ch in text)
 
 
 def _slug(text: str) -> str:
@@ -430,7 +412,7 @@ def _title_section(
     sub_pt = label_pt + 1  # slightly larger than body label
     sub_bs = sub_pt * 1.2
     poster = (
-        rf"\posterimage{{{_tex_escape(poster_file)}}}" if poster_file else r"\posterbox"
+        rf"\posterimage{{{tex_escape(poster_file)}}}" if poster_file else r"\posterbox"
     )
     lines = [
         r"\noindent\begin{center}",
@@ -440,7 +422,7 @@ def _title_section(
         r"\noindent\begin{minipage}[b]{0.98\linewidth}",
         r"\caplabel{TITLE}\\[3pt]",
         rf"{{\fontsize{{{title_pt}pt}}{{{title_bs:.1f}pt}}\selectfont\displfont\bfseries"
-        rf" \MakeUppercase{{{_tex_escape(report.name)}}}}}",
+        rf" \MakeUppercase{{{tex_escape(report.name)}}}}}",
     ]
     if (
         report.original_name
@@ -448,7 +430,7 @@ def _title_section(
     ):
         lines.append(
             rf"\\[2pt]{{\fontsize{{{sub_pt}pt}}{{{sub_bs:.1f}pt}}\selectfont\itshape"
-            rf" {_tex_escape(report.original_name)}}}"
+            rf" {tex_escape(report.original_name)}}}"
         )
     lines.append(r"\\[3pt]{\color{Outline}\rule{\linewidth}{0.8pt}}")
     lines.append(r"\end{minipage}")
@@ -557,7 +539,7 @@ def _body(
                 r"\notesbox",
             ]
         )
-    parts.append(rf"\reportfooter{{{_tex_escape(_ref_code(report))}}}")
+    parts.append(rf"\reportfooter{{{tex_escape(_ref_code(report))}}}")
     return "\n".join(parts)
 
 
@@ -590,14 +572,13 @@ def generate(
 
     report = fetch_report(chosen["media_type"], chosen["id"], language=language)
 
-    sizes.write_sizes_tex()
     dims = sizes.SIZES[size]
     pw, ph = dims["pw"], dims["ph"]
-    layout = sizes.MOVIE_REPORT[size]
+    layout = sizes.movie_report(size)
     cols = _stamp_cols(pw, layout["bind"], layout["outer"], layout["stamp_w"])
 
     slug = _slug(report.name or query)
-    out = Path("outputs") / f"movie-report-{slug}-{size}"
+    out = build.OUTPUTS / f"movie-report-{slug}-{size}"
     out.mkdir(parents=True, exist_ok=True)
 
     # Fetch the TMDB poster into the output dir; fall back to the placeholder.
@@ -608,7 +589,13 @@ def generate(
         if _download_poster(report.poster_path, dest, layout["dither_px"]):
             poster_file = dest.name
 
-    (out / "content.tex").write_text(
+    tex_name = f"movie-report-{slug}-{size}.tex"
+    font_name, font_path = _resolve_cjk_font(cjk_font, out)
+    defs: dict[str, object] = {"EDITION": size, "CJKFONT": font_name}
+    if font_path is not None:
+        defs["CJKFONTPATH"] = f"{font_path}/"
+    build.build_edition(
+        f"movie-report-{slug}-{size}",
         _body(
             report,
             cols,
@@ -618,17 +605,11 @@ def generate(
             label_pt=layout["label_pt"],
             card_vspace=layout["card_vspace"],
             compact=layout["compact"],
-        )
-        + "\n"
+        ),
+        _TEMPLATE_PATH,
+        defs=defs,
+        compile=compile,
     )
-
-    tex_name = f"movie-report-{slug}-{size}.tex"
-    font_name, font_path = _resolve_cjk_font(cjk_font, out)
-    wrapper = [f"\\def\\EDITION{{{size}}}%\n", f"\\def\\CJKFONT{{{font_name}}}%\n"]
-    if font_path is not None:
-        wrapper.append(f"\\def\\CJKFONTPATH{{{font_path}/}}%\n")
-    wrapper.append(f"\\input{{{_TEMPLATE_PATH}}}%\n")
-    (out / tex_name).write_text("".join(wrapper))
 
     n_seasons = len(report.seasons)
     detail = f"{report.kind}" + (f", {n_seasons} season(s)" if n_seasons else "")
@@ -638,5 +619,4 @@ def generate(
     )
 
     if compile:
-        sizes.compile(tex_name, out)
         print(f"Compiled {out}/{tex_name.removesuffix('.tex')}.pdf")

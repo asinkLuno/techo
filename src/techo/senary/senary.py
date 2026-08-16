@@ -14,9 +14,8 @@ Usage: techo senary 2047-08 --base tranquility --partner cnsa
 
 import calendar
 from datetime import datetime
-from pathlib import Path
 
-from .. import sizes
+from .. import build, sizes
 from ..sizes import FONT_CMD
 from ..validation import parse_year_month
 from .almanac import LunarAlmanac
@@ -227,12 +226,9 @@ def generate(ym: str, base_id: str = "tranquillity", partner_id: str = "cnsa") -
 
     key = "67m5l"
     pw, ph = sizes.SIZES[key]["pw"], sizes.SIZES[key]["ph"]
-    sizes.write_sizes_tex()
     days = calendar.monthrange(year, month)[1]
 
     edition = f"senary-{year}-{month:02d}-{base_id}"
-    out = Path("outputs") / edition
-    out.mkdir(parents=True, exist_ok=True)
     content = [
         "\\thispagestyle{empty}%",
         _cal(almanac, year, month, pw, ph),
@@ -243,13 +239,18 @@ def generate(ym: str, base_id: str = "tranquillity", partner_id: str = "cnsa") -
         "\\null",
         "\\clearpage",
     ]
-    (out / "content.tex").write_text("\n".join(content) + "\n")
-    (out / f"{edition}.tex").write_text("\\input{../../src/techo/senary/senary.tex}%\n")
+    out = build.build_edition(
+        edition,
+        content,
+        "../../src/techo/senary/senary.tex",
+        defs={"EDITION": key},
+        # The calendar/tracker anchor to `current page`; second pass places them.
+        passes=2,
+    )
     print(
         f"Generated {edition}/content.tex + {edition}.tex "
         f"({calendar.month_name[month]} {year}, {days} days, {pw}×{ph}mm landscape)"
     )
-    sizes.compile(f"{edition}.tex", out)
 
     # ── Pre-computed almanac JSON (doc §33) ──
     json_path = out / f"almanac_{year}-{month:02d}.json"
@@ -270,20 +271,10 @@ def generate(ym: str, base_id: str = "tranquillity", partner_id: str = "cnsa") -
         day_parts.append("\\clearpage")
     days_tex = (
         "\\documentclass[10pt]{article}\n"
-        "\\input{../../src/techo/sizes.tex}\n"
-        "\\usepackage[paperwidth=\\Size{67m5}{PW} mm, paperheight=\\Size{67m5}{PH} mm, margin=0mm]{geometry}\n"
-        "\\usepackage{tikz}\n"
-        "\\input{../../src/techo/colors.tex}\n"
-        "\\usepackage{fontspec}\n"
-        "\\setmainfont{3270 Nerd Font}\n"
-        "\\tikzset{gridline/.style={SenaryBrick, line width=0.4pt}}\n"
-        "\\pagestyle{empty}\n"
-        "\\setlength{\\parindent}{0pt}\n"
-        "\\setlength{\\parskip}{0pt}\n"
-        "\\setlength{\\topskip}{0pt}\n"
+        "\\input{../../src/techo/senary/day-preamble.tex}\n"
         "\\begin{document}\n" + "\n".join(day_parts) + "\n"
         "\\end{document}\n"
     )
     (out / "days.tex").write_text(days_tex)
-    sizes.compile("days.tex", out)
+    build.compile_tex("days.tex", out, passes=2)
     print(f"  → days.pdf ({days} day pages)")

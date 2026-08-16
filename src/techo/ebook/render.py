@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from ..build import compile_tex
 from ..sizes import SIZES
 
 FONT_ALIASES = {
@@ -134,12 +135,7 @@ def render_book(
         if not compile_pdf:
             shutil.copy2(tex, output_path)
             return output_path
-        for _ in range(2):
-            subprocess.run(
-                ["xelatex", "-interaction=nonstopmode", "-halt-on-error", tex.name],
-                cwd=work,
-                check=True,
-                stdout=subprocess.DEVNULL,
-            )
+        # Books need two passes (TOC / cross-references).
+        compile_tex(tex.name, work, passes=2)
         shutil.copy2(tex.with_suffix(".pdf"), output_path)
     return output_path

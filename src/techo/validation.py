@@ -27,16 +27,3 @@ def parse_date(value: str) -> date:
     if parsed.isoformat() != value:
         raise ValueError(f"expected YYYY-MM-DD, got {value!r}")
     return parsed
-
-
-def location_coordinates(
-    name: str, locations: dict[str, tuple[float, float]]
-) -> tuple[float, float]:
-    """Look up a named location with a useful domain error."""
-    try:
-        return locations[name]
-    except KeyError as error:
-        known = ", ".join(locations)
-        raise ValueError(
-            f"unknown location {name!r}; known locations: {known}"
-        ) from error

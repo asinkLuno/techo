@@ -3,9 +3,7 @@
 Usage: techo nightowl --size m5|cozyca|74m5
 """
 
-from pathlib import Path
-
-from .. import sizes
+from .. import build, sizes
 from ..green_dot import content as green_dot_content
 
 ROWS = [1, 3, 4, 5, 1, 3, 4, 5, 1]  # 27 numbers total (0–26)
@@ -20,7 +18,7 @@ def _label(n: int) -> str:
 
 def generate(size: str) -> None:
     s = sizes.SIZES[size]
-    g = sizes.NIGHTOWL[size]
+    g = sizes.nightowl(size)
     PW, PH = s["pw"], s["ph"]
     BINDING, RIGHT_MARGIN = g["binding"], g["right_margin"]
     ROW_GAP, NUM_GAP = g["row_gap"], g["num_gap"]
@@ -31,8 +29,6 @@ def generate(size: str) -> None:
 
     usable_w = PW - BINDING - RIGHT_MARGIN
     center_x = BINDING + usable_w / 2
-
-    sizes.write_sizes_tex()
 
     page_nodes = []
     n = 0
@@ -47,9 +43,6 @@ def generate(size: str) -> None:
             )
             n += 1
 
-    out = Path("outputs") / f"night-owl-{size}"
-    out.mkdir(parents=True, exist_ok=True)
-
     full = [
         "\\thispagestyle{empty}%",
         "\\begin{tikzpicture}[remember picture, overlay]",
@@ -59,23 +52,14 @@ def generate(size: str) -> None:
         "\\clearpage",
         *green_dot_content(),
     ]
-    (out / "content.tex").write_text("\n".join(full) + "\n")
-    (out / f"night-owl-{size}.tex").write_text(
-        f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/techo/nightowl/night-owl.tex}}%\n"
+    out = build.build_edition(
+        f"night-owl-{size}",
+        full,
+        "../../src/techo/nightowl/night-owl.tex",
+        defs={"EDITION": size},
     )
     print(f"Generated {out}/content.tex + night-owl-{size}.tex ({PW}×{PH}mm)")
-    sizes.compile(f"night-owl-{size}.tex", out)
 
     if size in ("tn", "tnp"):
-        spread_tex = (
-            "\\documentclass[10pt]{article}\n"
-            f"\\usepackage[paperwidth={PW * 2}mm, paperheight={PH}mm, margin=0mm]{{geometry}}\n"
-            "\\usepackage{pdfpages}\n"
-            "\\begin{document}\n"
-            f"\\includepdf[pages=-, booklet=true, landscape]"
-            f"{{night-owl-{size}.pdf}}\n"
-            "\\end{document}\n"
-        )
-        (out / "spread.tex").write_text(spread_tex)
-        sizes.compile("spread.tex", out)
+        build.write_spread(out, f"night-owl-{size}", PW, PH, booklet=True)
         print(f"Generated {out}/spread.pdf (booklet spread, {PW * 2}×{PH}mm)")

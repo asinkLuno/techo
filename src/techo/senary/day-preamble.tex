@@ -1,0 +1,19 @@
+% Shared preamble for the 67×105 portrait day pages — used by day.tex
+% (single-day edition) and by senary.py's generated days.tex (month batch).
+\input{../../src/techo/sizes.tex}
+
+\usepackage[paperwidth=\Size{67m5}{PW} mm,
+  paperheight=\Size{67m5}{PH} mm,
+margin=0mm]{geometry}
+
+\usepackage{tikz}
+\input{../../src/techo/colors.tex}
+\usepackage{fontspec}
+\setmainfont{3270 Nerd Font}
+
+\tikzset{gridline/.style={SenaryBrick, line width=0.4pt}}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\topskip}{0pt}
