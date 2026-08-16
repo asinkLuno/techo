@@ -1,28 +1,34 @@
-"""Senary — monthly calendar + habit tracker + day pages, landscape m5 (105×67).
+"""Senary — lunar-almanac month book, landscape m5 (105×67).
 
-Usage: techo senary 2026-07 [--tz Asia/Shanghai] [--location tranquility]
-  Front (odd page): that month's calendar, landscape (no rotation — the page is wide).
-  Back  (even page): two tracker tables stacked — 1–14 (item col + header) +
-                     15–end (header only, no item col), 6 rows each.
-  Day pages: one portrait m5 page per day of the month (timeline view).
+Usage: techo senary 2047-08 --base tranquility --partner cnsa
+
+  Front (odd page):  month calendar — date badges coloured by lunar
+                     day/night, each cell carries an *Earth-phase* square
+                     (the lunar resident's "moon phase", doc §20–21).
+  Back  (even page): habit tracker — date badges coloured by day/night.
+  Days:              one portrait m5 page per day (three-layer almanac
+                     header + LTC/partner timeline), batch PDF.
+  JSON:              pre-computed almanac per day (doc §33) — astronomy and
+                     typesetting stay fully separated.
 """
 
 import calendar
-import math
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
-
-import ephem
 
 from .. import sizes
 from ..sizes import FONT_CMD
-from ..validation import location_coordinates, parse_year_month
+from ..validation import parse_year_month
+from .almanac import LunarAlmanac
+from .astronomy import earth_illumination, earth_is_waxing, solar_alt_az
+from .bases import base_by_id
+from .day import day_page
+from .partners import partner_by_id
 
 # ── Calendar (front) ──
 COLS = 7
 BIND = 7.0  # mm, top binding margin
-GM = 4.0  # mm, margin on the other three sides (left/right/bottom)
+GM = 4.0  # mm, margin on the other three sides
 HEAD_H = 4.0
 WEEKDAYS = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")  # Monday-first
 
@@ -30,42 +36,24 @@ WEEKDAYS = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")  # Monday-first
 FONT_CAL = FONT_CMD["small"]
 FONT_TRACKER_HEAD = FONT_CMD["small"]
 
-# ── Moon phase indicator (shared with day.py) ──
-PS = 2.0  # mm, phase square side (matches digit height of \FontSmall, 8pt)
+# ── Earth-phase indicator (shared visual language with the old moon square) ──
+PS = 2.0  # mm, phase square side
 
 # ── Habit tracker (back) ──
 A = 5.5  # mm, square check cell
 ITEM_W = 2  # multiplier, item column = ITEM_W * A wide
 ITEMS = 4  # blank habit rows
-LOCATIONS = {"tranquility": (0.67, 23.47)}
 
 
-def _to_utc(year, month, day, tz_name):
-    """Return UTC datetime string for midnight local time in tz_name."""
-    local = datetime(year, month, day, tzinfo=ZoneInfo(tz_name))
-    utc = local.astimezone(ZoneInfo("UTC"))
-    return f"{utc.year}/{utc.month:02d}/{utc.day:02d} {utc.hour:02d}:{utc.minute:02d}:{utc.second:02d}"
+def _day_night_color(base, utc: datetime) -> str:
+    """Badge colour: ChromeYellow lunar day, CobaltBlue lunar night."""
+    alt, _ = solar_alt_az(base, utc)
+    return "ChromeYellow" if alt > 0 else "CobaltBlue"
 
 
-def _moon_info(year, month, day, tz_name="UTC", lat=0.67, lon=23.47):
-    """Return (color: str, phase: float, is_waxing: bool). phase: 0=new, 1=full."""
-    lat_r, lon_r = math.radians(lat), math.radians(lon)
-    m = ephem.Moon()
-    m.compute(_to_utc(year, month, day, tz_name))
-    cos_a = math.sin(m.subsolar_lat) * math.sin(lat_r) + math.cos(
-        m.subsolar_lat
-    ) * math.cos(lat_r) * math.cos(float(m.colong) - math.pi / 2 - lon_r)
-    color = "ChromeYellow" if cos_a > 0 else "CobaltBlue"
-    phase = m.moon_phase
-    # waxing/waning: compare with next day's phase
-    days_in_month = calendar.monthrange(year, month)[1]
-    if day < days_in_month:
-        m2 = ephem.Moon()
-        m2.compute(_to_utc(year, month, day + 1, tz_name))
-        is_waxing = phase < m2.moon_phase
-    else:
-        is_waxing = True  # ponytail: last day, assume waxing
-    return color, phase, is_waxing
+def _badge_data(base, utc: datetime) -> tuple[str, float]:
+    """(day/night colour, Earth illumination 0..1) at one reference instant."""
+    return _day_night_color(base, utc), earth_illumination(utc)
 
 
 def date_node(day: int, color: str, x: float, y: float, font: str = FONT_CAL) -> str:
@@ -80,7 +68,11 @@ def date_node(day: int, color: str, x: float, y: float, font: str = FONT_CAL) ->
 def phase_square(
     phase: float, is_waxing: bool, rx: float, ty: float, ps: float = PS
 ) -> str:
-    """Phase indicator square (always ChromeYellow). (rx,ty) = top-right corner; spans ps×ps."""
+    """Phase indicator square (always ChromeYellow). (rx,ty) = top-right corner.
+
+    Filled fraction grows leftward while waxing, shrinks while waning —
+    used for the Earth phase seen from the Moon (doc §20–21).
+    """
     out = [
         f"  \\draw[ChromeYellow] ([xshift={rx - ps:.2f}mm, yshift={-ty:.2f}mm]current page.north west)"
         f" rectangle ([xshift={rx:.2f}mm, yshift={-(ty + ps):.2f}mm]current page.north west);"
@@ -100,15 +92,8 @@ def phase_square(
     return "\n".join(out)
 
 
-def _cal(
-    year: int,
-    month: int,
-    pw: float,
-    ph: float,
-    tz_name: str = "UTC",
-    lat: float = 0.67,
-    lon: float = 23.47,
-) -> str:
+def _cal(almanac: LunarAlmanac, year: int, month: int, pw: float, ph: float) -> str:
+    base = almanac.base
     days = calendar.monthrange(year, month)[1]
     first = calendar.monthrange(year, month)[0]  # weekday of the 1st, 0=Mon
     weeks = (first + days + COLS - 1) // COLS
@@ -152,12 +137,13 @@ def _cal(
         r, c = divmod(first + d - 1, COLS)
         x = lm + cell_w * c + PAD
         y = gy + cell_h * r + PAD
-        color, phase, is_waxing = _moon_info(year, month, d, tz_name, lat, lon)
+        ref = almanac.reference_instant(f"{year:04d}-{month:02d}-{d:02d}")
+        color, illum = _badge_data(base, ref)
         out.append(date_node(d, color, x, y))
-        # phase indicator at top-right — always ChromeYellow
+        # earth-phase indicator at top-right — always ChromeYellow
         rx = lm + cell_w * (c + 1) - PAD
         ty = gy + cell_h * r + PAD
-        out.append(phase_square(phase, is_waxing, rx, ty))
+        out.append(phase_square(illum, earth_is_waxing(ref), rx, ty))
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
 
@@ -166,11 +152,9 @@ def _table(
     lm: float,
     top: float,
     dates: list[int],
+    almanac: LunarAlmanac,
     year: int,
     month: int,
-    tz_name: str,
-    lat: float,
-    lon: float,
     with_items: bool,
     with_header: bool = True,
 ) -> list[str]:
@@ -205,7 +189,8 @@ def _table(
     if with_header:
         hy = top + A - 0.2
         for i, d in enumerate(dates):
-            color, _, _ = _moon_info(year, month, d, tz_name, lat, lon)
+            ref = almanac.reference_instant(f"{year:04d}-{month:02d}-{d:02d}")
+            color = _day_night_color(almanac.base, ref)
             cx = xs[off + i + 1]
             label = f"\\phantom{{0}}{d}" if d < 10 else str(d)
             out.append(
@@ -215,16 +200,7 @@ def _table(
     return out
 
 
-def _tracker(
-    year: int,
-    month: int,
-    days: int,
-    pw: float,
-    ph: float,
-    tz_name: str = "UTC",
-    lat: float = 0.67,
-    lon: float = 23.47,
-) -> str:
+def _tracker(almanac: LunarAlmanac, year: int, month: int, days: int, pw: float, ph: float) -> str:
     dates1 = list(range(1, 15))  # 1–14
     dates2 = list(range(15, days + 1))  # 15–end
     w1 = ITEM_W * A + len(dates1) * A
@@ -239,72 +215,65 @@ def _tracker(
     out = [
         "\\begin{tikzpicture}[remember picture, overlay, every node/.style={inner sep=0pt}]"
     ]
-    out += _table(lm, top1, dates1, year, month, tz_name, lat, lon, with_items=True)
-    out += _table(
-        lm,
-        top2,
-        dates2,
-        year,
-        month,
-        tz_name,
-        lat,
-        lon,
-        with_items=False,
-        with_header=True,
-    )
+    out += _table(lm, top1, dates1, almanac, year, month, with_items=True)
+    out += _table(lm, top2, dates2, almanac, year, month, with_items=False, with_header=True)
     out.append("\\end{tikzpicture}%")
     return "\n".join(out)
 
 
-def generate(ym: str, tz_name: str = "UTC", location: str = "tranquility") -> None:
+def generate(ym: str, base_id: str = "tranquillity", partner_id: str = "cnsa") -> None:
     year, month = parse_year_month(ym)
-    lat, lon = location_coordinates(location, LOCATIONS)
+    almanac = LunarAlmanac(base_by_id(base_id), partner_by_id(partner_id))
 
     key = "67m5l"
     pw, ph = sizes.SIZES[key]["pw"], sizes.SIZES[key]["ph"]
     sizes.write_sizes_tex()
     days = calendar.monthrange(year, month)[1]
 
-    edition = f"senary-{year}-{month:02d}"
+    edition = f"senary-{year}-{month:02d}-{base_id}"
     out = Path("outputs") / edition
     out.mkdir(parents=True, exist_ok=True)
     content = [
         "\\thispagestyle{empty}%",
-        _cal(year, month, pw, ph, tz_name, lat, lon),
+        _cal(almanac, year, month, pw, ph),
         "\\null",
         "\\clearpage",
         "\\thispagestyle{empty}%",
-        _tracker(year, month, days, pw, ph, tz_name, lat, lon),
+        _tracker(almanac, year, month, days, pw, ph),
         "\\null",
         "\\clearpage",
     ]
     (out / "content.tex").write_text("\n".join(content) + "\n")
-    (out / f"{edition}.tex").write_text("\\input{../../src/senary/senary.tex}%\n")
+    (out / f"{edition}.tex").write_text("\\input{../../src/techo/senary/senary.tex}%\n")
     print(
         f"Generated {edition}/content.tex + {edition}.tex "
         f"({calendar.month_name[month]} {year}, {days} days, {pw}×{ph}mm landscape)"
     )
     sizes.compile(f"{edition}.tex", out)
 
-    # ── Day pages (all portrait m5 days in one PDF) ──
-    from ..senary.day import _day
+    # ── Pre-computed almanac JSON (doc §33) ──
+    json_path = out / f"almanac_{year}-{month:02d}.json"
+    almanac.write_month_json(year, month, json_path)
+    print(f"  → {json_path.name}")
 
+    # ── Day pages (all portrait m5 days in one PDF) ──
     day_key = "67m5"
     pw_day, ph_day = sizes.SIZES[day_key]["pw"], sizes.SIZES[day_key]["ph"]
     day_parts = []
     for d in range(1, days + 1):
+        page, _ = day_page(f"{year:04d}-{month:02d}-{d:02d}", almanac, pw_day, ph_day)
         day_parts.append("\\thispagestyle{empty}%")
-        day_parts.append(_day(year, month, d, pw_day, ph_day, tz_name, lat, lon))
+        day_parts.append(page)
         day_parts.append("\\null")
         day_parts.append("\\clearpage")
     days_tex = (
         "\\documentclass[10pt]{article}\n"
-        "\\input{../../src/sizes.tex}\n"
+        "\\input{../../src/techo/sizes.tex}\n"
         "\\usepackage[paperwidth=\\Size{67m5}{PW} mm, paperheight=\\Size{67m5}{PH} mm, margin=0mm]{geometry}\n"
         "\\usepackage{tikz}\n"
-        "\\input{../../src/colors.tex}\n"
+        "\\input{../../src/techo/colors.tex}\n"
         "\\usepackage{fontspec}\n"
-        "\\setmainfont{3270 Nerd Font Mono}\n"
+        "\\setmainfont{3270 Nerd Font}\n"
         "\\tikzset{gridline/.style={IronOxideRed!55, line width=0.5pt}}\n"
         "\\pagestyle{empty}\n"
         "\\setlength{\\parindent}{0pt}\n"

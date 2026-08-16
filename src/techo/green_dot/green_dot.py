@@ -40,7 +40,7 @@ def generate(size: str) -> None:
         f"\\def\\DBOT{{{BM}}}%\n"
         f"\\def\\DLEFT{{{BINDING}}}%\n"
         f"\\def\\DRIGHT{{{RIGHT}}}%\n"
-        f"\\input{{../../src/green_dot/green-dot.tex}}%\n"
+        f"\\input{{../../src/techo/green_dot/green-dot.tex}}%\n"
     )
     print(f"Generated {out}/content.tex + green-dot-{size}.tex ({PW}×{PH}mm, 2 pages)")
     sizes.compile(f"green-dot-{size}.tex", out)

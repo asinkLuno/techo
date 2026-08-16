@@ -2,7 +2,7 @@
 
 All builds go through the `techo` command:
   techo nightowl --size m5|cozyca|74m5
-  techo senary YYYY-MM [--tz Asia/Shanghai] [--location tranquility]
+  techo senary YYYY-MM [--base tranquillity] [--partner cnsa]
   techo movie "<query>" --size 74m5 [--type movie|tv] [--index N]
 """
 
@@ -16,8 +16,9 @@ from .green_dot import generate as gen_green_dot
 from .midori_grid.midori_grid import generate as gen_midori_grid
 from .movie_report.movie_report import generate as gen_movie_report
 from .nightowl import generate as gen_nightowl
-from .senary import LOCATIONS
 from .senary import generate as gen_senary
+from .senary.bases import BASES
+from .senary.partners import PARTNERS
 from .tn_cover import generate as gen_tn_cover
 
 
@@ -52,17 +53,24 @@ def nightowl(size: str) -> None:
 @cli.command("senary")
 @click.argument("ym")
 @click.option(
-    "--tz", default="UTC", show_default=True, help="IANA name, e.g. Asia/Shanghai"
+    "--base",
+    "base_id",
+    default="tranquillity",
+    show_default=True,
+    type=click.Choice(list(BASES.keys())),
+    help="Lunar base the almanac is computed for.",
 )
 @click.option(
-    "--location",
-    default="tranquility",
+    "--partner",
+    "partner_id",
+    default="cnsa",
     show_default=True,
-    type=click.Choice(list(LOCATIONS.keys())),
+    type=click.Choice(list(PARTNERS.keys())),
+    help="Earth partner (relay organisation) for the time axis.",
 )
-def senary(ym: str, tz: str, location: str) -> None:
-    """Monthly calendar (front) + habit tracker (back). YYYY-MM, e.g. 2026-07."""
-    _run(gen_senary, ym, tz_name=tz, location=location)
+def senary(ym: str, base_id: str, partner_id: str) -> None:
+    """Lunar-almanac month book: calendar + tracker + day pages. YYYY-MM."""
+    _run(gen_senary, ym, base_id=base_id, partner_id=partner_id)
 
 
 @cli.command("green-dot")

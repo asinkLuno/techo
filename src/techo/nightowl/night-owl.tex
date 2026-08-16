@@ -8,7 +8,7 @@
 \documentclass[10pt, twoside]{article}
 
 % ── Size ──
-\input{../../src/sizes.tex}
+\input{../../src/techo/sizes.tex}
 % Materialize current size dims as plain numbers (dot grid derives from these)
 \edef\PW{\Size{\EDITION}{PW}}
 \edef\PH{\Size{\EDITION}{PH}}
@@ -20,15 +20,15 @@ twoside]{geometry}
 
 % ── Packages ──
 \usepackage{tikz}
-\input{../../src/colors.tex}
+\input{../../src/techo/colors.tex}
 \usepackage{fontspec}
 \usepackage{xcolor}
 
 % ── Background: dot-grid ──
-\input{../../src/dot-grid.tex}
+\input{../../src/techo/dot-grid.tex}
 
 % ── 3270 Nerd Font (retro terminal numerals) ──
-\newfontfamily{\nightowlfont}{3270 Nerd Font Mono}[
+\newfontfamily{\nightowlfont}{3270 Nerd Font}[
   Scale=1.0,
 ]
 

@@ -61,7 +61,7 @@ def generate(size: str) -> None:
     ]
     (out / "content.tex").write_text("\n".join(full) + "\n")
     (out / f"night-owl-{size}.tex").write_text(
-        f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/nightowl/night-owl.tex}}%\n"
+        f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/techo/nightowl/night-owl.tex}}%\n"
     )
     print(f"Generated {out}/content.tex + night-owl-{size}.tex ({PW}×{PH}mm)")
     sizes.compile(f"night-owl-{size}.tex", out)

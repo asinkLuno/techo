@@ -172,7 +172,7 @@ def generate(size: str) -> None:
 
     (out / "content.tex").write_text("\n".join(full) + "\n")
     (out / f"midori-grid-{size}.tex").write_text(
-        f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/midori_grid/midori_grid.tex}}%\n"
+        f"\\def\\EDITION{{{size}}}%\n\\input{{../../src/techo/midori_grid/midori_grid.tex}}%\n"
     )
     print(
         f"Generated {out}/content.tex + midori-grid-{size}.tex "
