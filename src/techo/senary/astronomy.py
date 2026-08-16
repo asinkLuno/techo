@@ -112,6 +112,11 @@ def earth_is_waxing(utc: datetime, sample_h: float = 6.0) -> bool:
     return later > now or (later == now and now > earlier)
 
 
+def earth_illumination_trend(utc: datetime) -> str:
+    """'↑' waxing / '↓' waning Earth phase — the header arrow (doc v2 §1)."""
+    return "↑" if earth_is_waxing(utc) else "↓"
+
+
 def earth_distance_km(utc: datetime) -> float:
     """Geocentric Earth–Moon distance (km)."""
     return ephem.Moon(utc).earth_distance * 149597870.7
@@ -237,6 +242,81 @@ def solar_trend(base: LunarBase, utc: datetime) -> str:
     now = solar_altitude(base, utc)
     later = solar_altitude(base, utc + timedelta(hours=3))
     return "↑" if later > now else "↓"
+
+
+# ── Sunlight interval scan (doc v2 §4 — the yellow band) ──
+
+_SUNLIGHT_SCAN_STEP_H = 1.0  # azimuth sweeps ≤0.5°/h at the poles; 1 h brackets any crossing
+
+
+def _bisect_zero(f, lo: datetime, hi: datetime, up: bool) -> datetime:
+    """Zero crossing of *f* inside (lo, hi), given f(lo), f(hi) straddle 0.
+
+    *up*: True when the crossing goes from ≤0 to >0 (light on).
+    Returns the crossing to sub-second precision.
+    """
+    for _ in range(40):
+        mid = lo + (hi - lo) / 2
+        if (f(mid) <= 0.0) == up:
+            lo = mid
+        else:
+            hi = mid
+    return hi
+
+
+def sunlight_segments(
+    base: LunarBase, t0: datetime, t1: datetime
+) -> list[tuple[datetime, datetime]]:
+    """Intervals inside [t0, t1) when the base is under direct sunlight.
+
+    Ordinary bases (no horizon profile): solar altitude > 0° — the
+    astronomical day.  Polar bases (Shackleton): solar altitude > terrain
+    horizon — direct light, which can switch on and off several times per
+    day as the Sun's azimuth sweeps the ridge country (the multi-segment
+    yellow band, doc v2 §4).
+
+    Boundaries are the *actual* crossings (minute precision, sub-second
+    after bisection) — never snapped to whole hours.  A segment already in
+    progress at t0 starts at t0; one still running at t1 ends at t1.
+    """
+    t0 = t0.astimezone(timezone.utc)
+    t1 = t1.astimezone(timezone.utc)
+    if t1 <= t0:
+        return []
+    if base.horizon_profile is not None:
+
+        def f(t: datetime) -> float:
+            return _sun_excess(base, t)
+
+    else:
+
+        def f(t: datetime) -> float:  # type: ignore[misc]
+            return solar_altitude(base, t)
+
+    step = timedelta(hours=_SUNLIGHT_SCAN_STEP_H)
+    crossings: list[tuple[datetime, bool]] = []  # (instant, up=True→light on)
+    t, prev_v = t0, f(t0)
+    while t < t1:
+        nxt = min(t + step, t1)
+        v = f(nxt)
+        if prev_v <= 0.0 < v:
+            crossings.append((_bisect_zero(f, t, nxt, up=True), True))
+        elif prev_v >= 0.0 > v:
+            crossings.append((_bisect_zero(f, t, nxt, up=False), False))
+        t, prev_v = nxt, v
+
+    segments: list[tuple[datetime, datetime]] = []
+    seg_start = t0 if f(t0) > 0.0 else None
+    for instant, up in crossings:
+        if up:
+            seg_start = instant
+        elif seg_start is not None:
+            segments.append((seg_start, instant))
+            seg_start = None
+    if seg_start is not None:
+        segments.append((seg_start, t1))
+    return segments
+
 
 
 @dataclass(frozen=True)

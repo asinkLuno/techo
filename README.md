@@ -21,13 +21,20 @@ and typesets EPUB or Markdown books for any paper size defined in `src/sizes.py`
   front page is a month calendar whose date badges are coloured by **lunar
   day/night** at the base and whose cells carry an **Earth-phase** square
   (the lunar resident's “moon phase”); the back is a habit tracker; day
-  pages (portrait m5, batch-generated for the whole month) carry a
-  three-layer almanac header — LTC date/lunation, Earth-partner time and
-  work window, and the lunar sky (solar altitude & next transition, Earth
-  phase).  `--base` selects the selenographic site (`tranquillity` or the
-  polar `shackleton`, which switches to terrain-horizon **direct light**
-  logic), `--partner` the Earth relay organisation (`cnsa`/`houston`/`esa`,
-  IANA timezone with DST + scheduled work hours).  A pre-computed
+  pages (portrait m5, batch-generated for the whole month with continuous
+  orange page-number blocks, odd left / even right) carry the v2 layout:
+  a **two-line header** — date + lunation on row 1, the sky line
+  (`EARTH 07% ↑  SOL +30.0° ↓ · DAY  ALT +61.0°  SET 2D11H`) on row 2 —
+  a **BJT | LTC time column** (BJT #222 primary / LTC #777 secondary,
+  one continuous red divider, no slot numbers, no hour lines), a **plain
+  dot-grid writing area**, and an astronomy-driven **moon-day yellow band**
+  (solar altitude > 0°, or > terrain horizon for the polar base — multiple
+  bands per day at Shackleton).  `--base` selects the selenographic site
+  (`tranquillity` or the polar `shackleton`, which switches to terrain-
+  horizon **direct light** logic), `--partner` the Earth relay organisation
+  (`cnsa`/`houston`/`esa`, IANA timezone with DST + scheduled work hours;
+  kept in the JSON data layer, no longer rendered on the day page).  A
+  pre-computed
   `almanac_YYYY-MM.json` (per-day sky + partner data, doc-schema) is written
   next to the pages, keeping astronomy and typesetting fully separate.
 - **movie** — movie/TV rating page (74m5): searches [TMDB](https://www.themoviedb.org/) for the name and original name, prints five ☆ stars to fill in, and adds midori-style 5 mm episode grids for TV shows — one cell per episode, many seasons packed onto each page.

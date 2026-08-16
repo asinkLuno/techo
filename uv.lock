@@ -242,7 +242,7 @@ wheels = [
 [[package]]
 name = "eink-image-processor"
 version = "0.1.0"
-source = { git = "ssh://git@github.com/asinkLuno/gEInk.git#3a7d20e73b0d8db85981192a1adf3df172c28267" }
+source = { git = "https://github.com/asinkLuno/gEInk.git#f6f0cca67a2c2bf68747154a47d76c9a393d4a47" }
 dependencies = [
     { name = "click" },
     { name = "dotenv" },
@@ -1268,7 +1268,7 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "click", specifier = ">=8.4.2" },
     { name = "ebooklib", specifier = ">=0.18" },
-    { name = "eink-image-processor", git = "ssh://git@github.com/asinkLuno/gEInk.git" },
+    { name = "eink-image-processor", git = "https://github.com/asinkLuno/gEInk.git" },
     { name = "ephem", specifier = ">=4.2.1" },
     { name = "markdownify", specifier = ">=0.14" },
     { name = "pillow", specifier = ">=12.3.0" },

@@ -716,6 +716,13 @@ COLORS = {
     "ChromeYellow": "ffa700",
     "CobaltBlue": "0047ab",
     "NeonGreen": "39FF14",
+    # Senary (lunar day page v2) — dedicated names, additive to the shared set
+    "SenaryBrick": "a85b55",  # structural lines: frame, header rule, two verticals
+    "SenarySunlight": "fff2c2",  # moon-day yellow band (direct sunlight)
+    "SenaryPageNum": "f5a000",  # page-number block — the book's only saturated element
+    "SenaryInk": "222222",  # BJT time labels (primary reading point)
+    "SenaryGray": "777777",  # LTC time labels (secondary)
+    "SenaryDot": "9e9e9e",  # writing-area dot grid
 }
 
 FONT_CMD = {k: f"Font{k.title()}" for k in FONTS}
