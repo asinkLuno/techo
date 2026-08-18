@@ -37,6 +37,7 @@ interface PageSettings {
   bottom: number
   left: number
   gridStep: number
+  gridColor: string
   showPunchHoles: boolean
   holeDiameter: 4 | 5
   layout: LayoutMode
@@ -54,6 +55,7 @@ declare global {
 
 const PRINT_DPI = 300
 const PIXELS_PER_MM = PRINT_DPI / 25.4
+const TEX_GRID_LINE_WIDTH_MM = (0.7 * 25.4) / 72
 const MAX_EXPORT_DIMENSION = 16384
 
 const DEFAULT_SETTINGS: PageSettings = {
@@ -64,6 +66,7 @@ const DEFAULT_SETTINGS: PageSettings = {
   bottom: 10,
   left: 15,
   gridStep: 5,
+  gridColor: '#99def9',
   showPunchHoles: true,
   holeDiameter: 4,
   layout: 'center',
@@ -121,9 +124,10 @@ function drawGrid(context: CanvasRenderingContext2D, x: number, y: number, setti
   const extension = Math.max(1.2 * scale, 1)
 
   context.save()
-  context.strokeStyle = '#81c5cb'
-  context.fillStyle = '#6fb9c1'
-  context.lineWidth = Math.max(0.45 * scale, 0.55)
+  // Sampled from the 300 DPI XeLaTeX output of `cyan!40`; grid width is TeX's 0.7 pt.
+  context.strokeStyle = settings.gridColor
+  context.fillStyle = settings.gridColor
+  context.lineWidth = Math.max(TEX_GRID_LINE_WIDTH_MM * scale, 0.55)
   context.lineCap = 'round'
 
   for (let row = 0; row <= rows; row += 1) {
@@ -424,19 +428,28 @@ function App() {
           <Card className="settings-card">
             <CardHeader><CardTitle>网格设置</CardTitle><CardDescription>网格间距会同步应用于预览与 PNG 导出。</CardDescription></CardHeader>
             <CardContent>
-              <div className="grid-control">
-                <Label htmlFor="grid-step">网格大小</Label>
-                <Select value={String(settings.gridStep)} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: Number(value) }))}>
-                  <SelectTrigger id="grid-step" className="w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent align="start">
-                    <SelectItem value="3">3 mm</SelectItem>
-                    <SelectItem value="4">4 mm</SelectItem>
-                    <SelectItem value="5">5 mm</SelectItem>
-                    <SelectItem value="6">6 mm</SelectItem>
-                    <SelectItem value="7">7 mm</SelectItem>
-                    <SelectItem value="8">8 mm</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="grid-settings-fields">
+                <div className="grid-control">
+                  <Label htmlFor="grid-step">网格大小</Label>
+                  <Select value={String(settings.gridStep)} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: Number(value) }))}>
+                    <SelectTrigger id="grid-step" className="w-full"><SelectValue /></SelectTrigger>
+                    <SelectContent align="start">
+                      <SelectItem value="3">3 mm</SelectItem>
+                      <SelectItem value="4">4 mm</SelectItem>
+                      <SelectItem value="5">5 mm</SelectItem>
+                      <SelectItem value="6">6 mm</SelectItem>
+                      <SelectItem value="7">7 mm</SelectItem>
+                      <SelectItem value="8">8 mm</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid-color-control">
+                  <Label htmlFor="grid-color">网格颜色</Label>
+                  <div className="color-inputs">
+                    <Input id="grid-color" className="color-picker" type="color" value={settings.gridColor} onChange={(event) => setSettings((current) => ({ ...current, gridColor: event.target.value }))} aria-label="选择网格颜色" />
+                    <Input className="color-hex" value={settings.gridColor.toUpperCase()} maxLength={7} spellCheck={false} onChange={(event) => { const value = event.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(value)) setSettings((current) => ({ ...current, gridColor: value })) }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(settings.gridColor)) setSettings((current) => ({ ...current, gridColor: DEFAULT_SETTINGS.gridColor })) }} aria-label="网格颜色 HEX 值" />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
