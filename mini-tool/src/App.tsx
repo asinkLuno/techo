@@ -10,6 +10,7 @@ import './App.css'
 type LayoutMode = 'center' | 'spread'
 type Dimension = 'width' | 'height'
 type Margin = 'top' | 'right' | 'bottom' | 'left'
+type BindingSide = 'left' | 'right'
 
 const PRESETS = {
   a5: { label: 'A5', note: '148 × 210 mm', width: 148, height: 210 },
@@ -35,6 +36,9 @@ interface PageSettings {
   right: number
   bottom: number
   left: number
+  gridStep: number
+  showPunchHoles: boolean
+  holeDiameter: 4 | 5
   layout: LayoutMode
 }
 
@@ -55,10 +59,13 @@ const MAX_EXPORT_DIMENSION = 16384
 const DEFAULT_SETTINGS: PageSettings = {
   width: 148,
   height: 210,
-  top: 5,
+  top: 10,
   right: 5,
   bottom: 10,
   left: 15,
+  gridStep: 5,
+  showPunchHoles: true,
+  holeDiameter: 4,
   layout: 'center',
 }
 
@@ -67,12 +74,39 @@ function isMarker(index: number, count: number) {
   return index > 0 && index < count && (index - middle) % 10 === 0
 }
 
+function drawPunchHoles(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  settings: PageSettings,
+  scale: number,
+  bindingSide: BindingSide,
+) {
+  const pitch = 20
+  const count = Math.max(1, Math.floor((settings.height - 20) / pitch) + 1)
+  const firstHole = (settings.height - (count - 1) * pitch) / 2
+  const holeX = x + (bindingSide === 'left' ? 5 : settings.width - 5) * scale
+  const radius = (settings.holeDiameter / 2) * scale
+
+  context.save()
+  context.fillStyle = '#fffefd'
+  context.strokeStyle = '#5f9f9a'
+  context.lineWidth = Math.max(0.35 * scale, 0.45)
+  for (let index = 0; index < count; index += 1) {
+    context.beginPath()
+    context.arc(holeX, y + (firstHole + index * pitch) * scale, radius, 0, Math.PI * 2)
+    context.fill()
+    context.stroke()
+  }
+  context.restore()
+}
+
 function drawGrid(context: CanvasRenderingContext2D, x: number, y: number, settings: PageSettings, scale: number) {
   const usableWidth = settings.width - settings.left - settings.right
   const usableHeight = settings.height - settings.top - settings.bottom
   if (usableWidth <= 0 || usableHeight <= 0) return
 
-  const step = 5
+  const step = settings.gridStep
   const columns = Math.floor(usableWidth / step)
   const rows = Math.floor(usableHeight / step)
   if (columns < 1 || rows < 1) return
@@ -151,6 +185,20 @@ function drawGrid(context: CanvasRenderingContext2D, x: number, y: number, setti
   context.restore()
 }
 
+function drawPreviewPage(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  settings: PageSettings,
+  scale: number,
+  bindingSide: BindingSide,
+) {
+  drawGrid(context, x, y, settings, scale)
+  if (settings.showPunchHoles) {
+    drawPunchHoles(context, x, y, settings, scale, bindingSide)
+  }
+}
+
 function createPrintCanvas(settings: PageSettings, page = 0) {
   const width = Math.round(settings.width * PIXELS_PER_MM)
   const height = Math.round(settings.height * PIXELS_PER_MM)
@@ -211,6 +259,7 @@ function PreviewCanvas({ settings }: { settings: PageSettings }) {
         const pageSettings = settings.layout === 'spread' && page === 0
           ? { ...settings, left: settings.right, right: settings.left }
           : settings
+        const bindingSide: BindingSide = settings.layout === 'spread' && page === 0 ? 'right' : 'left'
 
         context.save()
         context.shadowColor = 'rgba(25, 37, 35, 0.17)'
@@ -223,7 +272,7 @@ function PreviewCanvas({ settings }: { settings: PageSettings }) {
         context.strokeStyle = '#d9ddda'
         context.lineWidth = 1
         context.strokeRect(pageX, startY, pageWidth, pageHeight)
-        drawGrid(context, pageX, startY, pageSettings, scale)
+        drawPreviewPage(context, pageX, startY, pageSettings, scale, bindingSide)
 
         context.fillStyle = '#87908c'
         context.font = '500 10px sans-serif'
@@ -373,6 +422,52 @@ function App() {
           </Card>
 
           <Card className="settings-card">
+            <CardHeader><CardTitle>网格设置</CardTitle><CardDescription>网格间距会同步应用于预览与 PNG 导出。</CardDescription></CardHeader>
+            <CardContent>
+              <div className="grid-control">
+                <Label htmlFor="grid-step">网格大小</Label>
+                <Select value={String(settings.gridStep)} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: Number(value) }))}>
+                  <SelectTrigger id="grid-step" className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="3">3 mm</SelectItem>
+                    <SelectItem value="4">4 mm</SelectItem>
+                    <SelectItem value="5">5 mm</SelectItem>
+                    <SelectItem value="6">6 mm</SelectItem>
+                    <SelectItem value="7">7 mm</SelectItem>
+                    <SelectItem value="8">8 mm</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="settings-card">
+            <CardHeader><CardTitle>打孔预览</CardTitle><CardDescription>仅在右侧 Canvas 辅助定位，不会绘制进最终 PNG；孔中心距装订边 5 mm。</CardDescription></CardHeader>
+            <CardContent>
+              <div className="hole-control">
+                <Label htmlFor="punch-preview">显示打孔</Label>
+                <Select value={settings.showPunchHoles ? 'on' : 'off'} onValueChange={(value) => setSettings((current) => ({ ...current, showPunchHoles: value === 'on' }))}>
+                  <SelectTrigger id="punch-preview" className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="on">打孔预览</SelectItem>
+                    <SelectItem value="off">不打孔预览</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {settings.showPunchHoles && <div className="hole-control hole-diameter-control">
+                <Label htmlFor="hole-diameter">孔径</Label>
+                <Select value={String(settings.holeDiameter)} onValueChange={(value) => setSettings((current) => ({ ...current, holeDiameter: Number(value) as 4 | 5 }))}>
+                  <SelectTrigger id="hole-diameter" className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="4">4 mm</SelectItem>
+                    <SelectItem value="5">5 mm</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>}
+            </CardContent>
+          </Card>
+
+          <Card className="settings-card">
             <CardHeader><CardTitle>排版方式</CardTitle><CardDescription>左右排版将输出装订方向相对的偶数页与奇数页。</CardDescription></CardHeader>
             <CardContent>
               <div className="layout-options" role="radiogroup" aria-label="Layout mode">
@@ -391,7 +486,7 @@ function App() {
               {exportState === 'saving' ? '正在保存 PNG…' : settings.layout === 'spread' ? '分别保存左右页 PNG' : '保存 PNG 到相册'}
             </Button>
             <p className={`export-message ${exportState}`} aria-live="polite">
-              {exportMessage || (settings.layout === 'spread' ? '输出为两张 300 DPI PNG，左右页会分别保存到相册。' : '输出为一张 300 DPI PNG。')}
+              {exportMessage || (settings.layout === 'spread' ? '输出为两张 300 DPI PNG，左右页会分别保存到相册；不包含打孔标记。' : '输出为一张 300 DPI PNG，不包含打孔标记。')}
             </p>
           </div>
         </aside>
@@ -400,7 +495,7 @@ function App() {
           <div className="preview-toolbar"><div><p className="eyebrow">LIVE CANVAS</p><h2>网格预览</h2></div><div className="page-count">⌑&nbsp; {pageCount} 页输出</div></div>
           <div className="canvas-frame"><PreviewCanvas settings={settings} /></div>
           <footer className="preview-footer">
-            {settings.layout === 'spread' ? <><span>装订边距</span><strong>{settings.left.toFixed(0)} mm</strong><span className="footer-dot" /><span>外侧边距</span><strong>{settings.right.toFixed(0)} mm</strong><span className="footer-dot" /><span>左右页面已镜像</span></> : <><span>可用网格区域</span><strong>{usableWidth.toFixed(0)} × {usableHeight.toFixed(0)} mm</strong><span className="footer-dot" /><span>网格间距 5 mm</span></>}
+            {settings.layout === 'spread' ? <><span>装订边距</span><strong>{settings.left.toFixed(0)} mm</strong><span className="footer-dot" /><span>{settings.showPunchHoles ? `${settings.holeDiameter} mm 孔 · ${settings.gridStep} mm 网格` : `${settings.gridStep} mm 网格 · 未显示打孔`}</span><span className="footer-dot" /><span>左右页面已镜像</span></> : <><span>可用网格区域</span><strong>{usableWidth.toFixed(0)} × {usableHeight.toFixed(0)} mm</strong><span className="footer-dot" /><span>{settings.showPunchHoles ? `${settings.gridStep} mm 网格 · ${settings.holeDiameter} mm 孔 · 进深 5 mm` : `${settings.gridStep} mm 网格 · 未显示打孔`}</span></>}
           </footer>
         </section>
       </div>
