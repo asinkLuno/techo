@@ -124,6 +124,15 @@ function drawDotGrid(
   const mMin = Math.ceil((-settings.height + settings.bottom + 1.5 - (-settings.height / 2)) / step)
   const mMax = Math.floor((-settings.top - 1.5 - (-settings.height / 2)) / step)
 
+  // Center point first — drawn exactly once, in red; the grid snaps to it
+  context.save()
+  context.fillStyle = '#960018'
+  context.beginPath()
+  context.arc(cx, cy, dotRadius, 0, Math.PI * 2)
+  context.fill()
+  context.restore()
+
+  // Spread dots outward from the center (center already drawn → skip it)
   context.save()
   context.fillStyle = settings.dotColor
   for (let n = nMin; n <= nMax; n += 1) {
@@ -136,14 +145,6 @@ function drawDotGrid(
       context.fill()
     }
   }
-  context.restore()
-
-  // Center dot → red
-  context.save()
-  context.fillStyle = '#960018'
-  context.beginPath()
-  context.arc(cx, cy, dotRadius, 0, Math.PI * 2)
-  context.fill()
   context.restore()
 }
 
