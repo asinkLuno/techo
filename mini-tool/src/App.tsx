@@ -61,6 +61,7 @@ interface PageSettings {
   gridStep: number
   gridColor: string
   dotColor: string
+  centerDotColor: string
   showPunchHoles: boolean
   holeDiameter: 4 | 5
   punchSide: PunchSide
@@ -92,6 +93,7 @@ const DEFAULT_SETTINGS: PageSettings = {
   gridStep: 3,
   gridColor: '#99def9',
   dotColor: '#39ff14',
+  centerDotColor: '#960018',
   showPunchHoles: true,
   holeDiameter: 4,
   punchSide: '长边打孔',
@@ -124,9 +126,9 @@ function drawDotGrid(
   const mMin = Math.ceil((-settings.height + settings.bottom + 1.5 - (-settings.height / 2)) / step)
   const mMax = Math.floor((-settings.top - 1.5 - (-settings.height / 2)) / step)
 
-  // Center point first — drawn exactly once, in red; the grid snaps to it
+  // Center point first — drawn exactly once; the grid snaps to it
   context.save()
-  context.fillStyle = '#960018'
+  context.fillStyle = settings.centerDotColor
   context.beginPath()
   context.arc(cx, cy, dotRadius, 0, Math.PI * 2)
   context.fill()
@@ -620,6 +622,13 @@ function App() {
                     <div className="color-inputs">
                       <Input id="dot-color" className="color-picker" type="color" value={settings.dotColor} onChange={(event) => setSettings((current) => ({ ...current, dotColor: event.target.value }))} aria-label="选择点颜色" />
                       <Input className="color-hex" value={settings.dotColor.toUpperCase()} maxLength={7} spellCheck={false} onChange={(event) => { const value = event.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(value)) setSettings((current) => ({ ...current, dotColor: value })) }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(settings.dotColor)) setSettings((current) => ({ ...current, dotColor: DEFAULT_SETTINGS.dotColor })) }} aria-label="点颜色 HEX 值" />
+                    </div>
+                  </div>
+                  <div className="grid-color-control">
+                    <Label htmlFor="center-dot-color">中心点颜色</Label>
+                    <div className="color-inputs">
+                      <Input id="center-dot-color" className="color-picker" type="color" value={settings.centerDotColor} onChange={(event) => setSettings((current) => ({ ...current, centerDotColor: event.target.value }))} aria-label="选择中心点颜色" />
+                      <Input className="color-hex" value={settings.centerDotColor.toUpperCase()} maxLength={7} spellCheck={false} onChange={(event) => { const value = event.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(value)) setSettings((current) => ({ ...current, centerDotColor: value })) }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(settings.centerDotColor)) setSettings((current) => ({ ...current, centerDotColor: DEFAULT_SETTINGS.centerDotColor })) }} aria-label="中心点颜色 HEX 值" />
                     </div>
                   </div>
                 </div>
