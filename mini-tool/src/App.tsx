@@ -13,7 +13,7 @@ type LayoutMode = 'center' | 'spread'
 type Dimension = 'width' | 'height'
 type Margin = 'top' | 'right' | 'bottom' | 'left'
 type BindingSide = 'left' | 'right' | 'top' | 'bottom'
-type PunchSide = 'long' | 'short'
+type PunchSide = '长边' | '短边'
 
 const PRESETS = {
   // ── TN ──
@@ -94,7 +94,7 @@ const DEFAULT_SETTINGS: PageSettings = {
   dotColor: '#39ff14',
   showPunchHoles: true,
   holeDiameter: 4,
-  punchSide: 'long',
+  punchSide: '长边',
   layout: 'center',
 }
 
@@ -162,7 +162,7 @@ function drawPunchHoles(
   const isPortrait = settings.height >= settings.width
   // Determine which dimension to punch along
   // long edge = max(width, height), short edge = min(width, height)
-  const punchAlongHeight = (punchSide === 'long' && isPortrait) || (punchSide === 'short' && !isPortrait)
+  const punchAlongHeight = (punchSide === '长边' && isPortrait) || (punchSide === '短边' && !isPortrait)
   const punchLength = punchAlongHeight ? settings.height : settings.width
   const count = Math.max(1, Math.floor((punchLength - 20) / pitch) + 1)
   const firstHole = (punchLength - (count - 1) * pitch) / 2
@@ -323,7 +323,7 @@ function createPrintCanvas(tool: Tool, settings: PageSettings, page = 0) {
     : settings
   context.fillStyle = '#fffefd'
   context.fillRect(0, 0, width, height)
-  const exportBindingSide: BindingSide = settings.punchSide === 'long'
+  const exportBindingSide: BindingSide = settings.punchSide === '长边'
     ? (settings.layout === 'spread' && page === 0 ? 'right' : 'left')
     : (settings.layout === 'spread' && page === 0 ? 'bottom' : 'top')
   drawPreviewPage(context, tool, 0, 0, pageSettings, PIXELS_PER_MM, exportBindingSide)
@@ -369,7 +369,7 @@ function PreviewCanvas({ tool, settings }: { tool: Tool; settings: PageSettings 
         const pageSettings = settings.layout === 'spread' && page === 0
           ? { ...settings, left: settings.right, right: settings.left }
           : settings
-        const bindingSide: BindingSide = settings.punchSide === 'long'
+        const bindingSide: BindingSide = settings.punchSide === '长边'
           ? (settings.layout === 'spread' && page === 0 ? 'right' : 'left')
           : (settings.layout === 'spread' && page === 0 ? 'bottom' : 'top')
 
@@ -632,11 +632,11 @@ function App() {
             <CardContent>
               <div className="hole-control">
                 <Label htmlFor="punch-preview">显示打孔</Label>
-                <Select value={settings.showPunchHoles ? 'on' : 'off'} onValueChange={(value) => setSettings((current) => ({ ...current, showPunchHoles: value === 'on' }))}>
+                <Select value={settings.showPunchHoles ? '显示' : '隐藏'} onValueChange={(value) => setSettings((current) => ({ ...current, showPunchHoles: value === '显示' }))}>
                   <SelectTrigger id="punch-preview" className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent align="start">
-                    <SelectItem value="on">打孔预览</SelectItem>
-                    <SelectItem value="off">不打孔预览</SelectItem>
+                    <SelectItem value="显示">打孔预览</SelectItem>
+                    <SelectItem value="隐藏">不打孔预览</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -655,8 +655,8 @@ function App() {
                 <Select value={settings.punchSide} onValueChange={(value) => setSettings((current) => ({ ...current, punchSide: value as PunchSide }))}>
                   <SelectTrigger id="punch-side" className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent align="start">
-                    <SelectItem value="long">长边打孔</SelectItem>
-                    <SelectItem value="short">短边打孔</SelectItem>
+                    <SelectItem value="长边">长边打孔</SelectItem>
+                    <SelectItem value="短边">短边打孔</SelectItem>
                   </SelectContent>
                 </Select>
               </div>}
