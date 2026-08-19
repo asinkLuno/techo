@@ -8,12 +8,12 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSepa
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import './App.css'
 
-type Tool = 'green-dot' | 'midori-grid'
-type LayoutMode = 'center' | 'spread'
-type Dimension = 'width' | 'height'
-type Margin = 'top' | 'right' | 'bottom' | 'left'
-type BindingSide = 'left' | 'right' | 'top' | 'bottom'
-type PunchSide = '长边打孔' | '短边打孔'
+import type { PageSettings, BindingSide, PunchSide } from '@/types'
+import { drawGreenDot, GreenDotSettings, label as greenDotLabel } from '@/tools/green-dot'
+import { drawMidoriGrid, MidoriGridSettings, label as midoriGridLabel } from '@/tools/midori-grid'
+import { drawTimeline, TimelineSettings, label as timelineLabel } from '@/tools/timeline'
+
+type Tool = 'green-dot' | 'midori-grid' | 'timeline'
 
 const PRESETS = {
   // ── TN ──
@@ -56,36 +56,8 @@ const PRESET_ITEMS = Object.entries(PRESETS).map(([key, option]) => ({
 
 type Preset = keyof typeof PRESETS
 
-interface PageSettings {
-  width: number
-  height: number
-  top: number
-  right: number
-  bottom: number
-  left: number
-  gridStep: number
-  gridColor: string
-  dotColor: string
-  centerDotColor: string
-  showPunchHoles: boolean
-  holeDiameter: 4 | 5
-  punchSide: PunchSide
-  layout: LayoutMode
-}
-
-interface XhsMiniTool {
-  saveImageToPhotosAlbum: (options: { filePath: string }) => Promise<unknown>
-}
-
-declare global {
-  interface Window {
-    xhs?: { miniTool?: XhsMiniTool }
-  }
-}
-
 const PRINT_DPI = 300
 const PIXELS_PER_MM = PRINT_DPI / 25.4
-const TEX_GRID_LINE_WIDTH_MM = (0.7 * 25.4) / 72
 const MAX_EXPORT_DIMENSION = 16384
 
 const DEFAULT_SETTINGS: PageSettings = {
@@ -103,11 +75,8 @@ const DEFAULT_SETTINGS: PageSettings = {
   holeDiameter: 4,
   punchSide: '长边打孔',
   layout: 'center',
-}
-
-function isMarker(index: number, count: number) {
-  const middle = Math.floor(count / 2)
-  return index > 0 && index < count && (index - middle) % 10 === 0
+  timelineSide: 'left',
+  timelineColor: '#24322e',
 }
 
 function parseMillimeters(value: string | null): number {
@@ -115,53 +84,7 @@ function parseMillimeters(value: string | null): number {
   return Number.isFinite(n) ? n : 0
 }
 
-// ── Green Dot rendering ──
-
-function drawDotGrid(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  settings: PageSettings,
-  scale: number,
-) {
-  const step = settings.gridStep
-  const cx = x + (settings.width / 2) * scale
-  const cy = y + (settings.height / 2) * scale
-  const cell = step * scale
-  const dotRadius = Math.max(0.35 * scale, 0.4)
-
-  // Range from center outward, constrained by margins.
-  // x 方向偏移 0.5、y 方向偏移 1.5 —— 与 src/techo/dot-grid.tex 保持一致，勿随意改动。
-  const nMin = Math.ceil((settings.left + 0.5 - settings.width / 2) / step)
-  const nMax = Math.floor((settings.width - settings.right - 0.5 - settings.width / 2) / step)
-  const mMin = Math.ceil((-settings.height + settings.bottom + 1.5 - (-settings.height / 2)) / step)
-  const mMax = Math.floor((-settings.top - 1.5 - (-settings.height / 2)) / step)
-
-  // Center point first — drawn exactly once; the grid snaps to it
-  context.save()
-  context.fillStyle = settings.centerDotColor
-  context.beginPath()
-  context.arc(cx, cy, dotRadius, 0, Math.PI * 2)
-  context.fill()
-  context.restore()
-
-  // Spread dots outward from the center (center already drawn → skip it)
-  context.save()
-  context.fillStyle = settings.dotColor
-  for (let n = nMin; n <= nMax; n += 1) {
-    for (let m = mMin; m <= mMax; m += 1) {
-      if (n === 0 && m === 0) continue
-      const dotX = cx + n * cell
-      const dotY = cy + m * cell
-      context.beginPath()
-      context.arc(dotX, dotY, dotRadius, 0, Math.PI * 2)
-      context.fill()
-    }
-  }
-  context.restore()
-}
-
-// ── Midori Grid rendering ──
+// ── Shared: punch holes ──
 
 function drawPunchHoles(
   context: CanvasRenderingContext2D,
@@ -174,8 +97,6 @@ function drawPunchHoles(
 ) {
   const pitch = 20
   const isPortrait = settings.height >= settings.width
-  // Determine which dimension to punch along
-  // long edge = max(width, height), short edge = min(width, height)
   const punchAlongHeight = (punchSide === '长边打孔' && isPortrait) || (punchSide === '短边打孔' && !isPortrait)
   const punchLength = punchAlongHeight ? settings.height : settings.width
   const count = Math.max(1, Math.floor((punchLength - 20) / pitch) + 1)
@@ -188,7 +109,6 @@ function drawPunchHoles(
   context.lineWidth = Math.max(0.35 * scale, 0.45)
 
   if (punchAlongHeight) {
-    // Holes along vertical edge (left or right)
     const holeX = x + (bindingSide === 'left' ? 5 : settings.width - 5) * scale
     for (let index = 0; index < count; index += 1) {
       context.beginPath()
@@ -197,7 +117,6 @@ function drawPunchHoles(
       context.stroke()
     }
   } else {
-    // Holes along horizontal edge (top or bottom)
     const holeY = y + (bindingSide === 'top' ? 5 : settings.height - 5) * scale
     for (let index = 0; index < count; index += 1) {
       context.beginPath()
@@ -210,99 +129,38 @@ function drawPunchHoles(
   context.restore()
 }
 
-function drawMidoriGrid(
+// ── Global declarations ──
+
+interface XhsMiniTool {
+  saveImageToPhotosAlbum: (options: { filePath: string }) => Promise<unknown>
+}
+
+declare global {
+  interface Window {
+    xhs?: { miniTool?: XhsMiniTool }
+  }
+}
+
+// ── Unified draw function type ──
+
+type DrawFn = (
   context: CanvasRenderingContext2D,
   x: number,
   y: number,
   settings: PageSettings,
   scale: number,
-) {
-  const usableWidth = settings.width - settings.left - settings.right
-  const usableHeight = settings.height - settings.top - settings.bottom
-  if (usableWidth <= 0 || usableHeight <= 0) return
+) => void
 
-  const step = settings.gridStep
-  const columns = Math.floor(usableWidth / step)
-  const rows = Math.floor(usableHeight / step)
-  if (columns < 1 || rows < 1) return
-
-  const gridWidth = columns * step
-  const gridHeight = rows * step
-  const startX = x + (settings.left + (usableWidth - gridWidth) / 2) * scale
-  const startY = y + (settings.top + (usableHeight - gridHeight) / 2) * scale
-  const cell = step * scale
-  const lineGap = Math.max(0.75 * scale, 0.65)
-  const extensionGap = Math.max(scale, 0.8)
-  const extension = Math.max(1.2 * scale, 1)
-
-  context.save()
-  context.strokeStyle = settings.gridColor
-  context.fillStyle = settings.gridColor
-  context.lineWidth = Math.max(TEX_GRID_LINE_WIDTH_MM * scale, 0.55)
-  context.lineCap = 'round'
-
-  for (let row = 0; row <= rows; row += 1) {
-    const lineY = startY + row * cell
-    context.beginPath()
-    context.moveTo(startX, lineY)
-    context.lineTo(startX + gridWidth * scale, lineY)
-    context.stroke()
-
-    if (row > 0 && row < rows && row % 2 === 0 && !isMarker(row, rows)) {
-      context.beginPath()
-      context.moveTo(startX - extensionGap - extension, lineY)
-      context.lineTo(startX - extensionGap, lineY)
-      context.moveTo(startX + gridWidth * scale + extensionGap, lineY)
-      context.lineTo(startX + gridWidth * scale + extensionGap + extension, lineY)
-      context.stroke()
-    }
-  }
-
-  for (let column = 0; column <= columns; column += 1) {
-    const lineX = startX + column * cell
-    for (let row = 0; row < rows; row += 1) {
-      context.beginPath()
-      context.moveTo(lineX, startY + row * cell + lineGap)
-      context.lineTo(lineX, startY + (row + 1) * cell)
-      context.stroke()
-    }
-
-    if (column > 0 && column < columns && column % 2 === 0 && !isMarker(column, columns)) {
-      context.beginPath()
-      context.moveTo(lineX, startY - extensionGap - extension)
-      context.lineTo(lineX, startY - extensionGap)
-      context.moveTo(lineX, startY + gridHeight * scale + extensionGap)
-      context.lineTo(lineX, startY + gridHeight * scale + extensionGap + extension)
-      context.stroke()
-    }
-  }
-
-  for (let column = 1; column < columns; column += 1) {
-    if (!isMarker(column, columns)) continue
-    const dotX = startX + column * cell
-    const radius = Math.max(0.7 * scale, 0.85)
-    context.beginPath()
-    context.arc(dotX, startY - 1.5 * scale, radius, 0, Math.PI * 2)
-    context.arc(dotX, startY + gridHeight * scale + 1.5 * scale, radius, 0, Math.PI * 2)
-    context.fill()
-  }
-
-  for (let row = 1; row < rows; row += 1) {
-    if (!isMarker(row, rows)) continue
-    const dotY = startY + row * cell
-    const radius = Math.max(0.7 * scale, 0.85)
-    context.beginPath()
-    context.arc(startX - 1.5 * scale, dotY, radius, 0, Math.PI * 2)
-    context.arc(startX + gridWidth * scale + 1.5 * scale, dotY, radius, 0, Math.PI * 2)
-    context.fill()
-  }
-
-  context.restore()
+const DRAW_FUNCTIONS: Record<Tool, DrawFn> = {
+  'green-dot': drawGreenDot,
+  'midori-grid': drawMidoriGrid,
+  'timeline': (ctx, x, y, settings, scale) =>
+    drawTimeline(ctx, x, y, settings, scale, settings.timelineSide),
 }
 
 function drawPreviewPage(
   context: CanvasRenderingContext2D,
-  tool: Tool,
+  drawFn: DrawFn,
   x: number,
   y: number,
   settings: PageSettings,
@@ -310,18 +168,13 @@ function drawPreviewPage(
   bindingSide: BindingSide,
   includePunchHoles = true,
 ) {
-  if (tool === 'green-dot') {
-    drawDotGrid(context, x, y, settings, scale)
-  } else {
-    drawMidoriGrid(context, x, y, settings, scale)
-  }
-  // 打孔仅在预览中绘制，PNG 导出时不显示（createPrintCanvas 传入 false）
+  drawFn(context, x, y, settings, scale)
   if (includePunchHoles && settings.showPunchHoles) {
     drawPunchHoles(context, x, y, settings, scale, bindingSide, settings.punchSide)
   }
 }
 
-function createPrintCanvas(tool: Tool, settings: PageSettings, page = 0) {
+function createPrintCanvas(drawFn: DrawFn, settings: PageSettings, page = 0) {
   const width = Math.round(settings.width * PIXELS_PER_MM)
   const height = Math.round(settings.height * PIXELS_PER_MM)
   if (width > MAX_EXPORT_DIMENSION || height > MAX_EXPORT_DIMENSION) {
@@ -342,13 +195,13 @@ function createPrintCanvas(tool: Tool, settings: PageSettings, page = 0) {
   const exportBindingSide: BindingSide = settings.punchSide === '长边打孔'
     ? (settings.layout === 'spread' && page === 0 ? 'right' : 'left')
     : (settings.layout === 'spread' && page === 0 ? 'bottom' : 'top')
-  drawPreviewPage(context, tool, 0, 0, pageSettings, PIXELS_PER_MM, exportBindingSide, false)
+  drawPreviewPage(context, drawFn, 0, 0, pageSettings, PIXELS_PER_MM, exportBindingSide, false)
   return canvas
 }
 
 // ── Shared preview canvas ──
 
-function PreviewCanvas({ tool, settings }: { tool: Tool; settings: PageSettings }) {
+function PreviewCanvas({ drawFn, settings }: { drawFn: DrawFn; settings: PageSettings }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -400,7 +253,7 @@ function PreviewCanvas({ tool, settings }: { tool: Tool; settings: PageSettings 
         context.strokeStyle = '#d9ddda'
         context.lineWidth = 1
         context.strokeRect(pageX, startY, pageWidth, pageHeight)
-        drawPreviewPage(context, tool, pageX, startY, pageSettings, scale, bindingSide)
+        drawPreviewPage(context, drawFn, pageX, startY, pageSettings, scale, bindingSide)
 
         context.fillStyle = '#87908c'
         context.font = '500 10px sans-serif'
@@ -421,9 +274,13 @@ function PreviewCanvas({ tool, settings }: { tool: Tool; settings: PageSettings 
     observer.observe(canvas)
     render()
     return () => observer.disconnect()
-  }, [tool, settings])
+  }, [drawFn, settings])
 
-  const toolLabel = tool === 'green-dot' ? '绿点' : '余白方格'
+  const toolLabel =
+    drawFn === DRAW_FUNCTIONS['green-dot'] ? '绿点'
+    : drawFn === DRAW_FUNCTIONS['midori-grid'] ? '余白方格'
+    : '时间轴'
+
   return <canvas ref={canvasRef} className="preview-canvas" aria-label={`${toolLabel} 页面预览`} />
 }
 
@@ -450,12 +307,12 @@ function App() {
   const [exportState, setExportState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [exportMessage, setExportMessage] = useState('')
 
-  const updateDimension = (field: Dimension, raw: string) => {
+  const updateDimension = (field: 'width' | 'height', raw: string) => {
     const value = Number(raw)
     setSettings((current) => ({ ...current, [field]: Number.isFinite(value) ? Math.max(1, value) : 1 }))
   }
 
-  const updateMargin = (field: Margin, raw: string) => {
+  const updateMargin = (field: 'top' | 'right' | 'bottom' | 'left', raw: string) => {
     const value = Number(raw)
     setSettings((current) => ({ ...current, [field]: Number.isFinite(value) ? Math.max(0, value) : 0 }))
   }
@@ -467,7 +324,6 @@ function App() {
       ...DEFAULT_SETTINGS,
       width: next.width,
       height: next.height,
-      // 保留用户对网格/颜色的偏好
       gridStep: current.gridStep,
       gridColor: current.gridColor,
       dotColor: current.dotColor,
@@ -486,16 +342,17 @@ function App() {
     setExportState('saving')
     setExportMessage('正在生成 300 DPI PNG…')
     try {
+      const drawFn = DRAW_FUNCTIONS[tool]
       const pageCount = settings.layout === 'center' ? 1 : 2
       for (let page = 0; page < pageCount; page += 1) {
         if (pageCount === 2) {
           setExportMessage(page === 0 ? '正在保存左页（偶数页）…' : '正在保存右页（奇数页）…')
         }
-        const dataUrl = createPrintCanvas(tool, settings, page).toDataURL('image/png')
+        const dataUrl = createPrintCanvas(drawFn, settings, page).toDataURL('image/png')
         await miniTool.saveImageToPhotosAlbum({ filePath: dataUrl })
       }
       setExportState('saved')
-      setExportMessage(pageCount === 1 ? 'PNG 已保存到系统相册。' : '左右两页 PNG 已分别保存到系统相册。')
+      setExportMessage(pageCount === 1 ? 'PNG 已保存到系统相册。' : '左右两页 PNG 已分别保存到相册。')
     } catch (error) {
       setExportState('error')
       setExportMessage(error instanceof Error ? error.message : '保存失败，请检查相册权限后重试。')
@@ -509,9 +366,12 @@ function App() {
 
   const pageCount = settings.layout === 'center' ? 1 : 2
 
+  const toolLabel =
+    tool === 'green-dot' ? greenDotLabel
+    : tool === 'midori-grid' ? midoriGridLabel
+    : timelineLabel
 
-  const toolLabel = tool === 'green-dot' ? '绿点' : '余白方格'
-
+  const drawFn = DRAW_FUNCTIONS[tool]
 
   return (
     <main className="tool-shell">
@@ -533,8 +393,9 @@ function App() {
 
           <Tabs value={tool} onValueChange={(value) => setTool(value as Tool)} className="tool-tabs">
             <TabsList className="tool-tabs-list">
-              <TabsTrigger value="green-dot">绿点</TabsTrigger>
-              <TabsTrigger value="midori-grid">余白方格</TabsTrigger>
+              <TabsTrigger value="green-dot">{greenDotLabel}</TabsTrigger>
+              <TabsTrigger value="midori-grid">{midoriGridLabel}</TabsTrigger>
+              <TabsTrigger value="timeline">{timelineLabel}</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -586,77 +447,10 @@ function App() {
             </CardContent>
           </Card>
 
-          {/* ── Tool-specific: grid settings (Midori only) ── */}
-          {tool === 'midori-grid' && (
-            <Card className="settings-card">
-              <CardHeader><CardTitle>网格设置</CardTitle><CardDescription>网格间距会同步应用于预览与 PNG 导出。</CardDescription></CardHeader>
-              <CardContent>
-                <div className="grid-settings-fields">
-                  <div className="grid-control">
-                    <Label htmlFor="grid-step">网格大小</Label>
-                    <Select value={`${settings.gridStep} mm`} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: parseMillimeters(value) }))}>
-                      <SelectTrigger id="grid-step" className="w-full"><SelectValue /></SelectTrigger>
-                      <SelectContent align="start">
-                        <SelectItem value="3 mm">3 mm</SelectItem>
-                        <SelectItem value="4 mm">4 mm</SelectItem>
-                        <SelectItem value="5 mm">5 mm</SelectItem>
-                        <SelectItem value="6 mm">6 mm</SelectItem>
-                        <SelectItem value="7 mm">7 mm</SelectItem>
-                        <SelectItem value="8 mm">8 mm</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid-color-control">
-                    <Label htmlFor="grid-color">网格颜色</Label>
-                    <div className="color-inputs">
-                      <Input id="grid-color" className="color-picker" type="color" value={settings.gridColor} onChange={(event) => setSettings((current) => ({ ...current, gridColor: event.target.value }))} aria-label="选择网格颜色" />
-                      <Input className="color-hex" value={settings.gridColor.toUpperCase()} maxLength={7} spellCheck={false} onChange={(event) => { const value = event.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(value)) setSettings((current) => ({ ...current, gridColor: value })) }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(settings.gridColor)) setSettings((current) => ({ ...current, gridColor: DEFAULT_SETTINGS.gridColor })) }} aria-label="网格颜色 HEX 值" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ── Tool-specific: grid settings (Green Dot) ── */}
-          {tool === 'green-dot' && (
-            <Card className="settings-card">
-              <CardHeader><CardTitle>网格设置</CardTitle><CardDescription>网格间距与点颜色会同步应用于预览与 PNG 导出。</CardDescription></CardHeader>
-              <CardContent>
-                <div className="grid-settings-fields">
-                  <div className="grid-control">
-                    <Label htmlFor="grid-step">网格大小</Label>
-                    <Select value={`${settings.gridStep} mm`} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: parseMillimeters(value) }))}>
-                      <SelectTrigger id="grid-step" className="w-full"><SelectValue /></SelectTrigger>
-                      <SelectContent align="start">
-                        <SelectItem value="2 mm">2 mm</SelectItem>
-                        <SelectItem value="3 mm">3 mm</SelectItem>
-                        <SelectItem value="4 mm">4 mm</SelectItem>
-                        <SelectItem value="5 mm">5 mm</SelectItem>
-                        <SelectItem value="6 mm">6 mm</SelectItem>
-                        <SelectItem value="7 mm">7 mm</SelectItem>
-                        <SelectItem value="8 mm">8 mm</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid-color-control">
-                    <Label htmlFor="dot-color">点颜色</Label>
-                    <div className="color-inputs">
-                      <Input id="dot-color" className="color-picker" type="color" value={settings.dotColor} onChange={(event) => setSettings((current) => ({ ...current, dotColor: event.target.value }))} aria-label="选择点颜色" />
-                      <Input className="color-hex" value={settings.dotColor.toUpperCase()} maxLength={7} spellCheck={false} onChange={(event) => { const value = event.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(value)) setSettings((current) => ({ ...current, dotColor: value })) }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(settings.dotColor)) setSettings((current) => ({ ...current, dotColor: DEFAULT_SETTINGS.dotColor })) }} aria-label="点颜色 HEX 值" />
-                    </div>
-                  </div>
-                  <div className="grid-color-control">
-                    <Label htmlFor="center-dot-color">中心点颜色</Label>
-                    <div className="color-inputs">
-                      <Input id="center-dot-color" className="color-picker" type="color" value={settings.centerDotColor} onChange={(event) => setSettings((current) => ({ ...current, centerDotColor: event.target.value }))} aria-label="选择中心点颜色" />
-                      <Input className="color-hex" value={settings.centerDotColor.toUpperCase()} maxLength={7} spellCheck={false} onChange={(event) => { const value = event.target.value; if (/^#[0-9a-fA-F]{0,6}$/.test(value)) setSettings((current) => ({ ...current, centerDotColor: value })) }} onBlur={() => { if (!/^#[0-9a-fA-F]{6}$/.test(settings.centerDotColor)) setSettings((current) => ({ ...current, centerDotColor: DEFAULT_SETTINGS.centerDotColor })) }} aria-label="中心点颜色 HEX 值" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {/* ── Tool-specific settings ── */}
+          {tool === 'green-dot' && <GreenDotSettings settings={settings} setSettings={setSettings} />}
+          {tool === 'midori-grid' && <MidoriGridSettings settings={settings} setSettings={setSettings} />}
+          {tool === 'timeline' && <TimelineSettings settings={settings} setSettings={setSettings} />}
 
           {/* ── Shared: punch hole preview ── */}
           <Card className="settings-card">
@@ -732,8 +526,8 @@ function App() {
             </div>
             <div className="page-count">输出&nbsp; {pageCount} 页</div>
           </div>
-          <div className="canvas-frame"><PreviewCanvas tool={tool} settings={settings} /></div>
-          </section>
+          <div className="canvas-frame"><PreviewCanvas drawFn={drawFn} settings={settings} /></div>
+        </section>
       </div>
     </main>
   )
