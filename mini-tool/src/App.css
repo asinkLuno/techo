@@ -80,6 +80,13 @@ h1 { font-size: 18px; line-height: 1.1; letter-spacing: -.035em; }
 .preview-footer strong { color: #4c625b; font-weight: 620; }
 .footer-dot { width: 3px; height: 3px; margin: 0 4px; border-radius: 50%; background: #aab5af; }
 
+/* Tool tabs */
+.tool-tabs { margin-bottom: 16px; }
+.tool-tabs-list { width: 100%; }
+[data-slot='tabs-list'] { display: flex; gap: 4px; }
+[data-slot='tabs-trigger'] { flex: 1; height: 44px; border-radius: 9px; font-size: 13px; font-weight: 600; color: #617069; border-color: #d5ded8; background: #fff; }
+[data-slot='tabs-trigger'][data-active='true'] { color: #176d66; border-color: #59aaa0; background: #eaf6f2; }
+
 @media (min-width: 921px) { .tool-shell { height: 100dvh; overflow: hidden; } .workspace { height: calc(100dvh - 80px); min-height: 0; } }
 @media (max-width: 920px) { .workspace { grid-template-columns: 1fr; } .control-panel { border-right: 0; border-bottom: 1px solid #dfe3dd; } .preview-area { min-height: 620px; } .canvas-frame { min-height: 460px; } }
 @media (max-width: 560px) { .app-header { height: 68px; padding: 0 18px; } .header-note { display: none; } .control-panel, .preview-area { padding: 28px 18px; } .preview-toolbar { align-items: flex-start; } .canvas-frame { min-height: 390px; } }

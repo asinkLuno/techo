@@ -7,7 +7,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dist = path.join(root, 'dist')
 const staticDir = path.join(root, 'static')
 const artifactDir = path.join(root, 'artifacts')
-const artifact = path.join(artifactDir, 'midori-grid-mini-tool.zip')
+const artifact = path.join(artifactDir, 'techo-mini-tool.zip')
 const rootPreviewFiles = ['index.html', 'assets']
 const allowedExtensions = new Set(['.html', '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.woff', '.woff2', '.json'])
 

@@ -22,7 +22,7 @@ export default defineConfig({
     lib: {
       entry: path.resolve(rootDir, 'src/main.tsx'),
       formats: ['iife'],
-      name: 'MidoriGridTool',
+      name: 'GreenDotTool',
       fileName: () => 'assets/main.js',
       cssFileName: 'assets/style',
     },
