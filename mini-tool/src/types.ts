@@ -1,7 +1,7 @@
 export type BindingSide = 'left' | 'right' | 'top' | 'bottom'
 export type PunchSide = '长边打孔' | '短边打孔'
 export type LayoutMode = 'center' | 'spread'
-export type TimelineSide = 'left' | 'right'
+export type TimelineSide = 'binding' | 'outer'
 
 export interface PageSettings {
   width: number

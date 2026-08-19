@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { PageSettings, TimelineSide } from '@/types'
+import type { PageSettings, TimelineSide, BindingSide } from '@/types'
 
 export const label = '时间轴'
 
@@ -13,26 +13,31 @@ export function drawTimeline(
   settings: PageSettings,
   scale: number,
   side: TimelineSide,
+  bindingSide: BindingSide,
 ) {
   const usableHeight = settings.height - settings.top - settings.bottom
-  const axisX = side === 'left'
+  const horizontalBinding = (bindingSide === 'left' || bindingSide === 'right') ? bindingSide : 'left'
+  const actualSide: 'left' | 'right' = side === 'binding'
+    ? horizontalBinding
+    : (horizontalBinding === 'left' ? 'right' : 'left')
+  const axisX = actualSide === 'left'
     ? x + settings.left * scale
     : x + (settings.width - settings.right) * scale
-  const dir = side === 'left' ? 1 : -1
+  const dir = actualSide === 'left' ? 1 : -1
 
   const hourHeight = (usableHeight / 24) * scale
-  const longTick = 11 * scale
-  const shortTick = 5 * scale
-  const labelGap = 5 * scale
+  const longTick = 7 * scale
+  const shortTick = 3 * scale
+  const labelGap = 3 * scale
   const labelSize = Math.max(3.6 * scale, 3)
 
   context.save()
   context.strokeStyle = settings.timelineColor
   context.fillStyle = settings.timelineColor
-  context.lineWidth = Math.max(0.38 * scale, 0.3)
+  context.lineWidth = Math.max(0.22 * scale, 0.2)
   context.lineCap = 'butt'
   context.font = `400 ${labelSize}px "3270 Nerd Font", sans-serif`
-  context.textAlign = side === 'left' ? 'right' : 'left'
+  context.textAlign = actualSide === 'left' ? 'right' : 'left'
   context.textBaseline = 'middle'
 
   for (let hour = 0; hour <= 24; hour += 1) {
@@ -44,8 +49,8 @@ export function drawTimeline(
     context.stroke()
 
     const label = String(hour).padStart(2, '0')
-    const labelX = axisX - dir * labelGap
-    context.fillText(label, labelX, posY)
+    const labelX = actualSide === 'left' ? axisX - labelGap : axisX + labelGap
+    context.fillText(label, labelX, posY + 0.4 * scale)
 
     if (hour < 24) {
       const halfY = posY + hourHeight / 2
@@ -67,7 +72,7 @@ interface TimelineSettingsProps {
 export function TimelineSettings({ settings, setSettings }: TimelineSettingsProps) {
   return (
     <Card className="settings-card">
-      <CardHeader><CardTitle>时间轴设置</CardTitle><CardDescription>选择刻度出现在页面左侧或右侧。</CardDescription></CardHeader>
+      <CardHeader><CardTitle>时间轴设置</CardTitle><CardDescription>选择刻度出现在装订边还是外侧。</CardDescription></CardHeader>
       <CardContent>
         <div className="timeline-controls">
           <div className="timeline-side-control">
@@ -75,8 +80,8 @@ export function TimelineSettings({ settings, setSettings }: TimelineSettingsProp
             <Select value={settings.timelineSide} onValueChange={(value) => setSettings((current) => ({ ...current, timelineSide: value as TimelineSide }))}>
               <SelectTrigger id="timeline-side" className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent align="start">
-                <SelectItem value="left">左侧</SelectItem>
-                <SelectItem value="right">右侧</SelectItem>
+                <SelectItem value="binding">装订边</SelectItem>
+                <SelectItem value="outer">外侧</SelectItem>
               </SelectContent>
             </Select>
           </div>

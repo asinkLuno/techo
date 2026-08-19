@@ -75,7 +75,7 @@ const DEFAULT_SETTINGS: PageSettings = {
   holeDiameter: 4,
   punchSide: '长边打孔',
   layout: 'center',
-  timelineSide: 'left',
+  timelineSide: 'binding',
   timelineColor: '#24322e',
 }
 
@@ -149,13 +149,14 @@ type DrawFn = (
   y: number,
   settings: PageSettings,
   scale: number,
+  bindingSide: BindingSide,
 ) => void
 
 const DRAW_FUNCTIONS: Record<Tool, DrawFn> = {
-  'green-dot': drawGreenDot,
-  'midori-grid': drawMidoriGrid,
-  'timeline': (ctx, x, y, settings, scale) =>
-    drawTimeline(ctx, x, y, settings, scale, settings.timelineSide),
+  'green-dot': (ctx, x, y, settings, scale, bindingSide) => drawGreenDot(ctx, x, y, settings, scale),
+  'midori-grid': (ctx, x, y, settings, scale, bindingSide) => drawMidoriGrid(ctx, x, y, settings, scale),
+  'timeline': (ctx, x, y, settings, scale, bindingSide) =>
+    drawTimeline(ctx, x, y, settings, scale, settings.timelineSide, bindingSide),
 }
 
 function drawPreviewPage(
@@ -168,7 +169,7 @@ function drawPreviewPage(
   bindingSide: BindingSide,
   includePunchHoles = true,
 ) {
-  drawFn(context, x, y, settings, scale)
+  drawFn(context, x, y, settings, scale, bindingSide)
   if (includePunchHoles && settings.showPunchHoles) {
     drawPunchHoles(context, x, y, settings, scale, bindingSide, settings.punchSide)
   }
