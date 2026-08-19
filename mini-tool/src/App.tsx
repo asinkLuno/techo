@@ -49,6 +49,11 @@ const PRESET_GROUPS = [
   { label: '其他', keys: ['a4', 'b5'] as const },
 ] as const
 
+const PRESET_ITEMS = Object.entries(PRESETS).map(([key, option]) => ({
+  value: key,
+  label: `${option.label} · ${option.note}`,
+}))
+
 type Preset = keyof typeof PRESETS
 
 interface PageSettings {
@@ -103,6 +108,11 @@ const DEFAULT_SETTINGS: PageSettings = {
 function isMarker(index: number, count: number) {
   const middle = Math.floor(count / 2)
   return index > 0 && index < count && (index - middle) % 10 === 0
+}
+
+function parseMillimeters(value: string | null): number {
+  const n = parseFloat(value ?? '')
+  return Number.isFinite(n) ? n : 0
 }
 
 // ── Green Dot rendering ──
@@ -522,7 +532,7 @@ function App() {
             <CardContent className="space-y-4">
               <div className="preset-select">
                 <Label htmlFor="paper-preset">预制纸张尺寸</Label>
-                <Select value={preset} onValueChange={(value) => applyPreset(value as Preset)}>
+                <Select value={preset} onValueChange={(value) => applyPreset(value as Preset)} items={PRESET_ITEMS}>
                   <SelectTrigger id="paper-preset" className="w-full">
                     <SelectValue placeholder="选择纸张尺寸" />
                   </SelectTrigger>
@@ -572,15 +582,15 @@ function App() {
                 <div className="grid-settings-fields">
                   <div className="grid-control">
                     <Label htmlFor="grid-step">网格大小</Label>
-                    <Select value={String(settings.gridStep)} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: Number(value) }))}>
+                    <Select value={`${settings.gridStep} mm`} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: parseMillimeters(value) }))}>
                       <SelectTrigger id="grid-step" className="w-full"><SelectValue /></SelectTrigger>
                       <SelectContent align="start">
-                        <SelectItem value="3">3 mm</SelectItem>
-                        <SelectItem value="4">4 mm</SelectItem>
-                        <SelectItem value="5">5 mm</SelectItem>
-                        <SelectItem value="6">6 mm</SelectItem>
-                        <SelectItem value="7">7 mm</SelectItem>
-                        <SelectItem value="8">8 mm</SelectItem>
+                        <SelectItem value="3 mm">3 mm</SelectItem>
+                        <SelectItem value="4 mm">4 mm</SelectItem>
+                        <SelectItem value="5 mm">5 mm</SelectItem>
+                        <SelectItem value="6 mm">6 mm</SelectItem>
+                        <SelectItem value="7 mm">7 mm</SelectItem>
+                        <SelectItem value="8 mm">8 mm</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -604,16 +614,16 @@ function App() {
                 <div className="grid-settings-fields">
                   <div className="grid-control">
                     <Label htmlFor="grid-step">网格大小</Label>
-                    <Select value={String(settings.gridStep)} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: Number(value) }))}>
+                    <Select value={`${settings.gridStep} mm`} onValueChange={(value) => setSettings((current) => ({ ...current, gridStep: parseMillimeters(value) }))}>
                       <SelectTrigger id="grid-step" className="w-full"><SelectValue /></SelectTrigger>
                       <SelectContent align="start">
-                        <SelectItem value="2">2 mm</SelectItem>
-                        <SelectItem value="3">3 mm</SelectItem>
-                        <SelectItem value="4">4 mm</SelectItem>
-                        <SelectItem value="5">5 mm</SelectItem>
-                        <SelectItem value="6">6 mm</SelectItem>
-                        <SelectItem value="7">7 mm</SelectItem>
-                        <SelectItem value="8">8 mm</SelectItem>
+                        <SelectItem value="2 mm">2 mm</SelectItem>
+                        <SelectItem value="3 mm">3 mm</SelectItem>
+                        <SelectItem value="4 mm">4 mm</SelectItem>
+                        <SelectItem value="5 mm">5 mm</SelectItem>
+                        <SelectItem value="6 mm">6 mm</SelectItem>
+                        <SelectItem value="7 mm">7 mm</SelectItem>
+                        <SelectItem value="8 mm">8 mm</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -652,11 +662,11 @@ function App() {
               </div>
               {settings.showPunchHoles && <div className="hole-control hole-diameter-control">
                 <Label htmlFor="hole-diameter">孔径</Label>
-                <Select value={String(settings.holeDiameter)} onValueChange={(value) => setSettings((current) => ({ ...current, holeDiameter: Number(value) as 4 | 5 }))}>
+                <Select value={`${settings.holeDiameter} mm`} onValueChange={(value) => setSettings((current) => ({ ...current, holeDiameter: parseMillimeters(value) as 4 | 5 }))}>
                   <SelectTrigger id="hole-diameter" className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent align="start">
-                    <SelectItem value="4">4 mm</SelectItem>
-                    <SelectItem value="5">5 mm</SelectItem>
+                    <SelectItem value="4 mm">4 mm</SelectItem>
+                    <SelectItem value="5 mm">5 mm</SelectItem>
                   </SelectContent>
                 </Select>
               </div>}
