@@ -1,8 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import type { PageSettings, TimelineSide, BindingSide } from '@/types'
+import type { PageSettings, BindingSide } from '@/types'
 
 export const label = '时间轴'
 
@@ -12,20 +11,18 @@ export function drawTimeline(
   y: number,
   settings: PageSettings,
   scale: number,
-  side: TimelineSide,
   bindingSide: BindingSide,
 ) {
   const usableHeight = settings.height - settings.top - settings.bottom
-  const horizontalBinding = (bindingSide === 'left' || bindingSide === 'right') ? bindingSide : 'left'
-  const actualSide: 'left' | 'right' = side === 'binding'
-    ? horizontalBinding
-    : (horizontalBinding === 'left' ? 'right' : 'left')
+  const startHour = Math.max(0, Math.min(26, settings.timelineStart))
+  const endHour = Math.max(startHour + 1, Math.min(26, settings.timelineEnd))
+  const actualSide: 'left' | 'right' = (bindingSide === 'left' || bindingSide === 'right') ? bindingSide : 'left'
   const axisX = actualSide === 'left'
     ? x + settings.left * scale
     : x + (settings.width - settings.right) * scale
   const dir = actualSide === 'left' ? 1 : -1
 
-  const hourHeight = (usableHeight / 24) * scale
+  const hourHeight = (usableHeight / (endHour - startHour)) * scale
   const longTick = 7 * scale
   const shortTick = 3 * scale
   const labelGap = 3 * scale
@@ -40,8 +37,8 @@ export function drawTimeline(
   context.textAlign = actualSide === 'left' ? 'right' : 'left'
   context.textBaseline = 'middle'
 
-  for (let hour = 0; hour <= 24; hour += 1) {
-    const posY = y + (settings.top + (hour / 24) * usableHeight) * scale
+  for (let hour = startHour; hour <= endHour; hour += 1) {
+    const posY = y + (settings.top + ((hour - startHour) / (endHour - startHour)) * usableHeight) * scale
 
     context.beginPath()
     context.moveTo(axisX, posY)
@@ -52,7 +49,7 @@ export function drawTimeline(
     const labelX = actualSide === 'left' ? axisX - labelGap : axisX + labelGap
     context.fillText(label, labelX, posY + 0.4 * scale)
 
-    if (hour < 24) {
+    if (hour < endHour) {
       const halfY = posY + hourHeight / 2
       context.beginPath()
       context.moveTo(axisX, halfY)
@@ -72,18 +69,30 @@ interface TimelineSettingsProps {
 export function TimelineSettings({ settings, setSettings }: TimelineSettingsProps) {
   return (
     <Card className="settings-card">
-      <CardHeader><CardTitle>时间轴设置</CardTitle><CardDescription>选择刻度出现在装订边还是外侧。</CardDescription></CardHeader>
+      <CardHeader><CardTitle>时间轴设置</CardTitle><CardDescription>刻度固定显示在装订内侧，可设置起止时间。</CardDescription></CardHeader>
       <CardContent>
         <div className="timeline-controls">
-          <div className="timeline-side-control">
-            <Label htmlFor="timeline-side">刻度位置</Label>
-            <Select value={settings.timelineSide} onValueChange={(value) => setSettings((current) => ({ ...current, timelineSide: value as TimelineSide }))}>
-              <SelectTrigger id="timeline-side" className="w-full"><SelectValue /></SelectTrigger>
-              <SelectContent align="start">
-                <SelectItem value="binding">装订边</SelectItem>
-                <SelectItem value="outer">外侧</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="timeline-range-controls">
+            <div className="number-field">
+              <Label htmlFor="timeline-start">开始时间</Label>
+              <div className="input-with-unit">
+                <Input id="timeline-start" type="number" min="0" max="25" step="1" value={settings.timelineStart} onChange={(event) => {
+                  const value = Math.max(0, Math.min(settings.timelineEnd - 1, Number(event.target.value) || 0))
+                  setSettings((current) => ({ ...current, timelineStart: value }))
+                }} />
+                <span>时</span>
+              </div>
+            </div>
+            <div className="number-field">
+              <Label htmlFor="timeline-end">结束时间</Label>
+              <div className="input-with-unit">
+                <Input id="timeline-end" type="number" min="1" max="26" step="1" value={settings.timelineEnd} onChange={(event) => {
+                  const value = Math.max(settings.timelineStart + 1, Math.min(26, Number(event.target.value) || 1))
+                  setSettings((current) => ({ ...current, timelineEnd: value }))
+                }} />
+                <span>时</span>
+              </div>
+            </div>
           </div>
           <div className="grid-color-control">
             <Label htmlFor="timeline-color">刻度颜色</Label>

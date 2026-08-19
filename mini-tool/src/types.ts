@@ -1,7 +1,6 @@
 export type BindingSide = 'left' | 'right' | 'top' | 'bottom'
 export type PunchSide = '长边打孔' | '短边打孔'
 export type LayoutMode = 'center' | 'spread'
-export type TimelineSide = 'binding' | 'outer'
 
 export interface PageSettings {
   width: number
@@ -18,6 +17,7 @@ export interface PageSettings {
   holeDiameter: 4 | 5
   punchSide: PunchSide
   layout: LayoutMode
-  timelineSide: TimelineSide
+  timelineStart: number
+  timelineEnd: number
   timelineColor: string
 }

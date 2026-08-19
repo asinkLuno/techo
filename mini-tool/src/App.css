@@ -41,7 +41,9 @@ h1 { font-size: 18px; line-height: 1.1; letter-spacing: -.035em; }
 [data-slot='select-item'] { min-height: 32px; color: #40534b; font-size: 12px; }
 [data-slot='select-item'][data-highlighted] { color: #176d66; background: #eaf6f2; }
 
-.dimension-fields, .margin-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; }
+.dimension-fields, .margin-fields, .timeline-range-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 10px; }
+.timeline-controls { display: grid; gap: 14px; }
+
 .margin-fields .number-field:last-child { grid-column: span 2; }
 .number-field { min-width: 0; }
 .number-field [data-slot='label'] { margin: 0 0 7px 1px; color: #617069; font-size: 11px; font-weight: 560; }

@@ -75,7 +75,8 @@ const DEFAULT_SETTINGS: PageSettings = {
   holeDiameter: 4,
   punchSide: '长边打孔',
   layout: 'center',
-  timelineSide: 'binding',
+  timelineStart: 0,
+  timelineEnd: 26,
   timelineColor: '#24322e',
 }
 
@@ -153,10 +154,10 @@ type DrawFn = (
 ) => void
 
 const DRAW_FUNCTIONS: Record<Tool, DrawFn> = {
-  'green-dot': (ctx, x, y, settings, scale, bindingSide) => drawGreenDot(ctx, x, y, settings, scale),
-  'midori-grid': (ctx, x, y, settings, scale, bindingSide) => drawMidoriGrid(ctx, x, y, settings, scale),
+  'green-dot': (ctx, x, y, settings, scale) => drawGreenDot(ctx, x, y, settings, scale),
+  'midori-grid': (ctx, x, y, settings, scale) => drawMidoriGrid(ctx, x, y, settings, scale),
   'timeline': (ctx, x, y, settings, scale, bindingSide) =>
-    drawTimeline(ctx, x, y, settings, scale, settings.timelineSide, bindingSide),
+    drawTimeline(ctx, x, y, settings, scale, bindingSide),
 }
 
 function drawPreviewPage(
