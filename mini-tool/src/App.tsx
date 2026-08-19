@@ -130,7 +130,8 @@ function drawDotGrid(
   const cell = step * scale
   const dotRadius = Math.max(0.35 * scale, 0.4)
 
-  // Range from center outward, constrained by margins
+  // Range from center outward, constrained by margins.
+  // x 方向偏移 0.5、y 方向偏移 1.5 —— 与 src/techo/dot-grid.tex 保持一致，勿随意改动。
   const nMin = Math.ceil((settings.left + 0.5 - settings.width / 2) / step)
   const nMax = Math.floor((settings.width - settings.right - 0.5 - settings.width / 2) / step)
   const mMin = Math.ceil((-settings.height + settings.bottom + 1.5 - (-settings.height / 2)) / step)
@@ -307,13 +308,15 @@ function drawPreviewPage(
   settings: PageSettings,
   scale: number,
   bindingSide: BindingSide,
+  includePunchHoles = true,
 ) {
   if (tool === 'green-dot') {
     drawDotGrid(context, x, y, settings, scale)
   } else {
     drawMidoriGrid(context, x, y, settings, scale)
   }
-  if (settings.showPunchHoles) {
+  // 打孔仅在预览中绘制，PNG 导出时不显示（createPrintCanvas 传入 false）
+  if (includePunchHoles && settings.showPunchHoles) {
     drawPunchHoles(context, x, y, settings, scale, bindingSide, settings.punchSide)
   }
 }
@@ -339,7 +342,7 @@ function createPrintCanvas(tool: Tool, settings: PageSettings, page = 0) {
   const exportBindingSide: BindingSide = settings.punchSide === '长边打孔'
     ? (settings.layout === 'spread' && page === 0 ? 'right' : 'left')
     : (settings.layout === 'spread' && page === 0 ? 'bottom' : 'top')
-  drawPreviewPage(context, tool, 0, 0, pageSettings, PIXELS_PER_MM, exportBindingSide)
+  drawPreviewPage(context, tool, 0, 0, pageSettings, PIXELS_PER_MM, exportBindingSide, false)
   return canvas
 }
 
@@ -460,7 +463,16 @@ function App() {
   const applyPreset = (key: Preset) => {
     const next = PRESETS[key]
     setPreset(key)
-    setSettings((current) => ({ ...current, width: next.width, height: next.height }))
+    setSettings((current) => ({
+      ...DEFAULT_SETTINGS,
+      width: next.width,
+      height: next.height,
+      // 保留用户对网格/颜色的偏好
+      gridStep: current.gridStep,
+      gridColor: current.gridColor,
+      dotColor: current.dotColor,
+      centerDotColor: current.centerDotColor,
+    }))
   }
 
   const savePng = async () => {
@@ -662,7 +674,11 @@ function App() {
               </div>
               {settings.showPunchHoles && <div className="hole-control hole-diameter-control">
                 <Label htmlFor="hole-diameter">孔径</Label>
-                <Select value={`${settings.holeDiameter} mm`} onValueChange={(value) => setSettings((current) => ({ ...current, holeDiameter: parseMillimeters(value) as 4 | 5 }))}>
+                <Select value={`${settings.holeDiameter} mm`} onValueChange={(value) => {
+                    const parsed = parseMillimeters(value)
+                    const valid = parsed === 4 ? 4 : parsed === 5 ? 5 : 4
+                    setSettings((current) => ({ ...current, holeDiameter: valid }))
+                  }}>
                   <SelectTrigger id="hole-diameter" className="w-full"><SelectValue /></SelectTrigger>
                   <SelectContent align="start">
                     <SelectItem value="4 mm">4 mm</SelectItem>
