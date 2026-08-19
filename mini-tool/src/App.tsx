@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSepa
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import './App.css'
 
-import type { PageSettings, BindingSide, PunchSide } from '@/types'
+import type { PageSettings, BindingSide } from '@/types'
 import { drawGreenDot, GreenDotSettings, label as greenDotLabel } from '@/tools/green-dot'
 import { drawMidoriGrid, MidoriGridSettings, label as midoriGridLabel } from '@/tools/midori-grid'
 import { drawTimeline, TimelineSettings, label as timelineLabel } from '@/tools/timeline'
@@ -33,7 +33,6 @@ const PRESETS = {
   // ── M5 ──
   '62m5': { label: '62M5', note: '62 × 105 mm', width: 62, height: 105 },
   '67m5': { label: '67M5', note: '67 × 105 mm', width: 67, height: 105 },
-  '67m5l': { label: '67M5L', note: '105 × 67 mm', width: 105, height: 67 },
   '74m5': { label: '74M5', note: '74 × 105 mm', width: 74, height: 105 },
   // ── 其他 ──
   a4: { label: 'A4', note: '210 × 297 mm', width: 210, height: 297 },
@@ -45,7 +44,7 @@ const PRESET_GROUPS = [
   { label: 'A5', keys: ['a5', 'a5fc', 'a5s'] as const },
   { label: 'A6', keys: ['a6per', 'a6s', 'a6standard'] as const },
   { label: 'A7', keys: ['120a7', '127a7'] as const },
-  { label: 'M5', keys: ['62m5', '67m5', '67m5l', '74m5'] as const },
+  { label: 'M5', keys: ['62m5', '67m5', '74m5'] as const },
   { label: '其他', keys: ['a4', 'b5'] as const },
 ] as const
 
@@ -67,17 +66,17 @@ const DEFAULT_SETTINGS: PageSettings = {
   right: 5,
   bottom: 10,
   left: 15,
-  gridStep: 3,
+  gridStep: 5,
   gridColor: '#99def9',
   dotColor: '#39ff14',
   centerDotColor: '#960018',
   showPunchHoles: true,
   holeDiameter: 4,
-  punchSide: '长边打孔',
-  layout: 'center',
+  timelinePages: 1,
+  timelineSwapPages: false,
   timelineStart: 0,
   timelineEnd: 26,
-  timelineColor: '#24322e',
+  timelineColor: '#7a7a7a',
 }
 
 function parseMillimeters(value: string | null): number {
@@ -94,11 +93,9 @@ function drawPunchHoles(
   settings: PageSettings,
   scale: number,
   bindingSide: BindingSide,
-  punchSide: PunchSide,
 ) {
   const pitch = 20
-  const isPortrait = settings.height >= settings.width
-  const punchAlongHeight = (punchSide === '长边打孔' && isPortrait) || (punchSide === '短边打孔' && !isPortrait)
+  const punchAlongHeight = settings.height >= settings.width
   const punchLength = punchAlongHeight ? settings.height : settings.width
   const count = Math.max(1, Math.floor((punchLength - 20) / pitch) + 1)
   const firstHole = (punchLength - (count - 1) * pitch) / 2
@@ -172,8 +169,28 @@ function drawPreviewPage(
 ) {
   drawFn(context, x, y, settings, scale, bindingSide)
   if (includePunchHoles && settings.showPunchHoles) {
-    drawPunchHoles(context, x, y, settings, scale, bindingSide, settings.punchSide)
+    drawPunchHoles(context, x, y, settings, scale, bindingSide)
   }
+}
+
+function getPageCount() {
+  return 2
+}
+
+function getPageSettings(drawFn: DrawFn, settings: PageSettings, pageIndex: number) {
+  const pageSettings = pageIndex === 0
+    ? { ...settings, left: settings.right, right: settings.left }
+    : settings
+
+  if (drawFn !== DRAW_FUNCTIONS.timeline || settings.timelinePages !== 2) {
+    return pageSettings
+  }
+
+  const timelinePage = settings.timelineSwapPages ? (pageIndex === 0 ? 1 : 0) : pageIndex
+  const splitHour = Math.floor((settings.timelineStart + settings.timelineEnd) / 2)
+  return timelinePage === 0
+    ? { ...pageSettings, timelineEnd: splitHour }
+    : { ...pageSettings, timelineStart: splitHour }
 }
 
 function createPrintCanvas(drawFn: DrawFn, settings: PageSettings, page = 0) {
@@ -189,14 +206,12 @@ function createPrintCanvas(drawFn: DrawFn, settings: PageSettings, page = 0) {
   const context = canvas.getContext('2d')
   if (!context) throw new Error('当前设备不支持 PNG 导出。')
 
-  const pageSettings = settings.layout === 'spread' && page === 0
-    ? { ...settings, left: settings.right, right: settings.left }
-    : settings
-  context.fillStyle = '#fffefd'
-  context.fillRect(0, 0, width, height)
-  const exportBindingSide: BindingSide = settings.punchSide === '长边打孔'
-    ? (settings.layout === 'spread' && page === 0 ? 'right' : 'left')
-    : (settings.layout === 'spread' && page === 0 ? 'bottom' : 'top')
+  const pageSettings = getPageSettings(drawFn, settings, page)
+  const isLeftPage = page === 0
+  const isPortrait = settings.height >= settings.width
+  const exportBindingSide: BindingSide = isPortrait
+    ? (isLeftPage ? 'right' : 'left')
+    : (isLeftPage ? 'bottom' : 'top')
   drawPreviewPage(context, drawFn, 0, 0, pageSettings, PIXELS_PER_MM, exportBindingSide, false)
   return canvas
 }
@@ -224,7 +239,7 @@ function PreviewCanvas({ drawFn, settings }: { drawFn: DrawFn; settings: PageSet
       context.fillStyle = '#eef0ed'
       context.fillRect(0, 0, bounds.width, bounds.height)
 
-      const pageCount = settings.layout === 'center' ? 1 : 2
+      const pageCount = getPageCount()
       const gap = pageCount === 2 ? 18 : 0
       const scale = Math.min(
         Math.max(bounds.width - 64, 1) / (settings.width * pageCount + gap),
@@ -237,12 +252,12 @@ function PreviewCanvas({ drawFn, settings }: { drawFn: DrawFn; settings: PageSet
 
       for (let page = 0; page < pageCount; page += 1) {
         const pageX = startX + page * (pageWidth + gap * scale)
-        const pageSettings = settings.layout === 'spread' && page === 0
-          ? { ...settings, left: settings.right, right: settings.left }
-          : settings
-        const bindingSide: BindingSide = settings.punchSide === '长边打孔'
-          ? (settings.layout === 'spread' && page === 0 ? 'right' : 'left')
-          : (settings.layout === 'spread' && page === 0 ? 'bottom' : 'top')
+        const pageSettings = getPageSettings(drawFn, settings, page)
+        const isLeftPage = page === 0
+        const isPortrait = settings.height >= settings.width
+        const bindingSide: BindingSide = isPortrait
+          ? (isLeftPage ? 'right' : 'left')
+          : (isLeftPage ? 'bottom' : 'top')
 
         context.save()
         context.shadowColor = 'rgba(25, 37, 35, 0.17)'
@@ -260,7 +275,7 @@ function PreviewCanvas({ drawFn, settings }: { drawFn: DrawFn; settings: PageSet
         context.fillStyle = '#87908c'
         context.font = '500 10px sans-serif'
         context.textAlign = 'center'
-        const pageLabel = pageCount === 1 ? '单页' : page === 0 ? '左 · 偶数页' : '右 · 奇数页'
+        const pageLabel = page === 0 ? '左页 · 偶数页' : '右页 · 奇数页'
         context.fillText(pageLabel, pageX + pageWidth / 2, startY + pageHeight + 25)
       }
 
@@ -269,7 +284,7 @@ function PreviewCanvas({ drawFn, settings }: { drawFn: DrawFn; settings: PageSet
       context.textAlign = 'left'
       context.fillText(`${settings.width} × ${settings.height} mm`, 24, 26)
       context.textAlign = 'right'
-      context.fillText(pageCount === 1 ? '居中 · 1 页' : '左右排版 · 2 页', bounds.width - 24, 26)
+      context.fillText('左右排版 · 2 页', bounds.width - 24, 26)
     }
 
     const observer = new ResizeObserver(render)
@@ -345,7 +360,7 @@ function App() {
     setExportMessage('正在生成 300 DPI PNG…')
     try {
       const drawFn = DRAW_FUNCTIONS[tool]
-      const pageCount = settings.layout === 'center' ? 1 : 2
+      const pageCount = getPageCount()
       for (let page = 0; page < pageCount; page += 1) {
         if (pageCount === 2) {
           setExportMessage(page === 0 ? '正在保存左页（偶数页）…' : '正在保存右页（奇数页）…')
@@ -354,7 +369,7 @@ function App() {
         await miniTool.saveImageToPhotosAlbum({ filePath: dataUrl })
       }
       setExportState('saved')
-      setExportMessage(pageCount === 1 ? 'PNG 已保存到系统相册。' : '左右两页 PNG 已分别保存到相册。')
+      setExportMessage('左右两页 PNG 已分别保存到相册。')
     } catch (error) {
       setExportState('error')
       setExportMessage(error instanceof Error ? error.message : '保存失败，请检查相册权限后重试。')
@@ -366,14 +381,13 @@ function App() {
     setSettings({ ...DEFAULT_SETTINGS, width: selectedPreset.width, height: selectedPreset.height })
   }
 
-  const pageCount = settings.layout === 'center' ? 1 : 2
+  const drawFn = DRAW_FUNCTIONS[tool]
+  const pageCount = getPageCount()
 
   const toolLabel =
     tool === 'green-dot' ? greenDotLabel
     : tool === 'midori-grid' ? midoriGridLabel
     : timelineLabel
-
-  const drawFn = DRAW_FUNCTIONS[tool]
 
   return (
     <main className="tool-shell">
@@ -453,8 +467,6 @@ function App() {
           {tool === 'green-dot' && <GreenDotSettings settings={settings} setSettings={setSettings} />}
           {tool === 'midori-grid' && <MidoriGridSettings settings={settings} setSettings={setSettings} />}
           {tool === 'timeline' && <TimelineSettings settings={settings} setSettings={setSettings} />}
-
-          {/* ── Shared: punch hole preview ── */}
           <Card className="settings-card">
             <CardHeader><CardTitle>打孔预览</CardTitle><CardDescription>仅在右侧 Canvas 辅助定位，不会绘制进最终 PNG；孔中心距装订边 5 mm。</CardDescription></CardHeader>
             <CardContent>
@@ -482,40 +494,15 @@ function App() {
                   </SelectContent>
                 </Select>
               </div>}
-              {settings.showPunchHoles && <div className="hole-control punch-side-control">
-                <Label htmlFor="punch-side">打孔边</Label>
-                <Select value={settings.punchSide} onValueChange={(value) => setSettings((current) => ({ ...current, punchSide: value as PunchSide }))}>
-                  <SelectTrigger id="punch-side" className="w-full"><SelectValue /></SelectTrigger>
-                  <SelectContent align="start">
-                    <SelectItem value="长边打孔">长边打孔</SelectItem>
-                    <SelectItem value="短边打孔">短边打孔</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>}
-            </CardContent>
-          </Card>
-
-          {/* ── Shared: layout mode ── */}
-          <Card className="settings-card">
-            <CardHeader><CardTitle>排版方式</CardTitle><CardDescription>左右排版将输出装订方向相对的偶数页与奇数页。</CardDescription></CardHeader>
-            <CardContent>
-              <div className="layout-options" role="radiogroup" aria-label="排版方式">
-                <Button className={`layout-option ${settings.layout === 'center' ? 'is-selected' : ''}`} variant="outline" type="button" role="radio" aria-checked={settings.layout === 'center'} onClick={() => setSettings((current) => ({ ...current, layout: 'center' }))}>
-                  <span className="layout-diagram one-page" aria-hidden="true"><i /></span><span><strong>居中</strong><small>生成 1 页</small></span>
-                </Button>
-                <Button className={`layout-option ${settings.layout === 'spread' ? 'is-selected' : ''}`} variant="outline" type="button" role="radio" aria-checked={settings.layout === 'spread'} onClick={() => setSettings((current) => ({ ...current, layout: 'spread' }))}>
-                  <span className="layout-diagram two-pages" aria-hidden="true"><i /><i /></span><span><strong>左右排版</strong><small>镜像生成 2 页</small></span>
-                </Button>
-              </div>
             </CardContent>
           </Card>
 
           <div className="export-controls">
             <Button className="save-button" type="button" disabled={exportState === 'saving'} onClick={savePng}>
-              {exportState === 'saving' ? '正在保存 PNG…' : settings.layout === 'spread' ? '分别保存左右页 PNG' : '保存 PNG 到相册'}
+              {exportState === 'saving' ? '正在保存 PNG…' : pageCount === 2 ? '分别保存左右页 PNG' : '保存 PNG 到相册'}
             </Button>
             <p className={`export-message ${exportState}`} aria-live="polite">
-              {exportMessage || (settings.layout === 'spread' ? '输出为两张 300 DPI PNG，左右页会分别保存到相册。' : '输出为一张 300 DPI PNG。')}
+              {exportMessage || (pageCount === 2 ? '输出为两张 300 DPI PNG，左右页会分别保存到相册。' : '输出为一张 300 DPI PNG。')}
             </p>
           </div>
         </aside>

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { PageSettings, BindingSide } from '@/types'
 
 export const label = '时间轴'
@@ -27,11 +28,15 @@ export function drawTimeline(
   const shortTick = 3 * scale
   const labelGap = 3 * scale
   const labelSize = Math.max(3.6 * scale, 3)
+  const lineWidth = Math.max(0.22 * scale, 0.2)
+  const extensionEndX = actualSide === 'left'
+    ? x + (settings.width * 2 / 3) * scale
+    : x + (settings.width / 3) * scale
 
   context.save()
   context.strokeStyle = settings.timelineColor
   context.fillStyle = settings.timelineColor
-  context.lineWidth = Math.max(0.22 * scale, 0.2)
+  context.lineWidth = lineWidth
   context.lineCap = 'butt'
   context.font = `400 ${labelSize}px "3270 Nerd Font", sans-serif`
   context.textAlign = actualSide === 'left' ? 'right' : 'left'
@@ -44,6 +49,15 @@ export function drawTimeline(
     context.moveTo(axisX, posY)
     context.lineTo(axisX + dir * longTick, posY)
     context.stroke()
+
+    const extensionStartX = axisX + dir * longTick
+    const extensionLength = Math.abs(extensionEndX - extensionStartX)
+    const dotSpacing = hourHeight / 2
+    for (let distance = dotSpacing; distance < extensionLength; distance += dotSpacing) {
+      context.beginPath()
+      context.arc(extensionStartX + dir * distance, posY, lineWidth / 2, 0, Math.PI * 2)
+      context.fill()
+    }
 
     const label = String(hour).padStart(2, '0')
     const labelX = actualSide === 'left' ? axisX - labelGap : axisX + labelGap
@@ -69,9 +83,29 @@ interface TimelineSettingsProps {
 export function TimelineSettings({ settings, setSettings }: TimelineSettingsProps) {
   return (
     <Card className="settings-card">
-      <CardHeader><CardTitle>时间轴设置</CardTitle><CardDescription>刻度固定显示在装订内侧，可设置起止时间。</CardDescription></CardHeader>
+      <CardHeader><CardTitle>时间轴设置</CardTitle><CardDescription>刻度固定显示在装订内侧，可设置起止时间和页数。</CardDescription></CardHeader>
       <CardContent>
         <div className="timeline-controls">
+          <div className="timeline-pages-control">
+            <Label htmlFor="timeline-pages">时间轴页数</Label>
+            <Select value={`${settings.timelinePages} 页`} onValueChange={(value) => setSettings((current) => ({ ...current, timelinePages: value === '2 页' ? 2 : 1 }))}>
+              <SelectTrigger id="timeline-pages" className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent align="start">
+                <SelectItem value="1 页">单页</SelectItem>
+                <SelectItem value="2 页">左右排版 · 2 页</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {settings.timelinePages === 2 && <div className="timeline-pages-control">
+            <Label htmlFor="timeline-swap-pages">左右页时间轴</Label>
+            <Select value={settings.timelineSwapPages ? '交换' : '默认'} onValueChange={(value) => setSettings((current) => ({ ...current, timelineSwapPages: value === '交换' }))}>
+              <SelectTrigger id="timeline-swap-pages" className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent align="start">
+                <SelectItem value="默认">默认顺序</SelectItem>
+                <SelectItem value="交换">交换左右页</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>}
           <div className="timeline-range-controls">
             <div className="number-field">
               <Label htmlFor="timeline-start">开始时间</Label>
