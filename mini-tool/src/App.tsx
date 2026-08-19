@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, Fragment, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import './App.css'
 
@@ -12,27 +12,42 @@ type Tool = 'green-dot' | 'midori-grid'
 type LayoutMode = 'center' | 'spread'
 type Dimension = 'width' | 'height'
 type Margin = 'top' | 'right' | 'bottom' | 'left'
-type BindingSide = 'left' | 'right'
+type BindingSide = 'left' | 'right' | 'top' | 'bottom'
+type PunchSide = 'long' | 'short'
 
 const PRESETS = {
-  cozyca: { label: 'CozyCa', note: '100 × 90 mm', width: 100, height: 90 },
+  // ── TN ──
+  tn: { label: 'TN', note: '110 × 210 mm', width: 110, height: 210 },
+  tnp: { label: 'TN-P', note: '88 × 125 mm', width: 88, height: 125 },
+  // ── A5 ──
+  a5: { label: 'A5', note: '148 × 210 mm', width: 148, height: 210 },
+  a5fc: { label: 'A5 FC', note: '107 × 172 mm', width: 107, height: 172 },
+  a5s: { label: 'A5 Slim', note: '110 × 210 mm', width: 110, height: 210 },
+  // ── A6 ──
+  a6per: { label: 'A6 Personal', note: '95 × 172 mm', width: 95, height: 172 },
+  a6s: { label: 'A6 Slim', note: '80 × 172 mm', width: 80, height: 172 },
+  a6standard: { label: 'A6 Standard', note: '105 × 148 mm', width: 105, height: 148 },
+  // ── A7 ──
+  '120a7': { label: '120A7', note: '80 × 120 mm', width: 80, height: 120 },
+  '127a7': { label: '127A7', note: '80 × 127 mm', width: 80, height: 127 },
+  // ── M5 ──
   '62m5': { label: '62M5', note: '62 × 105 mm', width: 62, height: 105 },
   '67m5': { label: '67M5', note: '67 × 105 mm', width: 67, height: 105 },
   '67m5l': { label: '67M5L', note: '105 × 67 mm', width: 105, height: 67 },
   '74m5': { label: '74M5', note: '74 × 105 mm', width: 74, height: 105 },
+  // ── 其他 ──
   a4: { label: 'A4', note: '210 × 297 mm', width: 210, height: 297 },
   b5: { label: 'B5', note: '176 × 250 mm', width: 176, height: 250 },
-  a5: { label: 'A5', note: '148 × 210 mm', width: 148, height: 210 },
-  a5fc: { label: 'A5 FC', note: '107 × 172 mm', width: 107, height: 172 },
-  a6per: { label: 'A6 Personal', note: '95 × 172 mm', width: 95, height: 172 },
-  a6s: { label: 'A6 Slim', note: '80 × 172 mm', width: 80, height: 172 },
-  a6standard: { label: 'A6 Standard', note: '105 × 148 mm', width: 105, height: 148 },
-  '127a7': { label: '127A7', note: '80 × 127 mm', width: 80, height: 127 },
-  '120a7': { label: '120A7', note: '80 × 120 mm', width: 80, height: 120 },
-  a5s: { label: 'A5 Slim', note: '110 × 210 mm', width: 110, height: 210 },
-  tn: { label: 'TN', note: '110 × 210 mm', width: 110, height: 210 },
-  tnp: { label: 'TN-P', note: '88 × 125 mm', width: 88, height: 125 },
 } as const
+
+const PRESET_GROUPS = [
+  { label: 'TN', keys: ['tn', 'tnp'] as const },
+  { label: 'A5', keys: ['a5', 'a5fc', 'a5s'] as const },
+  { label: 'A6', keys: ['a6per', 'a6s', 'a6standard'] as const },
+  { label: 'A7', keys: ['120a7', '127a7'] as const },
+  { label: 'M5', keys: ['62m5', '67m5', '67m5l', '74m5'] as const },
+  { label: '其他', keys: ['a4', 'b5'] as const },
+] as const
 
 type Preset = keyof typeof PRESETS
 
@@ -48,6 +63,7 @@ interface PageSettings {
   dotColor: string
   showPunchHoles: boolean
   holeDiameter: 4 | 5
+  punchSide: PunchSide
   layout: LayoutMode
 }
 
@@ -78,6 +94,7 @@ const DEFAULT_SETTINGS: PageSettings = {
   dotColor: '#39ff14',
   showPunchHoles: true,
   holeDiameter: 4,
+  punchSide: 'long',
   layout: 'center',
 }
 
@@ -139,23 +156,43 @@ function drawPunchHoles(
   settings: PageSettings,
   scale: number,
   bindingSide: BindingSide,
+  punchSide: PunchSide,
 ) {
   const pitch = 20
-  const count = Math.max(1, Math.floor((settings.height - 20) / pitch) + 1)
-  const firstHole = (settings.height - (count - 1) * pitch) / 2
-  const holeX = x + (bindingSide === 'left' ? 5 : settings.width - 5) * scale
+  const isPortrait = settings.height >= settings.width
+  // Determine which dimension to punch along
+  // long edge = max(width, height), short edge = min(width, height)
+  const punchAlongHeight = (punchSide === 'long' && isPortrait) || (punchSide === 'short' && !isPortrait)
+  const punchLength = punchAlongHeight ? settings.height : settings.width
+  const count = Math.max(1, Math.floor((punchLength - 20) / pitch) + 1)
+  const firstHole = (punchLength - (count - 1) * pitch) / 2
   const radius = (settings.holeDiameter / 2) * scale
 
   context.save()
   context.fillStyle = '#fffefd'
   context.strokeStyle = '#5f9f9a'
   context.lineWidth = Math.max(0.35 * scale, 0.45)
-  for (let index = 0; index < count; index += 1) {
-    context.beginPath()
-    context.arc(holeX, y + (firstHole + index * pitch) * scale, radius, 0, Math.PI * 2)
-    context.fill()
-    context.stroke()
+
+  if (punchAlongHeight) {
+    // Holes along vertical edge (left or right)
+    const holeX = x + (bindingSide === 'left' ? 5 : settings.width - 5) * scale
+    for (let index = 0; index < count; index += 1) {
+      context.beginPath()
+      context.arc(holeX, y + (firstHole + index * pitch) * scale, radius, 0, Math.PI * 2)
+      context.fill()
+      context.stroke()
+    }
+  } else {
+    // Holes along horizontal edge (top or bottom)
+    const holeY = y + (bindingSide === 'top' ? 5 : settings.height - 5) * scale
+    for (let index = 0; index < count; index += 1) {
+      context.beginPath()
+      context.arc(x + (firstHole + index * pitch) * scale, holeY, radius, 0, Math.PI * 2)
+      context.fill()
+      context.stroke()
+    }
   }
+
   context.restore()
 }
 
@@ -264,7 +301,7 @@ function drawPreviewPage(
     drawMidoriGrid(context, x, y, settings, scale)
   }
   if (settings.showPunchHoles) {
-    drawPunchHoles(context, x, y, settings, scale, bindingSide)
+    drawPunchHoles(context, x, y, settings, scale, bindingSide, settings.punchSide)
   }
 }
 
@@ -286,7 +323,10 @@ function createPrintCanvas(tool: Tool, settings: PageSettings, page = 0) {
     : settings
   context.fillStyle = '#fffefd'
   context.fillRect(0, 0, width, height)
-  drawPreviewPage(context, tool, 0, 0, pageSettings, PIXELS_PER_MM, 'left')
+  const exportBindingSide: BindingSide = settings.punchSide === 'long'
+    ? (settings.layout === 'spread' && page === 0 ? 'right' : 'left')
+    : (settings.layout === 'spread' && page === 0 ? 'bottom' : 'top')
+  drawPreviewPage(context, tool, 0, 0, pageSettings, PIXELS_PER_MM, exportBindingSide)
   return canvas
 }
 
@@ -329,7 +369,9 @@ function PreviewCanvas({ tool, settings }: { tool: Tool; settings: PageSettings 
         const pageSettings = settings.layout === 'spread' && page === 0
           ? { ...settings, left: settings.right, right: settings.left }
           : settings
-        const bindingSide: BindingSide = settings.layout === 'spread' && page === 0 ? 'right' : 'left'
+        const bindingSide: BindingSide = settings.punchSide === 'long'
+          ? (settings.layout === 'spread' && page === 0 ? 'right' : 'left')
+          : (settings.layout === 'spread' && page === 0 ? 'bottom' : 'top')
 
         context.save()
         context.shadowColor = 'rgba(25, 37, 35, 0.17)'
@@ -347,7 +389,7 @@ function PreviewCanvas({ tool, settings }: { tool: Tool; settings: PageSettings 
         context.fillStyle = '#87908c'
         context.font = '500 10px sans-serif'
         context.textAlign = 'center'
-        const pageLabel = pageCount === 1 ? 'SINGLE PAGE' : page === 0 ? 'LEFT · EVEN' : 'RIGHT · ODD'
+        const pageLabel = pageCount === 1 ? '单页' : page === 0 ? '左 · 偶数页' : '右 · 奇数页'
         context.fillText(pageLabel, pageX + pageWidth / 2, startY + pageHeight + 25)
       }
 
@@ -356,7 +398,7 @@ function PreviewCanvas({ tool, settings }: { tool: Tool; settings: PageSettings 
       context.textAlign = 'left'
       context.fillText(`${settings.width} × ${settings.height} mm`, 24, 26)
       context.textAlign = 'right'
-      context.fillText(pageCount === 1 ? 'CENTER · 1 PAGE' : 'SPREAD · 2 PAGES', bounds.width - 24, 26)
+      context.fillText(pageCount === 1 ? '居中 · 1 页' : '左右排版 · 2 页', bounds.width - 24, 26)
     }
 
     const observer = new ResizeObserver(render)
@@ -365,8 +407,8 @@ function PreviewCanvas({ tool, settings }: { tool: Tool; settings: PageSettings 
     return () => observer.disconnect()
   }, [tool, settings])
 
-  const toolLabel = tool === 'green-dot' ? 'Green Dot' : 'Midori Grid'
-  return <canvas ref={canvasRef} className="preview-canvas" aria-label={`${toolLabel} page preview`} />
+  const toolLabel = tool === 'green-dot' ? '绿点' : '余白方格'
+  return <canvas ref={canvasRef} className="preview-canvas" aria-label={`${toolLabel} 页面预览`} />
 }
 
 // ── Shared UI components ──
@@ -441,37 +483,33 @@ function App() {
   }
 
   const pageCount = settings.layout === 'center' ? 1 : 2
-  const usableWidth = Math.max(0, settings.width - settings.left - settings.right)
-  const usableHeight = Math.max(0, settings.height - settings.top - settings.bottom)
 
-  const toolLabel = tool === 'green-dot' ? 'Green Dot' : 'Midori Grid'
-  const toolDescription = tool === 'green-dot'
-    ? `${settings.gridStep} mm 点阵 · 可调点色 · 中心红点 #960018`
-    : '5 mm 方格线 · 空心交叉点 · 打孔定位'
+
+  const toolLabel = tool === 'green-dot' ? '绿点' : '余白方格'
+
 
   return (
     <main className="tool-shell">
       <header className="app-header">
         <div className="brand">
           <div className="brand-mark" aria-hidden="true">✦</div>
-          <div><p className="eyebrow">TECHO MINI TOOL</p><h1>{toolLabel}</h1></div>
+          <div><p className="eyebrow">TECHO 小工具</p><h1>{toolLabel}</h1></div>
         </div>
-        <p className="header-note">Python + XeLaTeX · {toolDescription}</p>
       </header>
 
       <div className="workspace">
-        <aside className="control-panel" aria-label="Page layout controls">
+        <aside className="control-panel" aria-label="页面布局控制">
           {/* ── Tool selector ── */}
           <div className="panel-intro">
-            <p className="eyebrow">VERSION</p>
+            <p className="eyebrow">版本</p>
             <h2>版式选择</h2>
             <p>选择要预览和导出的版式类型。</p>
           </div>
 
           <Tabs value={tool} onValueChange={(value) => setTool(value as Tool)} className="tool-tabs">
             <TabsList className="tool-tabs-list">
-              <TabsTrigger value="green-dot">Green Dot</TabsTrigger>
-              <TabsTrigger value="midori-grid">Midori Grid</TabsTrigger>
+              <TabsTrigger value="green-dot">绿点</TabsTrigger>
+              <TabsTrigger value="midori-grid">余白方格</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -486,8 +524,19 @@ function App() {
                     <SelectValue placeholder="选择纸张尺寸" />
                   </SelectTrigger>
                   <SelectContent align="start">
-                    {(Object.entries(PRESETS) as [Preset, (typeof PRESETS)[Preset]][]).map(([key, option]) => (
-                      <SelectItem key={key} value={key}>{option.label} · {option.note}</SelectItem>
+                    {PRESET_GROUPS.map((group, gi) => (
+                      <Fragment key={group.label}>
+                        {gi > 0 && <SelectSeparator />}
+                        <SelectGroup>
+                          <SelectLabel>{group.label}</SelectLabel>
+                          {group.keys.map((key) => {
+                            const option = PRESETS[key]
+                            return (
+                              <SelectItem key={key} value={key}>{option.label} · {option.note}</SelectItem>
+                            )
+                          })}
+                        </SelectGroup>
+                      </Fragment>
                     ))}
                   </SelectContent>
                 </Select>
@@ -601,6 +650,16 @@ function App() {
                   </SelectContent>
                 </Select>
               </div>}
+              {settings.showPunchHoles && <div className="hole-control punch-side-control">
+                <Label htmlFor="punch-side">打孔边</Label>
+                <Select value={settings.punchSide} onValueChange={(value) => setSettings((current) => ({ ...current, punchSide: value as PunchSide }))}>
+                  <SelectTrigger id="punch-side" className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="long">长边打孔</SelectItem>
+                    <SelectItem value="short">短边打孔</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>}
             </CardContent>
           </Card>
 
@@ -608,7 +667,7 @@ function App() {
           <Card className="settings-card">
             <CardHeader><CardTitle>排版方式</CardTitle><CardDescription>左右排版将输出装订方向相对的偶数页与奇数页。</CardDescription></CardHeader>
             <CardContent>
-              <div className="layout-options" role="radiogroup" aria-label="Layout mode">
+              <div className="layout-options" role="radiogroup" aria-label="排版方式">
                 <Button className={`layout-option ${settings.layout === 'center' ? 'is-selected' : ''}`} variant="outline" type="button" role="radio" aria-checked={settings.layout === 'center'} onClick={() => setSettings((current) => ({ ...current, layout: 'center' }))}>
                   <span className="layout-diagram one-page" aria-hidden="true"><i /></span><span><strong>居中</strong><small>生成 1 页</small></span>
                 </Button>
@@ -629,35 +688,16 @@ function App() {
           </div>
         </aside>
 
-        <section className="preview-area" aria-label="Canvas preview">
+        <section className="preview-area" aria-label="画布预览">
           <div className="preview-toolbar">
             <div>
-              <p className="eyebrow">LIVE CANVAS</p>
-              <h2>{toolLabel} 网格预览</h2>
+              <p className="eyebrow">实时预览</p>
+              <h2>{toolLabel}</h2>
             </div>
-            <div className="page-count">OLT&nbsp; {pageCount} 页输出</div>
+            <div className="page-count">输出&nbsp; {pageCount} 页</div>
           </div>
           <div className="canvas-frame"><PreviewCanvas tool={tool} settings={settings} /></div>
-          <footer className="preview-footer">
-            {settings.layout === 'spread' ? (
-              <>
-                <span>装订边距</span>
-                <strong>{settings.left.toFixed(0)} mm</strong>
-                <span className="footer-dot" />
-                <span>{tool === 'green-dot' ? `${settings.gridStep} mm 点阵 · 点 ${settings.dotColor.toUpperCase()} · 中心红点` : `${settings.gridStep} mm 网格 · ${settings.showPunchHoles ? `${settings.holeDiameter} mm 孔` : '无打孔'}`}</span>
-                <span className="footer-dot" />
-                <span>左右页面已镜像</span>
-              </>
-            ) : (
-              <>
-                <span>可用网格区域</span>
-                <strong>{usableWidth.toFixed(0)} × {usableHeight.toFixed(0)} mm</strong>
-                <span className="footer-dot" />
-                <span>{tool === 'green-dot' ? `${settings.gridStep} mm 点阵 · 点 ${settings.dotColor.toUpperCase()} · 中心红点` : `${settings.gridStep} mm 网格 · ${settings.showPunchHoles ? `${settings.holeDiameter} mm 孔 · 进深 5 mm` : '网格 · 未显示打孔'}`}</span>
-              </>
-            )}
-          </footer>
-        </section>
+          </section>
       </div>
     </main>
   )
