@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -5,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { PageSettings, BindingSide } from '@/types'
 
 export const label = '时间轴'
+const MAX_HOUR = 99
 
 export function drawTimeline(
   context: CanvasRenderingContext2D,
@@ -15,8 +18,8 @@ export function drawTimeline(
   bindingSide: BindingSide,
 ) {
   const usableHeight = settings.height - settings.top - settings.bottom
-  const startHour = Math.max(0, Math.min(26, settings.timelineStart))
-  const endHour = Math.max(startHour + 1, Math.min(26, settings.timelineEnd))
+  const startHour = Math.max(0, Math.min(MAX_HOUR - 1, settings.timelineStart))
+  const endHour = Math.max(startHour + 1, Math.min(MAX_HOUR, settings.timelineEnd))
   const actualSide: 'left' | 'right' = (bindingSide === 'left' || bindingSide === 'right') ? bindingSide : 'left'
   const axisX = actualSide === 'left'
     ? x + settings.left * scale
@@ -81,6 +84,32 @@ interface TimelineSettingsProps {
 }
 
 export function TimelineSettings({ settings, setSettings }: TimelineSettingsProps) {
+  const [startDraft, setStartDraft] = useState(String(settings.timelineStart))
+  const [endDraft, setEndDraft] = useState(String(settings.timelineEnd))
+
+  useEffect(() => {
+    setStartDraft(String(settings.timelineStart))
+    setEndDraft(String(settings.timelineEnd))
+  }, [settings.timelineStart, settings.timelineEnd])
+
+  const commitStart = () => {
+    const parsed = Number.parseInt(startDraft, 10)
+    const value = Number.isFinite(parsed)
+      ? Math.max(0, Math.min(settings.timelineEnd - 1, parsed))
+      : settings.timelineStart
+    setStartDraft(String(value))
+    setSettings((current) => ({ ...current, timelineStart: value }))
+  }
+
+  const commitEnd = () => {
+    const parsed = Number.parseInt(endDraft, 10)
+    const value = Number.isFinite(parsed)
+      ? Math.max(settings.timelineStart + 1, Math.min(MAX_HOUR, parsed))
+      : settings.timelineEnd
+    setEndDraft(String(value))
+    setSettings((current) => ({ ...current, timelineEnd: value }))
+  }
+
   return (
     <Card className="settings-card">
       <CardHeader><CardTitle>时间轴设置</CardTitle><CardDescription>刻度固定显示在装订内侧，可设置起止时间和页数。</CardDescription></CardHeader>
@@ -110,20 +139,14 @@ export function TimelineSettings({ settings, setSettings }: TimelineSettingsProp
             <div className="number-field">
               <Label htmlFor="timeline-start">开始时间</Label>
               <div className="input-with-unit">
-                <Input id="timeline-start" type="number" min="0" max="25" step="1" value={settings.timelineStart} onChange={(event) => {
-                  const value = Math.max(0, Math.min(settings.timelineEnd - 1, Number(event.target.value) || 0))
-                  setSettings((current) => ({ ...current, timelineStart: value }))
-                }} />
+                <Input id="timeline-start" type="number" min="0" max={MAX_HOUR - 1} step="1" value={startDraft} onChange={(event) => setStartDraft(event.target.value)} onBlur={commitStart} />
                 <span>时</span>
               </div>
             </div>
             <div className="number-field">
               <Label htmlFor="timeline-end">结束时间</Label>
               <div className="input-with-unit">
-                <Input id="timeline-end" type="number" min="1" max="26" step="1" value={settings.timelineEnd} onChange={(event) => {
-                  const value = Math.max(settings.timelineStart + 1, Math.min(26, Number(event.target.value) || 1))
-                  setSettings((current) => ({ ...current, timelineEnd: value }))
-                }} />
+                <Input id="timeline-end" type="number" min="1" max={MAX_HOUR} step="1" value={endDraft} onChange={(event) => setEndDraft(event.target.value)} onBlur={commitEnd} />
                 <span>时</span>
               </div>
             </div>
