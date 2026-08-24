@@ -31,7 +31,7 @@ export function drawTimeline(
   const shortTick = 3 * scale
   const labelGap = 3 * scale
   const labelSize = Math.max(3.6 * scale, 3)
-  const lineWidth = Math.max(0.22 * scale, 0.2)
+  const lineWidth = Math.max(0.15 * scale, 0.2)
   const extensionEndX = actualSide === 'left'
     ? x + (settings.width * 2 / 3) * scale
     : x + (settings.width / 3) * scale
@@ -41,7 +41,7 @@ export function drawTimeline(
   context.fillStyle = settings.timelineColor
   context.lineWidth = lineWidth
   context.lineCap = 'butt'
-  context.font = `400 ${labelSize}px "3270 Nerd Font", sans-serif`
+  context.font = `600 ${labelSize}px "3270 Nerd Font", sans-serif`
   context.textAlign = actualSide === 'left' ? 'right' : 'left'
   context.textBaseline = 'middle'
 
@@ -57,9 +57,7 @@ export function drawTimeline(
     const extensionLength = Math.abs(extensionEndX - extensionStartX)
     const dotSpacing = hourHeight / 2
     for (let distance = dotSpacing; distance < extensionLength; distance += dotSpacing) {
-      context.beginPath()
-      context.arc(extensionStartX + dir * distance, posY, lineWidth / 2, 0, Math.PI * 2)
-      context.fill()
+      context.fillRect(extensionStartX + dir * distance - lineWidth / 2, posY - lineWidth / 2, lineWidth, lineWidth)
     }
 
     const label = String(hour).padStart(2, '0')

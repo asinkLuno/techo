@@ -22,12 +22,14 @@ twoside]{geometry}
 \input{../../src/techo/colors.tex}
 
 % ── Fonts: 3270 Nerd Font (same mono as the mini-tool preview) ──
-\setmainfont{3270 Nerd Font}
+% Only a Regular weight ships; fake bold raises the digits' thin stroke toward
+% the tick width.  AutoFakeBold beyond ~5 collapses the glyph counters.
+\setmainfont{3270 Nerd Font}[AutoFakeBold=2]
 
 % ── Palette ──
 \definecolor{TimelineColor}{HTML}{\TIMELINECOLOR}
-\def\tlwidth{0.6mm}% one tick thickness — long ticks, short ticks, and the
-% guide dots all share it (mini-tool: dot radius = lineWidth/2).
+\def\tlwidth{0.4mm}% one tick thickness — long ticks, short ticks, and the
+% guide dots all share it (mini-tool: dot side = lineWidth).
 
 % ── Page style ──
 \pagestyle{empty}
@@ -73,11 +75,11 @@ twoside]{geometry}
       \ifnum\tln>0%
         \foreach \tli in {1,...,\tln}{%
           \pgfmathsetmacro{\tld}{\tltickx+\tldir*(\tli*\tlhourh/2)}%
-          \fill[TimelineColor] (\tld mm, -\tly mm) circle ({\tlwidth/2});%
+          \fill[TimelineColor] (\tld mm, -\tly mm) ++({-\tlwidth/2},{-\tlwidth/2}) rectangle ++(\tlwidth,\tlwidth);%
         }%
       \fi
       \pgfmathsetmacro{\tllabelx}{\tlaxis-\tldir*3}%
-      \node[tl-label] at (\tllabelx mm, -\tly mm) {\ifnum\tlh<10 0\fi\tlh};%
+      \node[tl-label] at (\tllabelx mm, -\tly mm) {\textbf{\ifnum\tlh<10 0\fi\tlh}};%
       \ifnum\tlh<#2%
         \pgfmathsetmacro{\tlhalfy}{\tly+\tlhourh/2}%
         \pgfmathsetmacro{\tlshortx}{\tlaxis+\tldir*3}%

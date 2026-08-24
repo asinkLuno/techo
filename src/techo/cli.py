@@ -129,9 +129,16 @@ def timeline(size: str, start: int, end: int, pages: str, swap: bool, color: str
     show_default=True,
     type=click.Choice(list(sizes.SIZES.keys())),
 )
-def timeline_merge(size: str) -> None:
+@click.option(
+    "--side",
+    default="binding",
+    show_default=True,
+    type=click.Choice(["binding", "outer"]),
+    help="binding: axes hug the spine, numbers toward the binding; outer: axes at the outer edges.",
+)
+def timeline_merge(size: str, side: str) -> None:
     """Assemble the merged print spread from generated timeline pages."""
-    _run(gen_timeline_merge, size)
+    _run(gen_timeline_merge, size, side=side)
 
 
 @cli.command("movie-report")

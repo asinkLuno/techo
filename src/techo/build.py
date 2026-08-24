@@ -83,19 +83,25 @@ def write_spread(
     ph: float,
     *,
     booklet: bool = False,
+    side: str = "outer",
     quiet: bool = True,
 ) -> Path:
     """Assemble spread.tex from an edition PDF and compile it.
 
     ``booklet`` (tn/tnp) prints the whole PDF as a landscape booklet
     spread; otherwise the first two pages are placed 2-up on the spread.
+    ``side`` selects the 2-up page order: "binding" puts the even page
+    (axis toward the spine) on the left half and the odd page on the
+    right; "outer" keeps natural page order.  Booklet spreads always bind
+    at the center, so ``side`` only affects the 2-up path.
     Returns the compiled spread PDF.
     """
     if booklet:
         include = f"\\includepdf[pages=-, booklet=true, landscape]{{{pdf_name}.pdf}}"
     else:
+        pages = "2,1" if side == "binding" else "1,2"
         include = (
-            f"\\includepdf[pages={{1,2}}, nup=2x1, width={pw}mm, height={ph}mm]"
+            f"\\includepdf[pages={{{pages}}}, nup=2x1, width={pw}mm, height={ph}mm]"
             f"{{{pdf_name}.pdf}}"
         )
     spread_tex = (
