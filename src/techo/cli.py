@@ -16,11 +16,11 @@ from .green_dot import generate as gen_green_dot
 from .midori_grid.midori_grid import generate as gen_midori_grid
 from .movie_report.movie_report import generate as gen_movie_report
 from .nightowl import generate as gen_nightowl
+from .postprocess import generate as gen_postprocess
 from .senary import generate as gen_senary
 from .senary.bases import BASES
 from .senary.partners import PARTNERS
 from .timeline.timeline import generate as gen_timeline
-from .timeline.timeline import merge as gen_timeline_merge
 from .tn_cover import generate as gen_tn_cover
 
 
@@ -122,23 +122,22 @@ def timeline(size: str, start: int, end: int, pages: str, swap: bool, color: str
     _run(gen_timeline, size, start=start, end=end, pages=int(pages), swap=swap, color=color)
 
 
-@cli.command("timeline-merge")
+@cli.command("postprocess")
+@click.argument("edition")
 @click.option(
     "--size",
-    default="a5s",
-    show_default=True,
+    required=True,
     type=click.Choice(list(sizes.SIZES.keys())),
 )
 @click.option(
     "--side",
-    default="binding",
+    default="outer",
     show_default=True,
     type=click.Choice(["binding", "outer"]),
-    help="binding: axes hug the spine, numbers toward the binding; outer: axes at the outer edges.",
 )
-def timeline_merge(size: str, side: str) -> None:
-    """Assemble the merged print spread from generated timeline pages."""
-    _run(gen_timeline_merge, size, side=side)
+def postprocess(edition: str, size: str, side: str) -> None:
+    """Turn a generated edition PDF into a print-ready spread."""
+    _run(gen_postprocess, edition, size, side)
 
 
 @cli.command("movie-report")

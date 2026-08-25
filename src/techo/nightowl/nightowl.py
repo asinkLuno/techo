@@ -59,7 +59,3 @@ def generate(size: str) -> None:
         defs={"EDITION": size},
     )
     print(f"Generated {out}/content.tex + night-owl-{size}.tex ({PW}×{PH}mm)")
-
-    if size in ("tn", "tnp"):
-        build.write_spread(out, f"night-owl-{size}", PW, PH, booklet=True)
-        print(f"Generated {out}/spread.pdf (booklet spread, {PW * 2}×{PH}mm)")

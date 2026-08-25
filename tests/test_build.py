@@ -3,7 +3,8 @@ from pathlib import Path
 from unittest import mock
 
 from techo import sizes
-from techo.build import build_edition, compile_tex, write_spread
+from techo.build import build_edition, compile_tex
+from techo.postprocess import spread
 from techo.texutil import tex_escape
 
 
@@ -106,17 +107,23 @@ class WriteSpreadTests(unittest.TestCase):
         self.out.mkdir(parents=True, exist_ok=True)
 
     def test_2up_spread(self) -> None:
-        with mock.patch("techo.build.compile_tex") as compile_:
-            pdf = write_spread(self.out, "demo", 67.0, 105.0)
+        (self.out / "demo.pdf").touch()
+        with mock.patch("techo.build.compile_tex") as compile_, mock.patch(
+            "techo.build.OUTPUTS", Path("/tmp/editions")
+        ):
+            pdf = spread("demo", "67m5")
         self.assertEqual(pdf, self.out / "spread.pdf")
         tex = (self.out / "spread.tex").read_text()
-        self.assertIn("paperwidth=134.0mm, paperheight=105.0mm", tex)
-        self.assertIn("\\includepdf[pages={1,2}, nup=2x1, width=67.0mm, height=105.0mm]{demo.pdf}", tex)
+        self.assertIn("paperwidth=134mm, paperheight=105mm", tex)
+        self.assertIn("\\includepdf[pages={1,2}, nup=2x1, width=67mm, height=105mm]{demo.pdf}", tex)
         compile_.assert_called_once_with("spread.tex", self.out, quiet=True)
 
     def test_booklet_spread(self) -> None:
-        with mock.patch("techo.build.compile_tex"):
-            write_spread(self.out, "demo", 67.0, 105.0, booklet=True)
+        (self.out / "demo.pdf").touch()
+        with mock.patch("techo.build.compile_tex"), mock.patch(
+            "techo.build.OUTPUTS", Path("/tmp/editions")
+        ):
+            spread("demo", "tn", side="binding")
         tex = (self.out / "spread.tex").read_text()
         self.assertIn("\\includepdf[pages=-, booklet=true, landscape]{demo.pdf}", tex)
 
