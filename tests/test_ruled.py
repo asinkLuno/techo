@@ -4,13 +4,10 @@ from techo.ruled.ruled import content
 
 
 class RuledContentTests(unittest.TestCase):
-    def test_content_is_two_empty_pages(self) -> None:
+    def test_content_is_one_empty_page(self) -> None:
         self.assertEqual(
             content(),
             [
-                "\\thispagestyle{empty}%",
-                "\\null",
-                "\\clearpage",
                 "\\thispagestyle{empty}%",
                 "\\null",
                 "\\clearpage",
