@@ -5,11 +5,10 @@ Usage: techo ruled --size a5s [--gap 5.0] [--top 10.0] [--bottom 10.0]
 """
 
 from .. import build, sizes
-from ..texutil import tex_escape
 
 
 def content() -> list[str]:
-    """Return LaTeX lines for a single empty ruled page."""
+    """Return LaTeX lines for one empty ruled page (call twice for a spread)."""
     return [
         "\\thispagestyle{empty}%",
         "\\null",
