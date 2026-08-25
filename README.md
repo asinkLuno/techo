@@ -9,14 +9,15 @@ and typesets EPUB or Markdown books for any paper size defined in `src/sizes.py`
 
 ## Designs & sizes
 
-| size | mm | night-owl | senary |
-|------|----|-----------|--------|
-| cozyca | 100×90 | ✓ | |
-| m5 | 67×105 | ✓ | |
-| 74m5 | 74×105 | ✓ | |
+| size | mm | night-owl | ruled |
+|------|----|-----------|-------|
+| cozyca | 100×90 | ✓ | ✓ |
+| m5 | 67×105 | ✓ | ✓ |
+| 74m5 | 74×105 | ✓ | ✓ |
 | m5l | 105×67 | | ✓ |
 
 - **night-owl** — numbers 0–26 in a triangular hourglass over a dot grid (3270 Nerd Font).
+- **ruled** — evenly spaced horizontal writing lines (line gap, margins, and color configurable).
 - **senary** — lunar-almanac month book (landscape m5l, takes `YYYY-MM`): the
   front page is a month calendar whose date badges are coloured by **lunar
   day/night** at the base and whose cells carry an **Earth-phase** square
@@ -50,6 +51,8 @@ and typesets EPUB or Markdown books for any paper size defined in `src/sizes.py`
 
 ```bash
 uv run techo nightowl --size m5          # or cozyca, 74m5
+uv run techo ruled --size a5s             # horizontal writing lines
+uv run techo ruled --size 67m5 --gap 6.0   # wider line spacing
 uv run techo senary 2047-08 --base tranquillity --partner cnsa   # lunar-almanac month book
 uv run techo senary 2047-08 --base shackleton --partner esa      # polar base, direct-light logic
 uv run techo movie "盗梦空间"             # rating page; default size 74m5

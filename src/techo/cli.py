@@ -16,9 +16,12 @@ from .green_dot import generate as gen_green_dot
 from .midori_grid.midori_grid import generate as gen_midori_grid
 from .movie_report.movie_report import generate as gen_movie_report
 from .nightowl import generate as gen_nightowl
+from .postprocess import generate as gen_postprocess
+from .ruled import generate as gen_ruled
 from .senary import generate as gen_senary
 from .senary.bases import BASES
 from .senary.partners import PARTNERS
+from .timeline.timeline import generate as gen_timeline
 from .tn_cover import generate as gen_tn_cover
 
 
@@ -97,6 +100,47 @@ def midori_grid(size: str) -> None:
     _run(gen_midori_grid, size)
 
 
+@cli.command("timeline")
+@click.option(
+    "--size",
+    default="a5s",
+    show_default=True,
+    type=click.Choice(list(sizes.SIZES.keys())),
+)
+@click.option("--start", default=0, show_default=True, type=click.IntRange(0, 98), help="Start hour.")
+@click.option("--end", default=26, show_default=True, type=click.IntRange(1, 99), help="End hour (must be > start).")
+@click.option(
+    "--pages",
+    default=1,
+    show_default=True,
+    type=click.Choice(["1", "2"]),
+    help="1: full range on every page; 2: split across the spread.",
+)
+@click.option("--swap", is_flag=True, help="Swap which half of the range each page gets (with --pages 2).")
+@click.option("--color", default="7a7a7a", show_default=True, help="Ticks/labels color as hex (e.g. 7a7a7a).")
+def timeline(size: str, start: int, end: int, pages: str, swap: bool, color: str) -> None:
+    """Hour axis on the binding edge with custom start/end hours."""
+    _run(gen_timeline, size, start=start, end=end, pages=int(pages), swap=swap, color=color)
+
+
+@cli.command("postprocess")
+@click.argument("edition")
+@click.option(
+    "--size",
+    required=True,
+    type=click.Choice(list(sizes.SIZES.keys())),
+)
+@click.option(
+    "--side",
+    default="outer",
+    show_default=True,
+    type=click.Choice(["binding", "outer"]),
+)
+def postprocess(edition: str, size: str, side: str) -> None:
+    """Turn a generated edition PDF into a print-ready spread."""
+    _run(gen_postprocess, edition, size, side)
+
+
 @cli.command("movie-report")
 @click.argument("query")
 @click.option(
@@ -153,6 +197,30 @@ def movie_report(
 def tn_cover(image_path: Path, size: str) -> None:
     """Generate Traveler's Notebook (TN/TNP) cover spread from an image."""
     _run(gen_tn_cover, image_path, size)
+
+
+@cli.command("ruled")
+@click.option(
+    "--size",
+    default="a5s",
+    show_default=True,
+    type=click.Choice(list(sizes.SIZES.keys())),
+)
+@click.option(
+    "--gap",
+    default=5.0,
+    show_default=True,
+    type=float,
+    help="Line spacing in mm.",
+)
+@click.option("--top", default=10.0, show_default=True, type=float, help="Top margin mm.")
+@click.option("--bottom", default=10.0, show_default=True, type=float, help="Bottom margin mm.")
+@click.option("--left", default=15.0, show_default=True, type=float, help="Inner (binding) margin mm.")
+@click.option("--right", default=5.0, show_default=True, type=float, help="Outer margin mm.")
+@click.option("--color", default="7a7a7a", show_default=True, help="Line color as hex.")
+def ruled(size: str, gap: float, top: float, bottom: float, left: float, right: float, color: str) -> None:
+    """Evenly spaced horizontal writing lines."""
+    _run(gen_ruled, size, gap=gap, top=top, bottom=bottom, left=left, right=right, color=color)
 
 
 if __name__ == "__main__":

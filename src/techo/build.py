@@ -8,8 +8,6 @@ booklet assembly).  This module centralises that boilerplate:
   configurable pass count; single-page editions need only one pass).
 * ``build_edition`` — writes sizes.tex, the content.tex body, the wrapper
   tex (``\\def`` preamble + ``\\input`` of the template) and compiles it.
-* ``write_spread`` — assembles spread.tex (booklet or 2-up) from an
-  edition PDF and compiles it.
 """
 
 import subprocess
@@ -74,38 +72,3 @@ def build_edition(
     if compile:
         compile_tex(f"{edition}.tex", out, passes=passes, quiet=quiet)
     return out
-
-
-def write_spread(
-    out: Path,
-    pdf_name: str,
-    pw: float,
-    ph: float,
-    *,
-    booklet: bool = False,
-    quiet: bool = True,
-) -> Path:
-    """Assemble spread.tex from an edition PDF and compile it.
-
-    ``booklet`` (tn/tnp) prints the whole PDF as a landscape booklet
-    spread; otherwise the first two pages are placed 2-up on the spread.
-    Returns the compiled spread PDF.
-    """
-    if booklet:
-        include = f"\\includepdf[pages=-, booklet=true, landscape]{{{pdf_name}.pdf}}"
-    else:
-        include = (
-            f"\\includepdf[pages={{1,2}}, nup=2x1, width={pw}mm, height={ph}mm]"
-            f"{{{pdf_name}.pdf}}"
-        )
-    spread_tex = (
-        "\\documentclass[10pt]{article}\n"
-        f"\\usepackage[paperwidth={pw * 2}mm, paperheight={ph}mm, margin=0mm]{{geometry}}\n"
-        "\\usepackage{pdfpages}\n"
-        "\\begin{document}\n"
-        f"{include}\n"
-        "\\end{document}\n"
-    )
-    (out / "spread.tex").write_text(spread_tex)
-    compile_tex("spread.tex", out, quiet=quiet)
-    return out / "spread.pdf"
