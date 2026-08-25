@@ -17,6 +17,7 @@ from .midori_grid.midori_grid import generate as gen_midori_grid
 from .movie_report.movie_report import generate as gen_movie_report
 from .nightowl import generate as gen_nightowl
 from .postprocess import generate as gen_postprocess
+from .ruled import generate as gen_ruled
 from .senary import generate as gen_senary
 from .senary.bases import BASES
 from .senary.partners import PARTNERS
@@ -196,6 +197,30 @@ def movie_report(
 def tn_cover(image_path: Path, size: str) -> None:
     """Generate Traveler's Notebook (TN/TNP) cover spread from an image."""
     _run(gen_tn_cover, image_path, size)
+
+
+@cli.command("ruled")
+@click.option(
+    "--size",
+    default="a5s",
+    show_default=True,
+    type=click.Choice(list(sizes.SIZES.keys())),
+)
+@click.option(
+    "--gap",
+    default=5.0,
+    show_default=True,
+    type=float,
+    help="Line spacing in mm.",
+)
+@click.option("--top", default=10.0, show_default=True, type=float, help="Top margin mm.")
+@click.option("--bottom", default=10.0, show_default=True, type=float, help="Bottom margin mm.")
+@click.option("--left", default=15.0, show_default=True, type=float, help="Inner (binding) margin mm.")
+@click.option("--right", default=5.0, show_default=True, type=float, help="Outer margin mm.")
+@click.option("--color", default="7a7a7a", show_default=True, help="Line color as hex.")
+def ruled(size: str, gap: float, top: float, bottom: float, left: float, right: float, color: str) -> None:
+    """Evenly spaced horizontal writing lines."""
+    _run(gen_ruled, size, gap=gap, top=top, bottom=bottom, left=left, right=right, color=color)
 
 
 if __name__ == "__main__":

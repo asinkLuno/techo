@@ -1,0 +1,50 @@
+% Ruled — evenly spaced horizontal writing lines
+% Size is set by \EDITION in each edition's generated wrapper.
+\documentclass[10pt, twoside]{article}
+
+% ── Size ──
+\input{../../src/techo/sizes.tex}
+\edef\PW{\Size{\EDITION}{PW}}
+\edef\PH{\Size{\EDITION}{PH}}
+
+% ── Page geometry ──
+\usepackage[paperwidth=\PW mm, paperheight=\PH mm,
+  inner=\RULEDLEFT mm, outer=\RULEDRIGHT mm,
+  top=\RULEDTOP mm, bottom=\RULEDBOT mm,
+twoside]{geometry}
+
+% ── Packages ──
+\usepackage{tikz}
+\input{../../src/techo/colors.tex}
+\usepackage{xcolor}
+
+% ── Ruled line style ──
+\definecolor{RuledColor}{HTML}{\RULEDCOLOR}
+\tikzset{ruledline/.style={RuledColor, line width=0.4pt}}
+
+% ── Page style ──
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}
+
+% ── Ruled lines: drawn as a shipout hook so they fill the page
+%    regardless of content.tex (empty pages stay lined).
+\AddToHook{shipout/background}{%
+  \begin{tikzpicture}[remember picture, overlay]
+    \pgfmathsetmacro{\lx}{\RULEDLEFT mm}        % left edge of lines
+    \pgfmathsetmacro{\rx}{\PW - \RULEDRIGHT mm}  % right edge
+    \pgfmathsetmacro{\top}{-\RULEDTOP mm}        % top edge
+    \pgfmathsetmacro{\bot}{-\PH + \RULEDBOT mm}  % bottom edge
+    \pgfmathsetmacro{\gap}{\RULEDGAP mm}
+    \pgfmathsetmacro{\nmax}{floor((\bot - \top) / \gap)}
+    \foreach \i in {0, ..., \nmax} {
+      \pgfmathsetmacro{\y}{\top + \i * \gap}
+      \draw[ruledline] (\lx, \y) -- (\rx, \y);
+    }
+  \end{tikzpicture}%
+}
