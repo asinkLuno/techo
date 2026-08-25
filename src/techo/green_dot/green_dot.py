@@ -38,5 +38,3 @@ def generate(size: str) -> None:
         },
     )
     print(f"Generated {out}/content.tex + green-dot-{size}.tex ({PW}×{PH}mm, 2 pages)")
-    build.write_spread(out, f"green-dot-{size}", PW, PH, booklet=size in ("tn", "tnp"))
-    print(f"Generated {out}/spread.pdf (spread, {PW * 2}×{PH}mm)")

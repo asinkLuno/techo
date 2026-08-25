@@ -1,0 +1,95 @@
+% ──────────────────────────────────────────
+% Timeline
+% Build: techo timeline [--size a5s] [--start 0] [--end 26]
+% ──────────────────────────────────────────
+\documentclass[10pt, twoside]{article}
+
+% ── Size ──
+\input{../../src/techo/sizes.tex}
+\edef\PW{\Size{\EDITION}{PW}}
+\edef\PH{\Size{\EDITION}{PH}}
+
+% ── Page geometry ──
+% margin=0 keeps the TikZ origin at the page top-left; the axis side is
+% decided per page by \timelinepage via \ifodd\value{page}.
+\usepackage[paperwidth=\PW mm, paperheight=\PH mm, margin=0mm]{geometry}
+
+% ── Packages ──
+\usepackage{tikz}
+\usepackage{fontspec}
+\input{../../src/techo/colors.tex}
+
+% ── Fonts: 3270 Nerd Font (same mono as the mini-tool preview) ──
+% Only a Regular weight ships; fake bold raises the digits' thin stroke toward
+% the tick width.  AutoFakeBold beyond ~5 collapses the glyph counters.
+\setmainfont{3270 Nerd Font}[AutoFakeBold=2]
+
+% ── Palette ──
+\definecolor{TimelineColor}{HTML}{\TIMELINECOLOR}
+\def\tlwidth{0.4mm}% one tick thickness — long ticks, short ticks, and the
+% guide dots all share it (mini-tool: dot side = lineWidth).
+
+% ── Page style ──
+\pagestyle{empty}
+% the overlay tikzpicture is the first line on each page; \topskip would push
+% its origin 10pt below the top edge, shifting the whole timeline down.
+\setlength{\topskip}{0pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% ──────────────────────────────────────────
+% One timeline page.  #1 = start hour, #2 = end hour (both inclusive).
+%
+% Left/right (左右页) typesetting is handled by LaTeX itself: the axis hugs
+% the spine — left margin on odd pages, right margin on even pages —
+% chosen with \ifodd\value{page}.  Calling \timelinepage repeatedly builds
+% a whole notebook; every page lands on the correct binding side.
+% ──────────────────────────────────────────
+\newcommand{\timelinepage}[2]{%
+  \thispagestyle{empty}%
+  \begin{tikzpicture}[remember picture, overlay,
+      every node/.style={font={\fontsize{\LABELPT pt}{\dimexpr\LABELPT pt*6/5\relax}\selectfont}, text=TimelineColor}]
+    \ifodd\value{page}%
+      \pgfmathsetmacro{\tlaxis}{\BINDINGMM}%
+      \def\tldir{1}%
+      \def\tlextend{\PW*2/3}%
+      \tikzset{tl-label/.style={anchor=east}}%
+    \else%
+      \pgfmathsetmacro{\tlaxis}{\PW-\BINDINGMM}%
+      \def\tldir{-1}%
+      \def\tlextend{\PW/3}%
+      \tikzset{tl-label/.style={anchor=west}}%
+    \fi
+    \pgfmathsetmacro{\tlspan}{#2-#1}%
+    \pgfmathsetmacro{\tlusable}{\PH-\TOPM-\BOTTOMM}%
+    \pgfmathsetmacro{\tlhourh}{\tlusable/\tlspan}%
+    \foreach \tlh in {#1,...,#2}{%
+      \pgfmathsetmacro{\tly}{\TOPM+(\tlh-#1)/\tlspan*\tlusable}%
+      \pgfmathsetmacro{\tltickx}{\tlaxis+\tldir*7}%
+      \draw[TimelineColor, line width=\tlwidth] (\tlaxis mm, -\tly mm) -- (\tltickx mm, -\tly mm);%
+      % dotted guide line from the tick toward the page interior
+      \pgfmathsetmacro{\tllen}{abs(\tlextend-\tltickx)}%
+      \pgfmathsetmacro{\tln}{int(ceil(\tllen/\tlhourh*2)-1)}%
+      \ifnum\tln>0%
+        \foreach \tli in {1,...,\tln}{%
+          \pgfmathsetmacro{\tld}{\tltickx+\tldir*(\tli*\tlhourh/2)}%
+          \fill[TimelineColor] (\tld mm, -\tly mm) ++({-\tlwidth/2},{-\tlwidth/2}) rectangle ++(\tlwidth,\tlwidth);%
+        }%
+      \fi
+      \pgfmathsetmacro{\tllabelx}{\tlaxis-\tldir*3}%
+      \node[tl-label] at (\tllabelx mm, -\tly mm) {\textbf{\ifnum\tlh<10 0\fi\tlh}};%
+      \ifnum\tlh<#2%
+        \pgfmathsetmacro{\tlhalfy}{\tly+\tlhourh/2}%
+        \pgfmathsetmacro{\tlshortx}{\tlaxis+\tldir*3}%
+        \draw[TimelineColor, line width=\tlwidth] (\tlaxis mm, -\tlhalfy mm) -- (\tlshortx mm, -\tlhalfy mm);%
+      \fi
+    }%
+  \end{tikzpicture}%
+  \null
+  \clearpage
+}
+
+% ──────────────────────────────────────────
+\begin{document}
+\input{content.tex}
+\end{document}

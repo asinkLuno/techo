@@ -173,5 +173,3 @@ def generate(size: str) -> None:
         f"Generated {out}/content.tex + midori-grid-{size}.tex "
         f"({PW}×{PH}mm, {num_x}x{num_y} grid, 2 pages)"
     )
-    build.write_spread(out, f"midori-grid-{size}", PW, PH, booklet=size in ("tn", "tnp"))
-    print(f"Generated {out}/spread.pdf (spread, {PW * 2}×{PH}mm)")
